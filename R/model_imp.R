@@ -94,9 +94,11 @@
 #' \tabular{ll}{
 #' \code{norm} \tab linear model\cr
 #' \code{lognorm} \tab log-linear model for skewed continuous data\cr
+#' \code{gamma} \tab gamma model (with log-link) for skewed continuous data\cr
+#' \code{beta} \tab beta model (with logit-link) for skewed continuous data in (0, 1)\cr
 #' \code{logit} \tab logistic model for binary data\cr
-#' \code{multinomial} \tab multinomial logit model for unordered categorical variables\cr
-#' \code{ordinal} \tab cumulative logit model for ordered categorical variables\cr
+#' \code{multilogit} \tab multinomial logit model for unordered categorical variables\cr
+#' \code{cumlogit} \tab cumulative logit model for ordered categorical variables\cr
 #' }}
 #'
 #' \subsection{Parameters to follow (\code{monitor_params})}{
@@ -289,6 +291,7 @@ model_imp <- function(fixed, data, random = NULL, link, family,
   # run JAGS -----------------------------------------------------------------
   t0 <- Sys.time()
   if (any(n.adapt > 0, n.iter > 0)) {
+    rjags::load.module("glm")
 
     adapt <- try(rjags::jags.model(file = modelfile, data = data_list,
                                    inits = inits, quiet = quiet,
@@ -301,7 +304,8 @@ model_imp <- function(fixed, data, random = NULL, link, family,
                                           family = family,
                                           y_name = colnames(Mlist$y),
                                           Zcols = ncol(Mlist$Z),
-                                          Xc = Mlist$Xc, Xcat = Mlist$Xcat),
+                                          Xc = Mlist$Xc, Xtrafo = Mlist$Xtrafo,
+                                          Xcat = Mlist$Xcat),
                                      monitor_params))
 
   mcmc <- if (n.iter > 0) {
@@ -323,12 +327,13 @@ model_imp <- function(fixed, data, random = NULL, link, family,
       if (!is.null(scale_pars)) {
         # re-scale parameters
         MCMC[[k]] <- as.mcmc(sapply(colnames(MCMC[[k]]), rescale, Mlist$fixed2,
-                            scale_pars, MCMC[[k]], Mlist$refs, Mlist$X2_names))
+                            scale_pars, MCMC[[k]], Mlist$refs, Mlist$X2_names,
+                            Mlist$trafos))
         attr(MCMC[[k]], 'mcpar') <- attr(mcmc[[k]], 'mcpar')
       }
     }
     # colnames(MCMC)[match(coefs[, 1], colnames(MCMC))] <- coefs[, 2]
-}
+  }
 
 
   if (!keep_model) {file.remove(modelfile)}

@@ -25,7 +25,7 @@ get_data_list <- function(analysis_type, family, link, meth, Mlist, K, auxvars,
   if (!is.null(Mlist$Xcat))  l$Xcat <- data.matrix(Mlist$Xcat)
   if (!is.null(Mlist$Xic)) l$Xic <- data.matrix(Mlist$Xic)
   if (!is.null(Mlist$Xil)) l$Xil <- data.matrix(Mlist$Xil)
-  if (!is.null(Mlist$Xtrafo)) l$Xtrafo <- data.matrix(Mlist$Xtrafo)
+  # if (!is.null(Mlist$Xtrafo)) l$Xtrafo <- data.matrix(Mlist$Xtrafo)
 
 
   # hyperparameters analysis model
@@ -53,6 +53,20 @@ get_data_list <- function(analysis_type, family, link, meth, Mlist, K, auxvars,
     l$tau_reg_norm <- defs$norm["tau_reg_norm"]
     l$a_tau_norm <- defs$norm["a_tau_norm"]
     l$b_tau_norm <- defs$norm["b_tau_norm"]
+  }
+
+  if (any(meth %in% c("gamma"))) {
+    l$mu_reg_gamma <- defs$gamma["mu_reg_gamma"]
+    l$tau_reg_gamma <- defs$gamma["tau_reg_gamma"]
+    l$a_tau_gamma <- defs$gamma["a_tau_gamma"]
+    l$b_tau_gamma <- defs$gamma["b_tau_gamma"]
+  }
+
+  if (any(meth %in% c("beta"))) {
+    l$mu_reg_beta <- defs$beta["mu_reg_beta"]
+    l$tau_reg_beta <- defs$beta["tau_reg_beta"]
+    l$a_tau_beta <- defs$beta["a_tau_beta"]
+    l$b_tau_beta <- defs$beta["b_tau_beta"]
   }
 
   if (any(meth == "logit")) {
@@ -130,6 +144,22 @@ get_data_list <- function(analysis_type, family, link, meth, Mlist, K, auxvars,
 #' \code{b_tau_norm} \tab rate parameter in gamma prior for precision of imputed variable\cr
 #' }
 #'
+#' \strong{gamma:} hyperparameters for gamma imputation models
+#' \tabular{ll}{
+#' \code{mu_reg_gamma} \tab mean in the priors for regression coefficients\cr
+#' \code{tau_reg_gamma} \tab precision in the priors for regression coefficients\cr
+#' \code{a_tau_gamma} \tab scale parameter in gamma prior for precision of imputed variable\cr
+#' \code{b_tau_gamma} \tab rate parameter in gamma prior for precision of imputed variable\cr
+#' }
+#'
+#' \strong{beta:} hyperparameters for beta imputation models
+#' \tabular{ll}{
+#' \code{mu_reg_beta} \tab mean in the priors for regression coefficients\cr
+#' \code{tau_reg_beta} \tab precision in the priors for regression coefficients\cr
+#' \code{a_tau_beta} \tab scale parameter in gamma prior for precision of imputed variable\cr
+#' \code{b_tau_beta} \tab rate parameter in gamma prior for precision of imputed variable\cr
+#' }
+#'
 #' \strong{logit:} hyperparameters for logistic imputation models
 #' \tabular{ll}{
 #' \code{mu_reg_logit} \tab mean in the priors for regression coefficients\cr
@@ -174,7 +204,7 @@ default_hyperpars <- function(family = 'gaussian', link = "identity", nranef = N
 
   # hyperparameters analysis model
   if (thefamily == "binomial" & thelink == "logit") {
-    tau_reg_main <- 4/9
+    tau_reg_main <- 0.001
   } else if (thefamily == "binomial" & thelink == "probit") {
     tau_reg_main <- 1
   } else {
@@ -215,21 +245,36 @@ default_hyperpars <- function(family = 'gaussian', link = "identity", nranef = N
     b_tau_norm = 0.01
   )
 
+  gamma <- c(
+    mu_reg_gamma = 0,
+    tau_reg_gamma = 0.0001,
+    a_tau_gamma = 0.01,
+    b_tau_gamma = 0.01
+  )
+
+  beta <- c(
+    mu_reg_beta = 0,
+    tau_reg_beta = 0.0001,
+    a_tau_beta = 0.01,
+    b_tau_beta = 0.01
+  )
+
+
   logit <- c(
     mu_reg_logit = 0,
-    tau_reg_logit = 4/9
+    tau_reg_logit = 0.001
   )
 
   multinomial <- c(
     mu_reg_multinomial = 0,
-    tau_reg_multinomial = 4/9
+    tau_reg_multinomial = 0.001
   )
 
   ordinal <- c(
     mu_reg_ordinal = 0,
-    tau_reg_ordinal = 4/9,
+    tau_reg_ordinal = 0.001,
     mu_delta_ordinal = 0,
-    tau_delta_ordinal = 4/9
+    tau_delta_ordinal = 0.001
   )
 
 
@@ -237,6 +282,8 @@ default_hyperpars <- function(family = 'gaussian', link = "identity", nranef = N
     analysis_model = analysis_model,
     Z = Z,
     norm = norm,
+    gamma = gamma,
+    beta = beta,
     logit = logit,
     multinomial = multinomial,
     ordinal = ordinal

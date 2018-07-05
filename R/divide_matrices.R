@@ -66,6 +66,8 @@ divide_matrices <- function(DF, fixed, random = NULL, auxvars = NULL,
                      model.frame(fixed2, DF, na.action = na.pass),
                      contrasts.arg = contr)
 
+  X2[is.nan(X2)] <- NA
+
   tvar <- apply(X2, 2, check_tvar, groups)
 
   # time-constant part of X
@@ -73,7 +75,7 @@ divide_matrices <- function(DF, fixed, random = NULL, auxvars = NULL,
   interact <- grep(":", colnames(Xcross), fixed = TRUE, value = TRUE)
 
   Xc <- Xcross[, !colnames(Xcross) %in% interact, drop = FALSE]
-  Xc <- Xc[, order(colSums(is.na(Xc))), drop = FALSE]
+  # Xc <- Xc[, order(colSums(is.na(Xc))), drop = FALSE]
 
   Xic <- if (length(interact) > 0) {
     Xcross[, interact, drop = FALSE]
@@ -97,7 +99,7 @@ divide_matrices <- function(DF, fixed, random = NULL, auxvars = NULL,
   }
 
   # Xtrafo ---------------------------------------------------------------------
-  trafos <- extract_fcts(fixed, DF)
+  trafos <- extract_fcts(fixed2, DF)
   Xtrafo <- if (!is.null(trafos)) {
     fmla_trafo <- as.formula(
       paste("~", paste0(unique(trafos$var), collapse = " + "))
@@ -113,6 +115,19 @@ divide_matrices <- function(DF, fixed, random = NULL, auxvars = NULL,
     Xc[, as.character(trafos$Xc_var)] <- NA
   }
 
+  # re-order columns in Xc
+  Xc_seq <- c(which(colSums(is.na(Xc)) == 0),
+              unlist(lapply(names(meth), match_positions, DF, colnames(Xc)))
+  )
+  for (x in unique(trafos$var)) {
+    Xc_seq <- append(Xc_seq,
+                     match(trafos$Xc_var[trafos$var == x & trafos$Xc_var != x], colnames(Xc)),
+                     after = match(x, names(Xc_seq)))
+  }
+
+  Xc_seq <- c(Xc_seq, which(!1:ncol(Xc) %in% Xc_seq))
+
+  Xc <- Xc[, Xc_seq, drop = FALSE]
 
 
   # Xlong ----------------------------------------------------------------------
@@ -161,7 +176,16 @@ divide_matrices <- function(DF, fixed, random = NULL, auxvars = NULL,
     excl <- grep("[[:alpha:]]*\\(", scale_vars, value = TRUE)
     excl <- c(excl, unique(trafos$Xc_var))
     excl <- excl[!excl %in% compl_fcts_vars]
+
+    if (!is.null(trafos)) {
+      qdrtrafos <- unlist(sapply(split(trafos, trafos$var), function(x) {
+        if (all(x$Xc_var %in% c(x$var, paste0("I(", x$var, "^2)")))) x$Xc_var
+      }))
+      excl <- excl[!excl %in% qdrtrafos]
+    }
+
     scale_vars <- scale_vars[which(!scale_vars %in% excl)]
+    if (length(scale_vars) == 0) scale_vars <- NULL
   }
 
 

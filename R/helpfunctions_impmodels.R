@@ -166,9 +166,9 @@ get_dest_column <- function(varname, refs, Xc_names, Xcat_names, Xtrafo_names,
     varname
   }
 
-  list("Xc" = setNames(match(nams, Xc_names), nams),
-       "Xcat" = setNames(match(varname, Xcat_names), varname),
-       "Xtrafo" = setNames(match(varname, Xtrafo_names), varname))
+  list("Xc" = setNames(match(make.names(nams), make.names(Xc_names)), nams),
+       "Xcat" = setNames(match(make.names(varname), make.names(Xcat_names)), varname),
+       "Xtrafo" = setNames(match(make.names(varname), make.names(Xtrafo_names)), varname))
 }
 
 
@@ -206,6 +206,8 @@ paste_imp_model <- function(imp_par_list) {
   imp_model <- switch(imp_par_list$impmeth,
                       norm = impmodel_normal,
                       lognorm = impmodel_lognorm,
+                      gamma = impmodel_gamma,
+                      beta = impmodel_beta,
                       logit = impmodel_logit,
                       multilogit = impmodel_multilogit,
                       cumlogit = impmodel_cumlogit)
@@ -220,6 +222,8 @@ paste_imp_priors <- function(imp_par_list) {
   imp_prior <- switch(imp_par_list$impmeth,
                       norm = impprior_normal,
                       lognorm = impprior_lognorm,
+                      gamma = impprior_gamma,
+                      beta = impprior_beta,
                       logit = impprior_logit,
                       multilogit = impprior_multilogit,
                       cumlogit = impprior_cumlogit)

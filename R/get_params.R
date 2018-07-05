@@ -4,6 +4,7 @@
 # @param y_name name of the outcome variable
 # @param Zcols number of columns in random effects design matrix
 # @param Xc matrix
+# @param Xtrafo matrix
 # @param Xcat matrix
 # @param analysis_main logical
 # @param analysis_random logical
@@ -19,10 +20,11 @@
 # @param tau_imp logical
 # @param gamma_imp logical
 # @param delta_imp logical
+# @param shaperate_imp logical
 # @param imps logical
 # @export
 get_params <- function(meth, analysis_type, family,
-                       Xc, Xcat, y_name = NULL, Zcols = NULL,
+                       Xc, Xcat, Xtrafo, y_name = NULL, Zcols = NULL,
                        analysis_main = FALSE,
                        analysis_random = FALSE,
                        imp_pars = FALSE,
@@ -30,7 +32,7 @@ get_params <- function(meth, analysis_type, family,
                        betas = NULL, tau_y = NULL, sigma_y = NULL,
                        ranef = NULL, invD = NULL, D = NULL, RinvD = NULL,
                        alphas = NULL, tau_imp = NULL, gamma_imp = NULL,
-                       delta_imp = NULL, other = NULL){
+                       delta_imp = NULL, shaperate_imp = NULL, other = NULL){
 
 
 
@@ -57,6 +59,7 @@ get_params <- function(meth, analysis_type, family,
     if (is.null(tau_imp)) tau_imp <- TRUE
     if (is.null(gamma_imp)) gamma_imp <- TRUE
     if (is.null(delta_imp)) delta_imp <- TRUE
+    if (is.null(shaperate_imp)) shaperate_imp <- TRUE
   }
 
 
@@ -71,14 +74,24 @@ get_params <- function(meth, analysis_type, family,
               if (tau_y) paste0("tau_", y_name),
               if (sigma_y) paste0("sigma_", y_name),
               if (alphas) "alpha",
-              if (tau_imp & any(meth == "norm")) {
-                paste0("tau_", names(meth)[meth == "norm"])
+              if (tau_imp & any(meth %in% c("norm", "lognorm", "gamma", "beta"))) {
+                paste0("tau_", names(meth)[meth %in% c("norm", "lognorm", "gamma", "beta")])
               },
               if (gamma_imp & any(meth == "cumlogit")) {
                 paste0("gamma_", names(meth)[meth == "cumlogit"])
               },
               if (delta_imp & any(meth == "cumlogit")) {
                 paste0("delta_", names(meth)[meth == "cumlogit"])
+              },
+              if (shaperate_imp & any(meth %in% c("beta"))) {
+                c(paste0("shape1_", names(meth[meth == "beta"])),
+                  paste0("shape2_", names(meth[meth == "beta"]))
+                )
+              },
+              if (shaperate_imp & any(meth %in% c("gamma"))) {
+                c(paste0("shape_", names(meth[meth == "gamma"])),
+                  paste0("rate_", names(meth[meth == "gamma"]))
+                )
               },
               other
   )
@@ -98,10 +111,13 @@ get_params <- function(meth, analysis_type, family,
     Xc_NA <- if (any(is.na(Xc))) which(is.na(Xc), arr.ind = TRUE)
     Xc_NA <- Xc_NA[Xc_NA[, 2] %in% which(colSums(!is.na(Xc)) > 0), ]
     Xcat_NA <- if (any(is.na(Xcat))) which(is.na(Xcat), arr.ind = TRUE)
+    Xtrafo_NA <- if (any(is.na(Xtrafo))) which(is.na(Xtrafo), arr.ind = TRUE)
 
     params <- c(params,
                 if (!is.null(Xc_NA))
                   paste0("Xc[", apply(Xc_NA, 1, paste, collapse = ","), "]"),
+                if (!is.null(Xtrafo_NA))
+                  paste0("Xtrafo[", apply(Xtrafo_NA, 1, paste, collapse = ","), "]"),
                 if (!is.null(Xcat_NA))
                   paste0("Xcat[", apply(Xcat_NA, 1, paste, collapse = ","), "]")
     )

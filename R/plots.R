@@ -18,7 +18,7 @@
 #'             (determined automatically if not specified)
 #' @param ncol optional; number of columns in the plotting layout
 #'             (determined automatically if not specified)
-#' @inheritDotParams graphics::matplot -x -y -type -xlab -ylab -pch
+#' @inheritDotParams graphics::matplot -x -y -type -xlab -ylab -pch -log
 #' @name traceplot
 #'
 #' @seealso \code{\link{summary.JointAI}}, \code{\link{lme_imp}}, \code{\link{glm_imp}},
@@ -159,7 +159,8 @@ plot_prep <- function(object, start = NULL, end = NULL, thin = NULL, subset = NU
     # re-scale parameters
     MCMC <- as.mcmc.list(lapply(MCMC, function(i) {
       as.mcmc(sapply(colnames(i), rescale, fixed2 = object$Mlist$fixed2, scale_pars = scale_pars,
-                     MCMC = i, refs = object$Mlist$refs, object$Mlist$X2_names))
+                     MCMC = i, refs = object$Mlist$refs, object$Mlist$X2_names,
+                     object$Mlist$trafos))
     }))
   }
 
