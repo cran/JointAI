@@ -4,12 +4,12 @@
 \alias{GR_crit}
 \title{Gelman-Rubin criterion for convergence}
 \usage{
-GR_crit(object, confidence = 0.95, transform = FALSE, autoburnin = TRUE,
-  multivariate = TRUE, subset = "main", start = NULL, end = NULL,
-  thin = NULL, ...)
+GR_crit(object, confidence = 0.95, transform = FALSE,
+  autoburnin = TRUE, multivariate = TRUE, subset = NULL,
+  start = NULL, end = NULL, thin = NULL, warn = TRUE, ...)
 }
 \arguments{
-\item{object}{inheriting from class \code{JointAI}}
+\item{object}{object inheriting from class "JointAI"}
 
 \item{confidence}{the coverage probability of the confidence interval for the
 potential scale reduction factor}
@@ -28,14 +28,9 @@ appropriate, will be applied.}
 potential scale reduction factor should be calculated for multivariate
 chains}
 
-\item{subset}{subset of monitored parameters (columns in the MCMC sample).
-Can be specified as a numeric vector of columns, a vector of
-column names, as \code{subset = "main"} or \code{NULL}.
-If \code{NULL}, all monitored nodes will be plotted.
-\code{subset = "main"} (default) the main parameters of the
-analysis model will be plotted (regression coefficients/fixed
-effects, and, if available, standard deviation of the residual
-and random effects covariance matrix).}
+\item{subset}{subset of parameters/variables/nodes (columns in the MCMC sample).
+Uses the same logic as the argument \code{monitor_params} in
+\code{\link{lm_imp}}, \code{\link{glm_imp}} and \code{\link{lme_imp}}.}
 
 \item{start}{the first iteration of interest (see \code{\link[coda]{window.mcmc}})}
 
@@ -43,15 +38,20 @@ and random effects covariance matrix).}
 
 \item{thin}{thinning interval (see \code{\link[coda]{window.mcmc}})}
 
+\item{warn}{logical; should warnings be given? Default is
+\code{TRUE}. Note: this applies only to warnings
+given directly by \strong{JointAI}.}
+
 \item{...}{currently not used}
 }
 \description{
-Gelman-Rubin criterion for convergence (uses \code{\link[coda]{gelman.diag}})
+Calculates the Gelman-Rubin criterion for convergence
+(uses \code{\link[coda]{gelman.diag}} from package \strong{coda}).
 }
 \examples{
-
 mod1 <- lm_imp(y~C1 + C2 + M2, data = wideDF, n.iter = 100)
 GR_crit(mod1)
+
 
 
 }
@@ -59,4 +59,8 @@ GR_crit(mod1)
 Gelman, A., Meng, X. L., & Stern, H. (1996).
 Posterior predictive assessment of model fitness via realized discrepancies.
 \emph{Statistica Sinica}, 733-760.
+}
+\seealso{
+The vignette \href{https://nerler.github.io/JointAI/articles/SelectingParameters.html}{Parameter Selection}
+contains some examples how to specify the argument \code{subset}.
 }

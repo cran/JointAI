@@ -7,11 +7,12 @@
 \usage{
 traceplot(object, ...)
 
-\method{traceplot}{JointAI}(object, start = NULL, end = NULL, thin = NULL,
-  subset = "main", nrow = NULL, ncol = NULL, ...)
+\method{traceplot}{JointAI}(object, start = NULL, end = NULL,
+  thin = NULL, subset = c(analysis_main = TRUE), nrow = NULL,
+  ncol = NULL, use_ggplot = FALSE, warn = TRUE, ...)
 }
 \arguments{
-\item{object}{object inheriting from class \code{JointAI}}
+\item{object}{object inheriting from class "JointAI"}
 
 \item{...}{Arguments passed on to \code{graphics::matplot}
 \describe{
@@ -52,30 +53,52 @@ traceplot(object, ...)
 
 \item{thin}{thinning interval (see \code{\link[coda]{window.mcmc}})}
 
-\item{subset}{subset of monitored parameters (columns in the MCMC sample).
-Can be specified as a numeric vector of columns, a vector of
-column names, as \code{subset = "main"} or \code{NULL}.
-If \code{NULL}, all monitored nodes will be plotted.
-\code{subset = "main"} (default) the main parameters of the
-analysis model will be plotted (regression coefficients/fixed
-effects, and, if available, standard deviation of the residual
-and random effects covariance matrix).}
+\item{subset}{subset of parameters/variables/nodes (columns in the MCMC sample).
+Uses the same logic as the argument \code{monitor_params} in
+\code{\link{lm_imp}}, \code{\link{glm_imp}} and \code{\link{lme_imp}}.}
 
-\item{nrow}{optional; number of rows in the plotting layout
-(determined automatically if not specified)}
+\item{nrow}{optional number of rows and columns in the plot layout;
+automatically chosen if unspecified}
 
-\item{ncol}{optional; number of columns in the plotting layout
-(determined automatically if not specified)}
+\item{ncol}{optional number of rows and columns in the plot layout;
+automatically chosen if unspecified}
+
+\item{use_ggplot}{logical; Should ggplot be used instead of the base graphics?}
+
+\item{warn}{logical; should warnings be given? Default is
+\code{TRUE}. Note: this applies only to warnings
+given directly by \strong{JointAI}.}
 }
 \description{
-Creates a set of traceplots from the MCMC sample of an object of class JointAI
+Creates a set of traceplots from the MCMC sample of an object of class "JointAI".
 }
 \examples{
+# fit a JointAI model
 mod <- lm_imp(y~C1 + C2 + M2, data = wideDF, n.iter = 100)
+
+
+# Example 1: simple traceplot
 traceplot(mod)
+
+
+# Example 2: ggplot version of traceplot
+traceplot(mod, use_ggplot = TRUE)
+
+
+# Example 5: changing how the ggplot version looks (using standard ggplot syntax)
+library(ggplot2)
+
+traceplot(mod, use_ggplot = TRUE) +
+  theme(legend.position = 'botto') +
+  xlab('iteration') +
+  ylab('value') +
+  scale_color_discrete(name = 'chain')
+
 
 }
 \seealso{
 \code{\link{summary.JointAI}}, \code{\link{lme_imp}}, \code{\link{glm_imp}},
-          \code{\link{lm_imp}}
+         \code{\link{lm_imp}}, \code{\link{densplot}}
+         The vignette \href{https://nerler.github.io/JointAI/articles/SelectingParameters.html}{Parameter Selection}
+         contains some examples how to specify the parameter \code{subset}.
 }

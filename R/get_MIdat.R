@@ -1,28 +1,33 @@
-#' Extract multiple imputed datasets (and export to SPSS)
+#' Extract multiple imputed datasets
 #'
-#' Extracts a dataset containing multiple imputed datasets. These data can be
-#' automatically exported to SPSS (i.e., a .txt file containing the data and a
+#' Creates a dataset containing multiple imputed datasets stacked onto each other
+#' (i.e., long format).
+#' These data can be automatically exported to SPSS (i.e., a .txt file containing the data and a
 #' .sps file containing syntax to generate a .sav file). For the export function
-#' the \href{https://CRAN.R-project.org/package=foreign}{foreign} package needs to be installed.
-#' @param object object inheriting from class \code{JointAI}
+#' the \href{https://CRAN.R-project.org/package=foreign}{\strong{foreign}} package needs to be installed.
+#' @inheritParams sharedParams
 #' @param m number of imputed datasets
-#' @param start the first iteration of interest (see \code{\link[coda]{window.mcmc}})
+#' @param include should the original, incomplete data be included?
 #' @param seed optional seed
+#' @param export_to_SPSS logical; should the completed data be exported to SPSS?
 #' @param resdir optional directory for results (if unspecified and
 #'               \code{export_to_SPSS = TRUE} the current working directory is used)
 #' @param filename optional file name (without ending; if unspecified and
 #'                 \code{export_to_SPSS = TRUE} a name is generated automatically)
-#' @param export_to_SPSS logical
 #'
 #' @return A dataframe containing the imputed values (and original data) stacked.
 #'        The variable \code{Imputation_} identifies the imputations.
+#'        In cross-sectional datasets the
+#'        variable \code{.imp} is added as subject identifier.
 #' @examples
+#' # fit a model and monitor the imputed values with monitor_params = c(imps = TRUE)#'
+#' mod <- lm_imp(y~C1 + C2 + M2, data = wideDF, monitor_params = c(imps = TRUE), n.iter = 100)
 #'
-#' mod <- lm_imp(y~C1 + C2 + M2, data = wideDF, n.iter = 100)
+#' # Example 1: without export to SPSS
 #' MIs <- get_MIdat(mod, m = 3, seed = 123)
 #'
 #' \dontrun{
-#' # or with export for SPSS (here: to the temporary directory "temp_dir")
+#' # Example 2: with export for SPSS (here: to the temporary directory "temp_dir")
 #' temp_dir <- tempdir()
 #' MIs <- get_MIdat(mod, m = 3, seed = 123, resdir = temp_dir,
 #'                  filename = "example_imputation",
@@ -31,8 +36,10 @@
 #' }
 #' @export
 #'
-get_MIdat <- function(object, m = 10, start = NULL, seed = NULL, resdir = NULL,
-                      filename = NULL, export_to_SPSS = FALSE){
+get_MIdat <- function(object, m = 10, include = TRUE,
+                      start = NULL, seed = NULL,
+                      export_to_SPSS = FALSE,
+                      resdir = NULL, filename = NULL){
 
   if (is.null(object$meth))
     stop("This JointAI object did not impute any values.")
@@ -53,6 +60,8 @@ get_MIdat <- function(object, m = 10, start = NULL, seed = NULL, resdir = NULL,
     }
     tvar <- apply(DFlong, 2, check_tvar, groups)
     DF <- DFlong[match(unique(DFlong[, id]), DFlong[, id]), names(tvar)[!tvar]]
+  } else {
+    DF$.id <- 1:nrow(DF)
   }
 
   meth <- object$meth
@@ -159,6 +168,9 @@ get_MIdat <- function(object, m = 10, start = NULL, seed = NULL, resdir = NULL,
     }
   }
 
+
+  if (!include)
+    DF_list <- DF_list[-1]
 
 # build dataset --------------------------------------------------------------------------
   if (object$analysis_type == "lme") {

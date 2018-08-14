@@ -14,8 +14,8 @@ impmodel_multilogit <- function(varname, dest_col, Xc_cols, par_elmts, par_name,
   predictor2 <- c(spltpred[["FALSE"]], "0", spltpred[["TRUE"]])
 
   probs <- sapply(1:ncat, function(k){
-    paste0(tab(), "p_", varname, "[i, ", k, "] <- phi_", varname, "[i, ", k,
-           "] / sum(phi_", varname, "[i, ])")
+    paste0(tab(), "p_", varname, "[i, ", k, "] <- min(1-1e-7, max(1e-7, phi_", varname, "[i, ", k,
+           "] / sum(phi_", varname, "[i, ])))")
     })
 
   logs <- mapply(function(k, predictor){

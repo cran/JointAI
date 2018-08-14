@@ -24,16 +24,23 @@
 # @param imps logical
 # @export
 get_params <- function(meth, analysis_type, family,
-                       Xc, Xcat, Xtrafo, y_name = NULL, Zcols = NULL,
-                       analysis_main = FALSE,
+                       Xc, Xcat, Xtrafo, y_name = NULL, y = NULL, Zcols = NULL, Z = NULL,
+                       imp_par_list = NULL,
+                       analysis_main = TRUE,
                        analysis_random = FALSE,
                        imp_pars = FALSE,
                        imps = NULL,
                        betas = NULL, tau_y = NULL, sigma_y = NULL,
                        ranef = NULL, invD = NULL, D = NULL, RinvD = NULL,
                        alphas = NULL, tau_imp = NULL, gamma_imp = NULL,
-                       delta_imp = NULL, shaperate_imp = NULL, other = NULL){
+                       delta_imp = NULL, other = NULL, ...){
 
+
+  if (is.null(y_name)) {
+    y_name <- names(y)
+  }
+  if (missing(family))
+    family <- attr(analysis_type, "family")
 
 
   if (analysis_main) {
@@ -59,7 +66,6 @@ get_params <- function(meth, analysis_type, family,
     if (is.null(tau_imp)) tau_imp <- TRUE
     if (is.null(gamma_imp)) gamma_imp <- TRUE
     if (is.null(delta_imp)) delta_imp <- TRUE
-    if (is.null(shaperate_imp)) shaperate_imp <- TRUE
   }
 
 
@@ -83,20 +89,14 @@ get_params <- function(meth, analysis_type, family,
               if (delta_imp & any(meth == "cumlogit")) {
                 paste0("delta_", names(meth)[meth == "cumlogit"])
               },
-              if (shaperate_imp & any(meth %in% c("beta"))) {
-                c(paste0("shape1_", names(meth[meth == "beta"])),
-                  paste0("shape2_", names(meth[meth == "beta"]))
-                )
-              },
-              if (shaperate_imp & any(meth %in% c("gamma"))) {
-                c(paste0("shape_", names(meth[meth == "gamma"])),
-                  paste0("rate_", names(meth[meth == "gamma"]))
-                )
-              },
               other
   )
 
   if (analysis_type == "lme") {
+    if (is.null(Zcols)) {
+      Zcols <- colnames(Z)
+    }
+
     params <- c(params,
                 if (ranef) "b",
                 if (invD) unlist(sapply(1:Zcols, function(x)
@@ -108,16 +108,33 @@ get_params <- function(meth, analysis_type, family,
   }
 
   if (imps) {
+    repl_list <- lapply(imp_par_list, function(x)
+      if(x$dest_mat == 'Xtrafo') x[c('dest_col', 'trafo_cols')]
+    )
+
     Xc_NA <- if (any(is.na(Xc))) which(is.na(Xc), arr.ind = TRUE)
     Xc_NA <- Xc_NA[Xc_NA[, 2] %in% which(colSums(!is.na(Xc)) > 0), ]
     Xcat_NA <- if (any(is.na(Xcat))) which(is.na(Xcat), arr.ind = TRUE)
     Xtrafo_NA <- if (any(is.na(Xtrafo))) which(is.na(Xtrafo), arr.ind = TRUE)
+    if (any(is.na(Xtrafo))) {
+      Xtrafo_NA_Xc <- matrix(nrow = 0, ncol = 2)
+      for (i in seq_along(repl_list)) {
+        for (j in seq_along(repl_list[[i]]$trafo_cols)) {
+          Xtrafo_NA_Xc_add <- Xtrafo_NA[Xtrafo_NA[, 'col'] == repl_list[[i]]$dest_col, ]
+          Xtrafo_NA_Xc_add[, 'col'] <- gsub(repl_list[[i]]$dest_col,
+                                            repl_list[[i]]$trafo_cols[j],
+                                            Xtrafo_NA_Xc_add[, 'col'])
+          Xtrafo_NA_Xc <- rbind(Xtrafo_NA_Xc, Xtrafo_NA_Xc_add)
+        }
+      }
+    }
 
     params <- c(params,
                 if (!is.null(Xc_NA))
                   paste0("Xc[", apply(Xc_NA, 1, paste, collapse = ","), "]"),
                 if (!is.null(Xtrafo_NA))
-                  paste0("Xtrafo[", apply(Xtrafo_NA, 1, paste, collapse = ","), "]"),
+                  c(paste0("Xtrafo[", apply(Xtrafo_NA, 1, paste, collapse = ","), "]"),
+                    paste0("Xc[", apply(Xtrafo_NA_Xc, 1, paste, collapse = ","), "]")),
                 if (!is.null(Xcat_NA))
                   paste0("Xcat[", apply(Xcat_NA, 1, paste, collapse = ","), "]")
     )
@@ -125,5 +142,3 @@ get_params <- function(meth, analysis_type, family,
 
   return(params)
 }
-
-

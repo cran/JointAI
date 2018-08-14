@@ -5,23 +5,18 @@
 \alias{plot.MCElist}
 \title{Monte Carlo error}
 \usage{
-MC_error(x, subset = "main", start = NULL, end = NULL, thin = NULL,
-  digits = 2, ...)
+MC_error(x, subset = NULL, start = NULL, end = NULL, thin = NULL,
+  digits = 2, warn = TRUE, ...)
 
 \method{plot}{MCElist}(x, scaled = TRUE, plotpars = NULL,
   ablinepars = list(v = 0.05), ...)
 }
 \arguments{
-\item{x}{object inheriting from class \code{JointAI}}
+\item{x}{object inheriting from class "JointAI"}
 
-\item{subset}{subset of monitored parameters (columns in the MCMC sample).
-Can be specified as a numeric vector of columns, a vector of
-column names, as \code{subset = "main"} or \code{NULL}.
-If \code{NULL}, all monitored nodes will be plotted.
-\code{subset = "main"} (default) the main parameters of the
-analysis model will be plotted (regression coefficients/fixed
-effects, and, if available, standard deviation of the residual
-and random effects covariance matrix).}
+\item{subset}{subset of parameters/variables/nodes (columns in the MCMC sample).
+Uses the same logic as the argument \code{monitor_params} in
+\code{\link{lm_imp}}, \code{\link{glm_imp}} and \code{\link{lme_imp}}.}
 
 \item{start}{the first iteration of interest (see \code{\link[coda]{window.mcmc}})}
 
@@ -30,6 +25,10 @@ and random effects covariance matrix).}
 \item{thin}{thinning interval (see \code{\link[coda]{window.mcmc}})}
 
 \item{digits}{number of digits for output}
+
+\item{warn}{logical; should warnings be given? Default is
+\code{TRUE}. Note: this applies only to warnings
+given directly by \strong{JointAI}.}
 
 \item{...}{Arguments passed on to \code{mcmcse::mcse.mat}
 \describe{
@@ -58,14 +57,14 @@ and random effects covariance matrix).}
 \item{ablinepars}{optional; list of parameters passed to \code{\link[graphics]{abline}()}}
 }
 \value{
-an object of class \code{MCElist} with elements \code{unscaled},
+An object of class \code{MCElist} with elements \code{unscaled},
         \code{scaled} and \code{digits}. The first two are matrices with
         columns \code{est} (posterior mean), \code{MCSE} (Monte Carlo error),
         \code{SD} (posterior standard deviation) and \code{MCSE/SD}
         (Monte Carlo error divided by post. standard deviation.)
 }
 \description{
-Calculate and plot the Monte Carlo error of the samples from a JointAI model
+Calculate and plot the Monte Carlo error of the samples from a JointAI model.
 }
 \section{Methods (by generic)}{
 \itemize{
@@ -79,12 +78,18 @@ Lesaffre & Lawson (2012) [p. 195] suggest the Monte Carlo error of a
 }
 \examples{
 mod <- lm_imp(y~C1 + C2 + M2, data = wideDF, n.iter = 100)
+
 MC_error(mod)
 
+plot(MC_error(mod), ablinepars = list(lty = 2))
 
 }
 \references{
 Lesaffre, E., & Lawson, A. B. (2012).
 \emph{Bayesian Biostatistics}.
 John Wiley & Sons.
+}
+\seealso{
+The vignette \href{https://nerler.github.io/JointAI/articles/SelectingParameters.html}{Parameter Selection}
+contains some examples how to specify the argument \code{subset}.
 }

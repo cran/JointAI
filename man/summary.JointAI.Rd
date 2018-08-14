@@ -5,13 +5,15 @@
 \alias{print.summary.JointAI}
 \title{Summary of an object of class JointAI}
 \usage{
-\method{summary}{JointAI}(object, start = NULL, end = NULL, thin = NULL,
-  quantiles = c(0.025, 0.975), subset = "main", ...)
+\method{summary}{JointAI}(object, start = NULL, end = NULL,
+  thin = NULL, quantiles = c(0.025, 0.975), subset = NULL,
+  warn = TRUE, mess = TRUE, ...)
 
-\method{print}{summary.JointAI}(x, digits = max(3, .Options$digits - 3), ...)
+\method{print}{summary.JointAI}(x, digits = max(3, .Options$digits - 3),
+  ...)
 }
 \arguments{
-\item{object}{object inheriting from class \code{JointAI}}
+\item{object}{object inheriting from class "JointAI"}
 
 \item{start}{the first iteration of interest (see \code{\link[coda]{window.mcmc}})}
 
@@ -21,16 +23,19 @@
 
 \item{quantiles}{posterior quantiles}
 
-\item{subset}{subset of monitored parameters (columns in the MCMC sample).
-Can be specified as a numeric vector of columns, a vector of
-column names, as \code{subset = "main"} or \code{NULL}.
-If \code{NULL}, all monitored nodes will be plotted.
-\code{subset = "main"} (default) the main parameters of the
-analysis model will be plotted (regression coefficients/fixed
-effects, and, if available, standard deviation of the residual
-and random effects covariance matrix).}
+\item{subset}{subset of parameters/variables/nodes (columns in the MCMC sample).
+Uses the same logic as the argument \code{monitor_params} in
+\code{\link{lm_imp}}, \code{\link{glm_imp}} and \code{\link{lme_imp}}.}
 
-\item{...}{currently not used}
+\item{warn}{logical; should warnings be given? Default is
+\code{TRUE}. Note: this applies only to warnings
+given directly by \strong{JointAI}.}
+
+\item{mess}{logical; should messages be given? Default is
+\code{TRUE}. Note: this applies only to messages
+given directly by \strong{JointAI}.}
+
+\item{\dots}{currently not used}
 
 \item{x}{an object of class \code{summary.JointAI}}
 
@@ -38,15 +43,18 @@ and random effects covariance matrix).}
     \code{\link{print.default}}.}
 }
 \description{
-Summary of an object of class JointAI
+\code{summary} method for class "JointAI".
 }
 \examples{
 mod1 <- lm_imp(y~C1 + C2 + M2, data = wideDF, n.iter = 100)
+
 summary(mod1)
 
 
 }
 \seealso{
 The model fitting functions \code{\link{lm_imp}},
-         \code{\link{glm_imp}}, \code{\link{lme_imp}}
+         \code{\link{glm_imp}}, \code{\link{lme_imp}} and the
+         vignette \href{https://nerler.github.io/JointAI/articles/SelectingParameters.html}{Parameter Selection}
+          for examples how to specify the parameter \code{subset}.
 }

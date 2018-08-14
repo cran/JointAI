@@ -4,37 +4,46 @@
 \alias{md_pattern}
 \title{Missing data pattern}
 \usage{
-md_pattern(data, plot = TRUE, xlab = "", ylab = "", xaxis_pars = list(),
-  yaxis_pars = list(), printN = TRUE, print = TRUE, ...)
+md_pattern(data, color = c(grDevices::grey(0.1), grDevices::grey(0.7)),
+  border = grDevices::grey(0.5), plot = TRUE, pattern = FALSE,
+  print_xaxis = TRUE, ylab = "Number of observations per pattern",
+  print_yaxis = TRUE, legend.position = "bottom", ...)
 }
 \arguments{
 \item{data}{data frame}
 
+\item{color}{vector of length two, that specifies the color used to indicate
+observed and missing  (in that order)}
+
+\item{border}{color of the grid}
+
 \item{plot}{logical; should the missing data pattern be plotted?}
 
-\item{xlab}{label for the x-axis}
+\item{pattern}{logical; should the missing data pattern be returned as matrix?}
 
-\item{ylab}{label for the y-axis}
+\item{print_xaxis, print_yaxis}{logical; should the x-axis (below the plot) and
+y-axis (on the right) be printed?}
 
-\item{xaxis_pars}{list of optional parameters for the x-axis}
+\item{ylab}{y-axis label}
 
-\item{yaxis_pars}{list of optional parameters for the y-axis}
+\item{legend.position}{the position of legends ("none", "left", "right",
+"bottom", "top", or two-element numeric vector)}
 
-\item{printN}{logical; should the title "N" of the y-axis be printed?}
-
-\item{print}{should the missing data pattern be returned as a matrix?}
-
-\item{...}{optional additional parameters passed to \code{\link[graphics]{image}()}}
+\item{...}{optional additional parameters, currently not used}
 }
 \description{
-Plot the pattern of missing data. The missing data pattern is determined
-using the function \code{\link[mice]{md.pattern}} from the
-\href{https://CRAN.R-project.org/package=mice}{\code{mice}} package.
+Plot the pattern of missing data.
+}
+\note{
+This function requires the \href{https://CRAN.R-project.org/package=ggplot2}{\strong{ggplot2}} package to be installed.
 }
 \examples{
+par(mar = c(3, 1, 1.5, 1.5), mgp = c(2, 0.6, 0))
 md_pattern(wideDF)
 
-par(mar = c(3, 1, 1.5, 1.5), mgp = c(2, 0.6, 0))
-md_pattern(longDF, yaxis_pars = list(cex.axis = 0.8))
 
+}
+\seealso{
+See the vignette \href{https://nerler.github.io/JointAI/articles/VisualizingIncompleteData.html}{Visualizing Incomplete Data}
+for more examples.
 }

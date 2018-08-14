@@ -7,11 +7,13 @@
 \usage{
 densplot(object, ...)
 
-\method{densplot}{JointAI}(object, start = NULL, end = NULL, thin = NULL,
-  subset = "main", vlines = NULL, nrow = NULL, ncol = NULL, ...)
+\method{densplot}{JointAI}(object, start = NULL, end = NULL,
+  thin = NULL, subset = c(analysis_main = TRUE), vlines = NULL,
+  nrow = NULL, ncol = NULL, joined = FALSE, use_ggplot = FALSE,
+  warn = TRUE, ...)
 }
 \arguments{
-\item{object}{object inheriting from class \code{JointAI}}
+\item{object}{object inheriting from class "JointAI"}
 
 \item{...}{additional parameters passed to \code{\link[graphics]{plot}}}
 
@@ -21,14 +23,9 @@ densplot(object, ...)
 
 \item{thin}{thinning interval (see \code{\link[coda]{window.mcmc}})}
 
-\item{subset}{subset of monitored parameters (columns in the MCMC sample).
-Can be specified as a numeric vector of columns, a vector of
-column names, as \code{subset = "main"} or \code{NULL}.
-If \code{NULL}, all monitored nodes will be plotted.
-\code{subset = "main"} (default) the main parameters of the
-analysis model will be plotted (regression coefficients/fixed
-effects, and, if available, standard deviation of the residual
-and random effects covariance matrix).}
+\item{subset}{subset of parameters/variables/nodes (columns in the MCMC sample).
+Uses the same logic as the argument \code{monitor_params} in
+\code{\link{lm_imp}}, \code{\link{glm_imp}} and \code{\link{lme_imp}}.}
 
 \item{vlines}{list, where each element is a named list of parameters that
 can be passed to \code{\link[graphics]{abline}} to create
@@ -37,31 +34,60 @@ Each of the list elements needs to contain at least
 \code{v = <x location>}, where <x location> is a vector of the
 same length as the number of plots (see examples).}
 
-\item{nrow}{optional; number of rows in the plotting layout
-(determined automatically if not specified)}
+\item{nrow}{optional number of rows and columns in the plot layout;
+automatically chosen if unspecified}
 
-\item{ncol}{optional; number of columns in the plotting layout
-(determined automatically if not specified)}
+\item{ncol}{optional number of rows and columns in the plot layout;
+automatically chosen if unspecified}
+
+\item{joined}{logical; should the chains be combined before plotting?}
+
+\item{use_ggplot}{logical; Should ggplot be used instead of the base graphics?}
+
+\item{warn}{logical; should warnings be given? Default is
+\code{TRUE}. Note: this applies only to warnings
+given directly by \strong{JointAI}.}
 }
 \description{
 Plots a set of densities (per MC chain and coefficient) from the MCMC sample
-of an object of class JointAI
+of an object of class "JointAI".
 }
 \examples{
 
+# fit a JointAI object:
 mod <- lm_imp(y ~ C1 + C2 + M2, data = wideDF, n.iter = 100)
 
-# densplot without vertical lines
+# Example 1: basic densityplot
 densplot(mod)
 
-# use vlines to mark zero
+
+# Example 2: use vlines to mark zero
 densplot(mod, col = c("darkred", "darkblue", "darkgreen"),
          vlines = list(list(v = rep(0, nrow(summary(mod)$stats)),
                             col = grey(0.8))))
 
-# use vlines to visualize the posterior mean and 2.5\% and 97.5\% quantiles
+
+# Example 3: use vlines to visualize the posterior mean and 2.5\% and 97.5\% quantiles
 densplot(mod, vlines = list(list(v = summary(mod)$stats[, "Mean"], lty = 1, lwd = 2),
                             list(v = summary(mod)$stats[, "2.5\%"], lty = 2),
                             list(v = summary(mod)$stats[, "97.5\%"], lty = 2)))
 
+
+# Example 4: ggplot version
+densplot(mod, use_ggplot = TRUE)
+
+
+# Example 5: changing how the ggplot version looks (using standard ggplot syntax)
+library(ggplot2)
+
+densplot(mod, use_ggplot = TRUE) +
+  xlab("value") +
+  theme(legend.position = 'bottom') +
+  scale_color_brewer(palette = 'Dark2', name = 'chain')
+
+
+}
+\seealso{
+The vignette \href{https://nerler.github.io/JointAI/articles/SelectingParameters.html}{Parameter Selection}
+contains some examples how to specify the argument \code{subset}.
 }

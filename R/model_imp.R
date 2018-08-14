@@ -1,7 +1,7 @@
 #' Joint analysis and imputation of incomplete data
 #'
-#' \code{lm_imp}, \code{glm_imp} and \code{lme_imp} estimate linear, generalized
-#' linear and linear mixed models, respectively, using MCMC sampling.
+#' Functions to estimate linear, generalized
+#' linear and linear mixed models using MCMC sampling.
 #'
 #' @param formula a two sided model formula (see \code{\link[stats]{formula}})
 #' @param fixed a two sided formula describing the fixed-effects part of the
@@ -10,7 +10,7 @@
 #'               a one-sided formula of the form \code{~x1 + ... + xn | g},
 #'               where \code{x1 + ... + xn} specifies the model for the random
 #'               effects and \code{g} the grouping variable
-#' @param data a data frame
+#' @param data a \code{data.frame}
 #' @param family only for \code{glm_imp}:
 #'               a description of the distribution and link function to
 #'               be used in the model. This can be a character string naming a
@@ -18,17 +18,17 @@
 #'               a family function. (See \code{\link[stats]{family}} and the
 #'               `Details` section below.)
 #' @param monitor_params named vector specifying which parameters should be
-#'                       monitored, see details.
+#'                       monitored.
 #' @param inits optional specification of initial values in the form of a list
-#'              or a function (see \code{\link[rjags]{jags.model}}.
+#'              or a function (see \code{\link[rjags]{jags.model}}).
 #'              If omitted, initial values will be generated automatically.
 #'              It is an error to supply an initial value for an observed node.
+#' @param progress.bar Character string specifying the type of progress bar.
+#'                     Possible values are "text", "gui", and "none".
+#'                     See \code{\link[rjags]{update}}.
 #' @inheritParams rjags::jags.model
 #' @inheritParams rjags::coda.samples
-#' @inheritParams rjags::update.jags
-#' @param warn logical; should warnings and messages be suppressed; default is
-#'             \code{TRUE}. Note: this applies only to warnings and messages
-#'             given directly by \strong{JointAI}.
+#' @inheritParams sharedParams
 #' @param modelname optional; character string specifying the name of model file
 #'                  (including the ending, either .R or .txt).
 #'                  If unspecified a random name will be generated.
@@ -53,8 +53,12 @@
 #' @param refcats optional; a named list specifying which category should be
 #'                used as reference category for each of the categorical variables.
 #'                Options are the category label, the category number,
-#'                'first" (the first category) or "largest" (chooses the
-#'                category with the most observations). Default is "first".
+#'                "first" (the first category), "last" (the last category)
+#'                or "largest" (chooses the category with the most observations).
+#'                Default is "first".
+#' @param trunc optional named list specifying the limits of truncation for the
+#'              distribution of the named incomplete variables
+#'              of each
 #' @param scale_vars optional; named vector of (continuous) variables that will
 #'                   be scaled (such that mean = 0 and sd = 1) to improve
 #'                   convergence of the MCMC sampling. Default is that all
@@ -66,25 +70,23 @@
 #' @param hyperpars list of hyperparameters, as obtained by \code{\link{default_hyperpars}()};
 #'                  only needs to be supplied if hyperparameters other than the
 #'                  default should be used
-#' @param ... additional, optional arguments, see below
+#' @param scale_pars optional matrix of parameters used for centering and
+#'                   scaling continuous covariates. If not specified, this will
+#'                   be calculated automatically. If \code{FALSE}, no scaling
+#'                   will be done.
+#' @param ... additional, optional arguments
 #'
 #'
-#' @section Optional arguments:
-#' There are some optional parameters that can be passed to \code{\dots}
-#' \describe{
-#' \item{\code{scale_pars}}{optional matrix of parameters used for centering and
-#' scaling continuous covariates. If not specified, this will be calculated
-#' automatically. If \code{FALSE}, no scaling will be done.}
-#'}
 #'
 #' @section Details:
+#' See also the vignette: \href{https://nerler.github.io/JointAI/articles/ModelSpecification.html}{Model Specification}
 #' \subsection{Implemented distribution families and link functions for \code{glm_imp()}}{
 #' \tabular{ll}{
 # \emph{family} \tab \emph{link}\cr
 #' \code{gaussian} \tab with links: \code{identity}, \code{log}\cr
 #' \code{binomial} \tab with links: \code{logit}, \code{probit}, \code{log}, \code{cloglog}\cr
 #' \code{Gamma}    \tab with links: \code{identity}, \code{log}\cr
-#' \code{poisson}  \tab with links: \code{log}, \code{identity}\cr
+#' \code{poisson}  \tab with links: \code{log}, \code{identity}
 #' }}
 #'
 #'
@@ -98,10 +100,12 @@
 #' \code{beta} \tab beta model (with logit-link) for skewed continuous data in (0, 1)\cr
 #' \code{logit} \tab logistic model for binary data\cr
 #' \code{multilogit} \tab multinomial logit model for unordered categorical variables\cr
-#' \code{cumlogit} \tab cumulative logit model for ordered categorical variables\cr
+#' \code{cumlogit} \tab cumulative logit model for ordered categorical variables
 #' }}
 #'
 #' \subsection{Parameters to follow (\code{monitor_params})}{
+#' See also the vignette: \href{https://nerler.github.io/JointAI/articles/SelectingParameters.html}{Parameter Selection}\cr
+#'
 #' Named vector specifying which parameters should be monitored. This can be done
 #' either directly by specifying the name of the parameter or indirectly by one
 #' of the key words summarizing a number of parameters. Except for \code{other},
@@ -125,7 +129,7 @@
 #' \code{tau_imp} \tab precision parameters of the residuals from imputation models\cr
 #' \code{gamma_imp} \tab intercepts in ordinal imputation models\cr
 #' \code{delta_imp} \tab increments of ordinal intercepts\cr
-#' \code{other} \tab additional parameters\cr
+#' \code{other} \tab additional parameters
 #' }
 #' For example:
 #'
@@ -139,20 +143,37 @@
 #'}
 #'
 #'
-#' @return An object of class \code{JointAI}
+#' @return An object of class "JointAI".
 #'
 #'
 #'
-#' @seealso \code{\link{traceplot}}, \code{\link{densplot}},
+#' @seealso \code{\link{set_refcat}}, \code{\link{get_imp_meth}},
+#'          \code{\link{traceplot}}, \code{\link{densplot}},
 #'          \code{\link{summary.JointAI}}, \code{\link{MC_error}},
 #'          \code{\link{GR_crit}}, \code{\link[rjags]{jags.model}},
-#'          \code{\link[rjags]{coda.samples}}, \code{predict.JointAI}
+#'          \code{\link[rjags]{coda.samples}}, \code{\link{predict.JointAI}},
+#'          \code{\link{JointAIObject}}, \code{\link{add_samples}},
+#'          \code{\link{parameters}}, \code{\link{list_impmodels}}
+#'
+#' Vignettes
+#' \itemize{
+#'   \item \href{https://nerler.github.io/JointAI/articles/MinimalExample.html}{Minimal Example}
+#'   \item \href{https://nerler.github.io/JointAI/articles/ModelSpecification.html}{Model Specification}
+#'   \item \href{https://nerler.github.io/JointAI/articles/SelectingParameters.html}{Parameter Selection}
+#'}
 #'
 #' @examples
 #'
+#' # Example 1: Linear regression with incomplete covariates
 #' mod1 <- lm_imp(y~C1 + C2 + M2, data = wideDF, n.iter = 100)
+#'
+#'
+#' # Example 2: Logistic regression with incomplete covariats
 #' mod2 <- glm_imp(B1 ~ C1 + C2 + M2, data = wideDF,
 #'                 family = binomial(link = "logit"), n.iter = 100)
+#'
+#'
+#' # Example 3: Linear mixed model with incomplete covariates
 #' mod3 <- lme_imp(y ~ C1 + B2 + L1 + time, random = ~ time|id,
 #'                 data = longDF, n.iter = 500)
 #'
@@ -164,16 +185,17 @@ model_imp <- function(fixed, data, random = NULL, link, family,
                       n.chains = 3, n.adapt = 100, n.iter = 0, thin = 1,
                       monitor_params = NULL, inits = TRUE,
                       modelname = NULL, modeldir = NULL,
-                      overwrite = FALSE, keep_model = FALSE,
-                      quiet = TRUE, progress.bar = "text", warn = FALSE,
-                      auxvars = NULL, meth = NULL, refcats = NULL,
+                      overwrite = NULL, keep_model = FALSE,
+                      quiet = TRUE, progress.bar = "text", warn = TRUE,
+                      mess = TRUE,
+                      auxvars = NULL, meth = NULL, refcats = NULL, trunc = NULL,
                       scale_vars = NULL, scale_pars = NULL, hyperpars = NULL,
                       MCMCpackage = "JAGS", analysis_type,
                       Mlist = NULL, K = NULL, K_imp = NULL, imp_pos = NULL,
                       dest_cols = NULL, imp_par_list = NULL,  data_list = NULL, ...) {
 
   # Checks & warnings -------------------------------------------------------
-  if (warn)
+  if (mess)
     message("This is new software. Please report any bug to the package maintainer.")
 
   if (missing(fixed)) {
@@ -188,7 +210,7 @@ model_imp <- function(fixed, data, random = NULL, link, family,
   }
 
   if (n.iter == 0) {
-    if (warn)
+    if (mess)
       message("Note: No MCMC sample will be created when n.iter is set to 0.")
   }
 
@@ -210,13 +232,14 @@ model_imp <- function(fixed, data, random = NULL, link, family,
 
   # check if initial values are supplied or should be generated
   if (!(is.null(inits) | inherits(inits, c("logical", "function", "list")))) {
-    warning("The object supplied to 'inits' could not be recognized.
+    if (warn)
+      warning("The object supplied to 'inits' could not be recognized.
             Default function to create initial values is used.")
     inits <- TRUE
   }
 
 
-  # default imputation methods, if not specified
+  # imputation method ----------------------------------------------------------
   if (is.null(meth)) {
     meth <- get_imp_meth(fixed = fixed, random = random, data = data,
                          auxvars = auxvars)
@@ -225,7 +248,8 @@ model_imp <- function(fixed, data, random = NULL, link, family,
 
   if (is.null(Mlist)) {
     Mlist <- divide_matrices(data, fixed, random = random, auxvars = auxvars,
-                             scale_vars = scale_vars, refcats = refcats, meth = meth)
+                             scale_vars = scale_vars, refcats = refcats,
+                             meth = meth, warn = warn, mess = mess)
   }
 
   if (is.null(K)) {
@@ -250,26 +274,40 @@ model_imp <- function(fixed, data, random = NULL, link, family,
   if (is.null(imp_par_list)) {
     imp_par_list <- mapply(get_imp_par_list, meth, names(meth),
                            MoreArgs = list(Mlist$Xc, Mlist$Xcat, K_imp, dest_cols,
-                                           Mlist$refs, Mlist$trafos),
+                                           Mlist$refs, Mlist$trafos, trunc),
                            SIMPLIFY = FALSE)
   }
 
   # write model ----------------------------------------------------------------
-  if (!file.exists(modelfile) | (file.exists(modelfile) & overwrite == TRUE)) {
+  if (file.exists(modelfile) & is.null(overwrite)) {
+    question_asked <- TRUE
+    # This warning can not be switched off by warn = FALSE, because an input is required.
+    warning(gettextf("\nThe file %s already exists in %s.",
+                     dQuote(modelname), dQuote(modeldir)),
+              call. = FALSE, immediate. = TRUE)
+    reply <- menu(c('yes', 'no'),
+                  title = "\nDo you want me to overwrite this file?")
+    if (reply == 1) {
+      if (mess)
+        message('The modelfile was overwritten.')
+    overwrite = TRUE
+    } else {
+      overwrite = FALSE
+      if (mess)
+        message('The old model will be used.')
+    }
+    if (mess)
+    message("To skip this question in the future, set 'overwrite = TRUE' or 'overwrite = FALSE'.")
+  }
+
+  if (!file.exists(modelfile) || (file.exists(modelfile) & overwrite == TRUE)) {
     write_model(analysis_type = analysis_type, family = family,
                 link = link, meth = meth, Ntot = nrow(Mlist$y),
                 N = nrow(Mlist$Xc),
                 y_name = names(Mlist$y), Mlist = Mlist, K = K,
                 imp_par_list = imp_par_list,
                 file = modelfile)
-  } else {
-    if (warn)
-    warning(gettextf("\nThe file %s already exists and no new model was written.",
-                     dQuote(modelfile)),
-            "\nTo overwrite the model set 'overwrite = TRUE'.",
-            call. = FALSE, immediate. = TRUE)
   }
-
 
   if (is.null(data_list)) {
     data_list <- try(get_data_list(analysis_type, family, link, meth, Mlist, K, auxvars,
@@ -291,7 +329,6 @@ model_imp <- function(fixed, data, random = NULL, link, family,
   # run JAGS -----------------------------------------------------------------
   t0 <- Sys.time()
   if (any(n.adapt > 0, n.iter > 0)) {
-    rjags::load.module("glm")
 
     adapt <- try(rjags::jags.model(file = modelfile, data = data_list,
                                    inits = inits, quiet = quiet,
@@ -299,16 +336,26 @@ model_imp <- function(fixed, data, random = NULL, link, family,
   }
   if (is.null(monitor_params)) {
     monitor_params <- c("analysis_main" = TRUE)
-  }
+  } else {
+    if (!is.null(scale_pars) & any(grepl('beta[', unlist(monitor_params), fixed = T))) {
+      monitor_params <- c(sapply(monitor_params, function(x) {
+        if (any(grepl('beta[', x, fixed = TRUE)))
+          x[-grep('beta[', x, fixed = TRUE)]
+        else x}, simplify = F),
+        analysis_main = TRUE)
+      if (mess)
+        message('Note: Main model parameter were added to the list of parameters to follow.')
+    }}
   var.names <- do.call(get_params, c(list(meth = meth, analysis_type = analysis_type,
                                           family = family,
                                           y_name = colnames(Mlist$y),
                                           Zcols = ncol(Mlist$Z),
                                           Xc = Mlist$Xc, Xtrafo = Mlist$Xtrafo,
-                                          Xcat = Mlist$Xcat),
+                                          Xcat = Mlist$Xcat,
+                                          imp_par_list = imp_par_list),
                                      monitor_params))
 
-  mcmc <- if (n.iter > 0) {
+  mcmc <- if (n.iter > 0 & !inherits(adapt, 'try-error')) {
     try(rjags::coda.samples(adapt, n.iter = n.iter, thin = thin,
                             variable.names = var.names,
                             na.rm = FALSE, progress.bar = progress.bar))
@@ -316,14 +363,16 @@ model_imp <- function(fixed, data, random = NULL, link, family,
   t1 <- Sys.time()
 
 
-  if (n.iter > 0) {
-    # MCMC <- do.call(rbind, mcmc)
+  if (n.iter > 0 & !is.null(mcmc)) {
     coefs <- get_coef_names(Mlist, K)
 
 
     MCMC <- mcmc
     for (k in 1:length(MCMC)) {
-      colnames(MCMC[[k]])[na.omit(match(coefs[, 1], colnames(MCMC[[k]])))] <- coefs[, 2]
+      # change names of MCMC to variable names where possible
+      colnames(MCMC[[k]])[na.omit(match(coefs[, 1], colnames(MCMC[[k]])))] <-
+        coefs[na.omit(match(colnames(MCMC[[k]]), coefs[, 1])), 2]
+
       if (!is.null(scale_pars)) {
         # re-scale parameters
         MCMC[[k]] <- as.mcmc(sapply(colnames(MCMC[[k]]), rescale, Mlist$fixed2,
@@ -357,14 +406,19 @@ model_imp <- function(fixed, data, random = NULL, link, family,
     list(analysis_type = analysis_type,
          data = data, meth = meth, fixed = fixed, random = random,
          Mlist = Mlist,
-         refcats = Mlist$refs, K = K, K_imp = K_imp,
+         K = K,
+         K_imp = K_imp,
          mcmc_settings = mcmc_settings,
+         monitor_params = c(monitor_params,
+                            if (!'analysis_main' %in% names(monitor_params))
+                              setNames(TRUE, 'analysis_main')),
          data_list = data_list,
          scale_pars = scale_pars,
          hyperpars = hyperpars,
+         imp_par_list = imp_par_list,
          model = if (n.adapt > 0) adapt,
-         sample = if (n.iter > 0) mcmc,
-         MCMC = if (n.iter > 0) as.mcmc.list(MCMC),
+         sample = if (n.iter > 0 & !is.null(mcmc)) mcmc,
+         MCMC = if (n.iter > 0 & !is.null(mcmc)) as.mcmc.list(MCMC),
          time = t1 - t0
          ), class = "JointAI")
   )
@@ -377,10 +431,11 @@ lm_imp <- function(formula, data,
                    n.chains = 3, n.adapt = 100, n.iter = 0, thin = 1,
                    monitor_params = NULL, inits = TRUE,
                    modelname = NULL, modeldir = NULL,
-                   overwrite = FALSE, keep_model = FALSE,
+                   overwrite = NULL, keep_model = FALSE,
                    quiet = TRUE, progress.bar = "text", warn = TRUE,
-                   auxvars = NULL, meth = NULL, refcats = NULL,
-                   scale_vars = NULL, hyperpars = NULL, ...){
+                   mess = TRUE,
+                   auxvars = NULL, meth = NULL, refcats = NULL, trunc = NULL,
+                   scale_vars = NULL, scale_pars = NULL, hyperpars = NULL, ...){
 
   if (missing(formula))
     stop("No model formula specified.")
@@ -418,10 +473,11 @@ glm_imp <- function(formula, family, data,
                     n.chains = 3, n.adapt = 100, n.iter = 0, thin = 1,
                     monitor_params = NULL, inits = TRUE,
                     modelname = NULL, modeldir = NULL,
-                    overwrite = FALSE, keep_model = FALSE,
+                    overwrite = NULL, keep_model = FALSE,
                     quiet = TRUE, progress.bar = "text", warn = TRUE,
-                    auxvars = NULL, meth = NULL, refcats = NULL,
-                    scale_vars = NULL, hyperpars = NULL, ...){
+                    mess = TRUE,
+                    auxvars = NULL, meth = NULL, refcats = NULL, trunc = NULL,
+                    scale_vars = NULL, scale_pars = NULL, hyperpars = NULL, ...){
 
   if (missing(formula))
     stop("No model formula specified.")
@@ -484,10 +540,11 @@ lme_imp <- function(fixed, data, random,
                     n.chains = 3, n.adapt = 100, n.iter = 0, thin = 1,
                     monitor_params = NULL, inits = TRUE,
                     modelname = NULL, modeldir = NULL,
-                    overwrite = FALSE, keep_model = FALSE,
+                    overwrite = NULL, keep_model = FALSE,
                     quiet = TRUE, progress.bar = "text", warn = TRUE,
-                    auxvars = NULL, meth = NULL, refcats = NULL,
-                    scale_vars = NULL, hyperpars = NULL, ...){
+                    mess = TRUE,
+                    auxvars = NULL, meth = NULL, refcats = NULL, trunc = NULL,
+                    scale_vars = NULL, scale_pars = NULL, hyperpars = NULL, ...){
 
   if (missing(fixed))
     stop("No fixed effects structure specified.")
@@ -517,3 +574,4 @@ lme_imp <- function(fixed, data, random,
 
   return(res)
 }
+

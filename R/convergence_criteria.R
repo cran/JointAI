@@ -1,7 +1,8 @@
 #' Gelman-Rubin criterion for convergence
 #'
-#' Gelman-Rubin criterion for convergence (uses \code{\link[coda]{gelman.diag}})
-#' @param object inheriting from class \code{JointAI}
+#' Calculates the Gelman-Rubin criterion for convergence
+#' (uses \code{\link[coda]{gelman.diag}} from package \strong{coda}).
+#' @inheritParams sharedParams
 #' @inheritParams coda::gelman.diag
 #' @inheritParams summary.JointAI
 #' @references
@@ -9,19 +10,24 @@
 #' Posterior predictive assessment of model fitness via realized discrepancies.
 #' \emph{Statistica Sinica}, 733-760.
 #'
-#' @examples
+#' @seealso
+#' The vignette \href{https://nerler.github.io/JointAI/articles/SelectingParameters.html}{Parameter Selection}
+#' contains some examples how to specify the argument \code{subset}.
 #'
+#'
+#' @examples
 #' mod1 <- lm_imp(y~C1 + C2 + M2, data = wideDF, n.iter = 100)
 #' GR_crit(mod1)
 #'
 #'
+#'
 #' @export
 GR_crit <- function(object, confidence = 0.95, transform = FALSE, autoburnin = TRUE,
-                    multivariate = TRUE, subset = "main", start = NULL, end = NULL,
-                    thin = NULL, ...) {
+                    multivariate = TRUE, subset = NULL,
+                    start = NULL, end = NULL, thin = NULL, warn = TRUE, ...) {
 
   if (!inherits(object, "JointAI"))
-    stop("Object must be of class JointAI.")
+    stop('Object must be of class "JointAI".')
 
   if (is.null(object$sample))
     stop("No mcmc sample.")
@@ -36,19 +42,9 @@ GR_crit <- function(object, confidence = 0.95, transform = FALSE, autoburnin = T
   if (is.null(thin))
     thin <- thin(object$sample)
 
+  MCMC <- get_subset(object, subset, call_orig = as.list(match.call()), warn = warn)
+  MCMC <- window(MCMC, start = start, end = end, thin = thin)
 
-  MCMC <- window(object$sample, start = start, end = end, thin = thin)
-  coefs <- get_coef_names(object$Mlist, object$K)
-  nams <- colnames(MCMC[[1]])
-  nams[match(coefs[, 1], nams)] <- coefs[, 2]
-
-  for (i in 1:length(MCMC)) {
-    colnames(MCMC[[i]]) <- nams
-  }
-
-  if (!is.null(subset)) {
-    MCMC <- get_subset(subset, MCMC, object)
-  }
 
   gelman.diag(x = MCMC, confidence = confidence, transform = transform,
               autoburnin = autoburnin, multivariate = multivariate)
@@ -58,23 +54,13 @@ GR_crit <- function(object, confidence = 0.95, transform = FALSE, autoburnin = T
 
 #' Monte Carlo error
 #'
-#' Calculate and plot the Monte Carlo error of the samples from a JointAI model
-#' @param x object inheriting from class \code{JointAI}
-#' @param subset subset of monitored parameters (columns in the MCMC sample).
-#'               Can be specified as a numeric vector of columns, a vector of
-#'               column names, as \code{subset = "main"} or \code{NULL}.
-#'               If \code{NULL}, all monitored nodes will be plotted.
-#'               \code{subset = "main"} (default) the main parameters of the
-#'               analysis model will be plotted (regression coefficients/fixed
-#'               effects, and, if available, standard deviation of the residual
-#'               and random effects covariance matrix).
-#' @param start the first iteration of interest (see \code{\link[coda]{window.mcmc}})
-#' @param end the last iteration of interest (see \code{\link[coda]{window.mcmc}})
-#' @param thin thinning interval (see \code{\link[coda]{window.mcmc}})
+#' Calculate and plot the Monte Carlo error of the samples from a JointAI model.
+#' @param x object inheriting from class "JointAI"
 #' @param digits number of digits for output
+#' @inheritParams sharedParams
 #' @inheritDotParams mcmcse::mcse.mat -x
 #'
-#' @return an object of class \code{MCElist} with elements \code{unscaled},
+#' @return An object of class \code{MCElist} with elements \code{unscaled},
 #'         \code{scaled} and \code{digits}. The first two are matrices with
 #'         columns \code{est} (posterior mean), \code{MCSE} (Monte Carlo error),
 #'         \code{SD} (posterior standard deviation) and \code{MCSE/SD}
@@ -90,17 +76,24 @@ GR_crit <- function(object, confidence = 0.95, transform = FALSE, autoburnin = T
 #' \emph{Bayesian Biostatistics}.
 #' John Wiley & Sons.
 #'
+#' @seealso
+#' The vignette \href{https://nerler.github.io/JointAI/articles/SelectingParameters.html}{Parameter Selection}
+#' contains some examples how to specify the argument \code{subset}.
+#'
 #' @examples
 #' mod <- lm_imp(y~C1 + C2 + M2, data = wideDF, n.iter = 100)
+#'
 #' MC_error(mod)
 #'
+#' plot(MC_error(mod), ablinepars = list(lty = 2))
 #'
 #' @export
-MC_error <- function(x, subset = "main", start = NULL, end = NULL, thin = NULL,
-                     digits = 2, ...) {
+MC_error <- function(x, subset = NULL,
+                     start = NULL, end = NULL, thin = NULL,
+                     digits = 2, warn = TRUE, ...) {
 
   if (!inherits(x, "JointAI"))
-    stop("x must be of class JointAI.")
+    stop('x must be of class "JointAI".')
 
   if (is.null(x$sample))
     stop("No mcmc sample.")
@@ -117,14 +110,10 @@ MC_error <- function(x, subset = "main", start = NULL, end = NULL, thin = NULL,
   if (is.null(thin))
     thin <- thin(x$sample)
 
+  MCMC <- get_subset(object = x, subset = subset,
+                     call_orig = as.list(match.call()), warn = warn)
 
-  MCMC <- do.call(rbind, window(x$sample, start = start, end = end, thin = thin))
-  coefs <- get_coef_names(x$Mlist, x$K)
-  colnames(MCMC)[match(coefs[, 1], colnames(MCMC))] <- coefs[, 2]
-
-  if (!is.null(subset)) {
-    MCMC <- get_subset(subset, MCMC, x)
-  }
+  MCMC <- do.call(rbind, window(MCMC, start = start, end = end, thin = thin))
 
   res1 <- mcmcse::mcse.mat(x = MCMC, ...)
   colnames(res1) <- gsub("se", "MCSE", colnames(res1))

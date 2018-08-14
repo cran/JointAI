@@ -1,31 +1,38 @@
 #' Traceplot of a JointAI model
 #'
-#' Creates a set of traceplots from the MCMC sample of an object of class JointAI
+#' Creates a set of traceplots from the MCMC sample of an object of class "JointAI".
 #'
-#' @param object object inheriting from class \code{JointAI}
-#' @param subset subset of monitored parameters (columns in the MCMC sample).
-#'               Can be specified as a numeric vector of columns, a vector of
-#'               column names, as \code{subset = "main"} or \code{NULL}.
-#'               If \code{NULL}, all monitored nodes will be plotted.
-#'               \code{subset = "main"} (default) the main parameters of the
-#'               analysis model will be plotted (regression coefficients/fixed
-#'               effects, and, if available, standard deviation of the residual
-#'               and random effects covariance matrix).
-#' @param start the first iteration of interest (see \code{\link[coda]{window.mcmc}})
-#' @param end the last iteration of interest (see \code{\link[coda]{window.mcmc}})
-#' @param thin thinning interval (see \code{\link[coda]{window.mcmc}})
-#' @param nrow optional; number of rows in the plotting layout
-#'             (determined automatically if not specified)
-#' @param ncol optional; number of columns in the plotting layout
-#'             (determined automatically if not specified)
+#' @inheritParams sharedParams
 #' @inheritDotParams graphics::matplot -x -y -type -xlab -ylab -pch -log
 #' @name traceplot
 #'
 #' @seealso \code{\link{summary.JointAI}}, \code{\link{lme_imp}}, \code{\link{glm_imp}},
-#'           \code{\link{lm_imp}}
+#'          \code{\link{lm_imp}}, \code{\link{densplot}}
+#'          The vignette \href{https://nerler.github.io/JointAI/articles/SelectingParameters.html}{Parameter Selection}
+#'          contains some examples how to specify the parameter \code{subset}.
+#'
 #' @examples
+#' # fit a JointAI model
 #' mod <- lm_imp(y~C1 + C2 + M2, data = wideDF, n.iter = 100)
+#'
+#'
+#' # Example 1: simple traceplot
 #' traceplot(mod)
+#'
+#'
+#' # Example 2: ggplot version of traceplot
+#' traceplot(mod, use_ggplot = TRUE)
+#'
+#'
+#' # Example 5: changing how the ggplot version looks (using standard ggplot syntax)
+#' library(ggplot2)
+#'
+#' traceplot(mod, use_ggplot = TRUE) +
+#'   theme(legend.position = 'botto') +
+#'   xlab('iteration') +
+#'   ylab('value') +
+#'   scale_color_discrete(name = 'chain')
+#'
 #'
 #' @export
 traceplot <- function(object, ...) {
@@ -35,19 +42,37 @@ traceplot <- function(object, ...) {
 #' @rdname traceplot
 #' @export
 traceplot.JointAI <- function(object, start = NULL, end = NULL, thin = NULL,
-                              subset = "main", nrow = NULL, ncol = NULL, ...) {
+                              subset = c(analysis_main = TRUE),
+                              nrow = NULL, ncol = NULL,
+                              use_ggplot = FALSE, warn = TRUE,
+                              ...) {
 
   prep <- plot_prep(object, start = start, end = end, thin = thin, subset = subset,
-                    nrow = nrow, ncol = ncol)
+                    nrow = nrow, ncol = ncol, warn = warn)
 
-  op <- par(mfrow = c(prep$nrow, prep$ncol), mar = c(3.2, 2.5, 2, 1),
-            mgp = c(2, 0.6, 0), ask = prep$ask)
 
-  for (i in 1:nvar(prep$MCMC)) {
-    matplot(x = prep$time, as.array(prep$MCMC)[, i, ], type = "l", xlab = "Iterations", ylab = "",
-            main = colnames(prep$MCMC[[1]])[i], ...)
+  if (use_ggplot) {
+    meltMCMC <- reshape2::melt(lapply(prep$MCMC, as.matrix),
+                               varnames = c('iteration',
+                                            'variable'))
+    meltMCMC$chain <- factor(meltMCMC$L1)
+
+
+    ggplot2::ggplot(meltMCMC,
+                    ggplot2::aes(iteration, value, color = chain)) +
+      ggplot2::geom_line() +
+      ggplot2::facet_wrap('variable', scales = 'free')
+  } else {
+    op <- par(mfrow = c(prep$nrow, prep$ncol), mar = c(3.2, 2.5, 2, 1),
+              mgp = c(2, 0.6, 0))
+
+    for (i in 1:nvar(prep$MCMC)) {
+      matplot(x = prep$time, as.array(prep$MCMC)[, i, ], type = "l",
+              xlab = "Iterations", ylab = "",
+              main = colnames(prep$MCMC[[1]])[i], ...)
+    }
+    par(op)
   }
-  par(op)
 }
 
 
@@ -55,7 +80,7 @@ traceplot.JointAI <- function(object, start = NULL, end = NULL, thin = NULL,
 #' Plot posterior density from JointAI model
 #'
 #' Plots a set of densities (per MC chain and coefficient) from the MCMC sample
-#' of an object of class JointAI
+#' of an object of class "JointAI".
 #' @inheritParams traceplot
 #' @param vlines list, where each element is a named list of parameters that
 #'               can be passed to \code{\link[graphics]{abline}} to create
@@ -63,23 +88,46 @@ traceplot.JointAI <- function(object, start = NULL, end = NULL, thin = NULL,
 #'               Each of the list elements needs to contain at least
 #'               \code{v = <x location>}, where <x location> is a vector of the
 #'               same length as the number of plots (see examples).
+#' @param joined logical; should the chains be combined before plotting?
 #' @param ... additional parameters passed to \code{\link[graphics]{plot}}
 #' @examples
 #'
+#' # fit a JointAI object:
 #' mod <- lm_imp(y ~ C1 + C2 + M2, data = wideDF, n.iter = 100)
 #'
-#' # densplot without vertical lines
+#' # Example 1: basic densityplot
 #' densplot(mod)
 #'
-#' # use vlines to mark zero
+#'
+#' # Example 2: use vlines to mark zero
 #' densplot(mod, col = c("darkred", "darkblue", "darkgreen"),
 #'          vlines = list(list(v = rep(0, nrow(summary(mod)$stats)),
 #'                             col = grey(0.8))))
 #'
-#' # use vlines to visualize the posterior mean and 2.5% and 97.5% quantiles
+#'
+#' # Example 3: use vlines to visualize the posterior mean and 2.5% and 97.5% quantiles
 #' densplot(mod, vlines = list(list(v = summary(mod)$stats[, "Mean"], lty = 1, lwd = 2),
 #'                             list(v = summary(mod)$stats[, "2.5%"], lty = 2),
 #'                             list(v = summary(mod)$stats[, "97.5%"], lty = 2)))
+#'
+#'
+#' # Example 4: ggplot version
+#' densplot(mod, use_ggplot = TRUE)
+#'
+#'
+#' # Example 5: changing how the ggplot version looks (using standard ggplot syntax)
+#' library(ggplot2)
+#'
+#' densplot(mod, use_ggplot = TRUE) +
+#'   xlab("value") +
+#'   theme(legend.position = 'bottom') +
+#'   scale_color_brewer(palette = 'Dark2', name = 'chain')
+#'
+#'
+#' @seealso
+#' The vignette \href{https://nerler.github.io/JointAI/articles/SelectingParameters.html}{Parameter Selection}
+#' contains some examples how to specify the argument \code{subset}.
+#'
 #'
 #' @export
 densplot <- function(object, ...) {
@@ -90,50 +138,66 @@ densplot <- function(object, ...) {
 #' @rdname densplot
 #' @export
 densplot.JointAI <- function(object, start = NULL, end = NULL, thin = NULL,
-                             subset = "main", vlines = NULL, nrow = NULL,
-                             ncol = NULL, ...) {
+                             subset = c(analysis_main = TRUE), vlines = NULL, nrow = NULL,
+                             ncol = NULL, joined = FALSE, use_ggplot = FALSE,
+                             warn = TRUE, ...) {
 
   prep <- plot_prep(object, start = start, end = end, thin = thin,
-                    subset = subset, nrow = nrow, ncol = ncol)
+                    subset = subset, nrow = nrow, ncol = ncol, warn = warn)
+
+  if (joined)
+    prep$MCMC <- as.mcmc.list(as.mcmc(do.call(rbind, prep$MCMC)))
 
 
-  op <- par(mfrow = c(prep$nrow, prep$ncol), mar = c(3, 3, 2, 1),
-            mgp = c(2, 0.6, 0), ask = prep$ask)
-  for (i in 1:ncol(prep$MCMC[[1]])) {
-    dens <- lapply(prep$MCMC[, i], density)
-    vline_range <- if (is.list(vlines[[1]])) {
-      lapply(lapply(vlines, "[[", "v"), "[", i)
-    }else{
-      vlines$v
-    }
-    plot(NULL,
-         xlim = range(lapply(dens, "[[", "x"), vline_range, na.rm = TRUE),
-         ylim = range(lapply(dens, "[[", "y"), na.rm = TRUE),
-         main = colnames(prep$MCMC[[1]])[i],
-         xlab = "", ylab = "density", ...
-    )
+  if (use_ggplot) {
+    meltMCMC <- reshape2::melt(lapply(prep$MCMC, as.matrix),
+                               varnames = c('iteration',
+                                            'variable'))
+    meltMCMC$chain <- factor(meltMCMC$L1)
 
-    for (j in 1:length(prep$MCMC)) {
-      lines(dens[[j]], col = j)
-    }
-    if (!is.null(vlines)) {
-      for (l in 1:length(vlines)) {
-        args <- if (is.list(vlines[[l]])) vlines[[l]] else vlines
-        args$v <- args$v[i]
-        do.call(abline, args)
+
+    ggplot2::ggplot(meltMCMC, ggplot2::aes(value, color = chain)) +
+      ggplot2::geom_density() +
+      ggplot2::facet_wrap('variable', scales = 'free')
+  } else {
+    op <- par(mfrow = c(prep$nrow, prep$ncol), mar = c(3, 3, 2, 1),
+              mgp = c(2, 0.6, 0))
+    for (i in 1:ncol(prep$MCMC[[1]])) {
+      dens <- lapply(prep$MCMC[, i], density)
+      vline_range <- if (is.list(vlines[[1]])) {
+        lapply(lapply(vlines, "[[", "v"), "[", i)
+      }else{
+        vlines$v
+      }
+      plot(NULL,
+           xlim = range(lapply(dens, "[[", "x"), vline_range, na.rm = TRUE),
+           ylim = range(lapply(dens, "[[", "y"), na.rm = TRUE),
+           main = colnames(prep$MCMC[[1]])[i],
+           xlab = "", ylab = "density", ...
+      )
+
+      for (j in 1:length(prep$MCMC)) {
+        lines(dens[[j]], col = j)
+      }
+      if (!is.null(vlines)) {
+        for (l in 1:length(vlines)) {
+          args <- if (is.list(vlines[[l]])) vlines[[l]] else vlines
+          args$v <- args$v[i]
+          do.call(abline, args)
+        }
       }
     }
+    par(op)
   }
-  par(op)
 }
 
 
-
-
-
-
+# Helpfunction for densityplot and traceplot
 plot_prep <- function(object, start = NULL, end = NULL, thin = NULL, subset = NULL,
-                      nrow = NULL, ncol = NULL) {
+                      nrow = NULL, ncol = NULL, warn = TRUE, ...) {
+  if(is.null(object$sample))
+    stop("There is no MCMC sample.")
+
   if (is.null(start))
     start <- start(object$sample)
 
@@ -143,51 +207,159 @@ plot_prep <- function(object, start = NULL, end = NULL, thin = NULL, subset = NU
   if (is.null(thin))
     thin <- thin(object$sample)
 
-  MCMC <- window(object$sample, start = start, end = end, thin = thin)
+  MCMC <- get_subset(object, subset, as.list(match.call()), warn = warn)
+  MCMC <- window(MCMC,
+                 start = start,
+                 end = end,
+                 thin = thin)
+
+  # MCMC <- window(object$sample, start = start, end = end, thin = thin)
   time <- time(MCMC)
 
-  coefs <- get_coef_names(object$Mlist, object$K)
-  nams <- colnames(MCMC[[1]])
-  nams[match(coefs[, 1], nams)] <- coefs[, 2]
+  # coefs <- get_coef_names(object$Mlist, object$K)
+  # nams <- colnames(MCMC[[1]])
+  # nams[match(coefs[, 1], nams)] <- coefs[, 2]
+  #
+  # for (i in 1:length(MCMC)) {
+  #   colnames(MCMC[[i]]) <- nams
+  # }
 
-  for (i in 1:length(MCMC)) {
-    colnames(MCMC[[i]]) <- nams
+  # scale_pars <- object$scale_pars
+  # if (!is.null(scale_pars)) {
+  #   # re-scale parameters
+  #   MCMC <- as.mcmc.list(lapply(MCMC, function(i) {
+  #     as.mcmc(sapply(colnames(i), rescale, fixed2 = object$Mlist$fixed2, scale_pars = scale_pars,
+  #                    MCMC = i, refs = object$Mlist$refs, object$Mlist$X2_names,
+  #                    object$Mlist$trafos))
+  #   }))
+  # }
+
+  # if (!is.null(subset)) {
+  #   MCMC <- get_subset(subset, MCMC, object)
+  # }
+  #
+  #
+
+  # get number of rows and columns of plots
+  if (is.null(nrow) & is.null(ncol)) {
+    dims <- grDevices::n2mfrow(ncol(MCMC[[1]]))
+  } else if (is.null(nrow) & !is.null(ncol)) {
+    dims <- c(ceiling(ncol(MCMC[[1]])/ncol), ncol)
+  } else if (is.null(ncol) & !is.null(nrow)) {
+    dims <- c(ncol, ceiling(ncol(MCMC[[1]])/nrow))
   }
 
-  scale_pars <- object$scale_pars
-  if (!is.null(scale_pars)) {
-    # re-scale parameters
-    MCMC <- as.mcmc.list(lapply(MCMC, function(i) {
-      as.mcmc(sapply(colnames(i), rescale, fixed2 = object$Mlist$fixed2, scale_pars = scale_pars,
-                     MCMC = i, refs = object$Mlist$refs, object$Mlist$X2_names,
-                     object$Mlist$trafos))
-    }))
+  # ask <- ncol(MCMC[[1]]) > 30
+  #
+  # if (is.null(nrow)) {
+  #   if (is.null(ncol)) {
+  #     nrow <- floor(sqrt(ncol(MCMC[[1]])))
+  #   } else {
+  #     nrow <- ceiling(ncol(MCMC[[1]])/ncol)
+  #   }
+  # }
+  #
+  # if (is.null(ncol))
+  #   ncol <- ceiling(ncol(MCMC[[1]])/nrow)
+  #
+  # if (ask) {
+  #   nrow = 5
+  #   ncol = 6
+  # }
+
+  return(list(MCMC = MCMC, nrow = dims[1], ncol = dims[2],
+              thin = thin, time = time, subset = subset))
+}
+
+
+#' Visualize the distribution of all variables in the dataset
+#'
+#' Plots a grid of histograms (for continuous variables) and barplots (for
+#' categorical variables) together with the proportion of missing values and
+#' the name of each variable.
+#' @param data a \code{data.frame} (or a \code{matrix})
+#' @param fill color the histograms and bars are filled with
+#' @param border color of the borders of the histograms and bars
+#' @param allNA logical; if \code{FALSE} (default) the proportion of missing
+#'              values is only given for variables that have missing values,
+#'              if \code{TRUE} it is given for all variables
+#' @inheritParams sharedParams
+#' @param ... additional parameters passed to \code{\link[graphics]{barplot}}
+#'            and \code{\link[graphics]{hist}}
+#'
+#' @seealso Vignette: \href{https://nerler.github.io/JointAI/articles/VisualizingIncompleteData.html}{Visualizing Incomplete Data}
+#' @examples
+#' par(mar = c(1,2,3,1), mgp = c(2, 0.6, 0))
+#' plot_all(wideDF)
+#'
+#' @export
+
+plot_all <- function(data, nrow = NULL, ncol = NULL, fill = grDevices::grey(0.8),
+                     border = 'black', allNA = FALSE, use_level = FALSE, idvar,
+                     xlab = '', ylab = 'frequency', ...) {
+
+  args <- as.list(match.call())
+  args <- args[!names(args) %in% names(formals(plot_all))]
+  args_hist <- unlist(args[names(args) %in% names(formals(hist.default))])
+  args_barplot <- unlist(args[names(args) %in% names(formals(barplot.default))])
+
+  # get number of rows and columns of plots
+  if (is.null(nrow) & is.null(ncol)) {
+    dims <- grDevices::n2mfrow(ncol(data))
+  } else if (is.null(nrow) & !is.null(ncol)) {
+    dims <- c(ceiling(ncol(data)/ncol), ncol)
+  } else if (is.null(ncol) & !is.null(nrow)) {
+    dims <- c(ncol, ceiling(ncol(data)/nrow))
   }
 
-  if (!is.null(subset)) {
-    MCMC <- get_subset(subset, MCMC, object)
-  }
-
-
-
-  ask <- ncol(MCMC[[1]]) > 30
-
-  if (is.null(nrow)) {
-    if (is.null(ncol)) {
-      nrow <- floor(sqrt(ncol(MCMC[[1]])))
+  op <- par(mfrow = dims)
+  for (i in 1:ncol(data)) {
+    # specify plot title, including % missing values for incomplete variables
+    main <- if (any(is.na(data[, i])) | allNA) {
+      paste0(names(data)[i], " (", round(mean(is.na(data[, i]))*100, 1), "% NA)")
     } else {
-      nrow <- ceiling(ncol(MCMC[[1]])/ncol)
+      names(data)[i]
+    }
+
+    if (use_level) {
+      if (missing(idvar))
+        stop("'idvar' must be specified when 'use_level = TRUE'.")
+
+      istvar <- check_tvar(data[, i], data[, idvar])
+      main <- paste0(main, "\n", ifelse(istvar, "level-1", "level-2"))
+      if (!istvar)
+        x <- data[match(unique(data[, idvar]), data[, idvar]), i]
+      else x <- data[, i]
+    } else {
+      x <- data[, i]
+    }
+
+    if (is.factor(x)) {
+      if (any(is.na(x))) {
+        x <- factor(x, levels = c(levels(x), "NA"), ordered = T)
+        x[is.na(x)] <- "NA"
+      }
+      if (is.null(args_barplot)) {
+        barplot(table(x), ylab = ylab, main = main, col = fill,
+                border = border, xlab = xlab)
+      } else {
+        barplot(table(x), ylab = ylab, main = main, col = fill,
+                border = border, xlab = xlab, args_barplot)
+      }
+    } else if (is.character(x)) {
+      plot(0, type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "",
+           main = main)
+      text(1, 0, paste0(names(data)[i], " \nis coded as character\nand cannot be plotted."))
+    } else {
+      if (is.null(args_hist)) {
+        hist(x, ylab = ylab, main = main,
+             col = fill, border = border, xlab = xlab)
+      } else {
+        hist(x, ylab = ylab, main = main,
+             col = fill, border = border, xlab = xlab, args_hist)
+      }
     }
   }
 
-  if (is.null(ncol))
-    ncol <- ceiling(ncol(MCMC[[1]])/nrow)
-
-  if (ask) {
-    nrow = 5
-    ncol = 6
-  }
-
-  return(list(MCMC = MCMC, ask = ask, nrow = nrow, ncol = ncol,
-              thin = thin, time = time, subset = subset))
+  par(op)
 }
