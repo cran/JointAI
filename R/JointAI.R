@@ -8,14 +8,17 @@
 #'
 #'
 #' @section Main functions:
-#' The package has three main functions, \code{\link{lm_imp}},
-#' \code{\link{glm_imp}} and \code{\link{lme_imp}},
-#' that allow analysis using linear regression, generalized linear regression
-#' and linear mixed effects models. As far as possible, the specification of
+#' The package has five main functions, \code{\link{lm_imp}},
+#' \code{\link{glm_imp}}, \code{\link{lme_imp}}, \code{\link{glme_imp}} and \code{\link{survreg_imp}}
+#' that allow analysis using linear regression, generalized linear regression,
+#' linear mixed effects models, generalized linear mixed effects models and parametric
+#' survival models. As far as possible, the specification of
 #' the functions is the same as the specification of their complete data
-#' versions \code{\link[stats]{lm}}, \code{\link[stats]{glm}} and
+#' versions \code{\link[stats]{lm}}, \code{\link[stats]{glm}},
 #' \code{\link[nlme]{lme}} (from the package
-#' \href{https://CRAN.R-project.org/package=nlme}{\strong{nlme}}).
+#' \href{https://CRAN.R-project.org/package=nlme}{\strong{nlme}}) and
+#' \code{\link[survival]{survreg}} (from the package
+#' \href{https://CRAN.R-project.org/package=survival}{\strong{survival}}).
 #'
 #'
 #' Results can be summarized and printed with \code{\link{summary.JointAI}},
@@ -31,6 +34,14 @@
 #' \code{\link{GR_crit}} and \code{\link{MC_error}}.
 #'
 #' Imputed data can be extracted and exported to SPSS data using \code{\link{get_MIdat}}.
+#'
+#' @section Other useful functions:
+#' \itemize{
+#' \item \code{\link{parameters}} and \code{\link{list_impmodels}} to gain
+#'       insight in the specified model
+#' \item \code{\link{plot_all}} and \code{md_pattern} to visualize the
+#'       distribution of the data and the missing data pattern
+#' }
 #'
 #' @section Vignettes:
 #' The following vignettes are available
@@ -60,6 +71,16 @@
 #'                                 in the \code{\link{summary}}, \code{\link{traceplot}},
 #'                                 \code{\link{densplot}} or when using
 #'                                 \code{\link{GR_crit}} or \code{\link{MC_error}}.
+#'
+#' \item \href{https://nerler.github.io/JointAI/articles/MCMCsettings.html}{\emph{MCMC Settings}}:\cr
+#' Examples demonstrating how to set the arguments controlling settings of the MCMC sampling,
+#' i.e., \code{n.adapt}, \code{n.iter}, \code{n.chains}, \code{thin}, \code{inits}.
+#'
+#' \item \href{https://nerler.github.io/JointAI/articles/AfterFitting.html}{\emph{After Fitting}}:\cr
+#' Examples on the use of functions to be applied after the model has been fitted,
+#' including \code{\link{traceplot}}, \code{\link{densplot}}, \code{\link{summary}},
+#' \code{\link{GR_crit}}, \code{\link{MC_error}}, \code{\link{predict}},
+#' \code{\link{predDF}} and \code{\link{get_MIdat}}.
 #'}
 #' @references Erler, N. S., Rizopoulos, D., Rosmalen, J. V., Jaddoe,
 #' V. W., Franco, O. H., & Lesaffre, E. M. (2016).
@@ -107,6 +128,7 @@ utils::globalVariables(c("Var1", "Var2", "iteration", "value", "chain"))
 #' @param use_level logical; should the multi-level structure be taken into account?
 #'        This requires specification of the argument \code{idvar}.
 #' @param idvar name of the column that specifies the multi-level grouping structure
+#' @param keep_aux logical; Should constant effects of auxiliary variables be kept in the output?
 #'
 #' @name sharedParams
 NULL

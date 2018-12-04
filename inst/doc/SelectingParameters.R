@@ -5,7 +5,7 @@ knitr::opts_chunk$set(
   fig.width = 7,
   fig.align = 'center'
 )
-library(JointAI)
+library("JointAI")
 
 ## ---- echo = F-----------------------------------------------------------
 tab <- rbind(
@@ -61,6 +61,7 @@ tab <- rbind(object = 'a JointAI object',
              include = "logical; should the original data be included?",
              start = paste0("the first iteration that may be randomly chosen",
                             " (i.e., all previous iterations are discarded as burn-in)"),
+             minspace = 'minimum number of iterations between iterations chosen as imputed values',
              seed = "optional seed value in order to make the random selection
                      of iterations reproducible",
              export_to_SPSS = paste0("logical; should the datasets be exported", 
@@ -76,27 +77,27 @@ colnames(tab) <- c('argument', 'explanation')
 knitr::kable(tab, row.names = FALSE)
 
 ## ------------------------------------------------------------------------
-lme1 <- lme_imp(bmi ~ age + EDUC, random = ~age|ID, 
+lme1 <- lme_imp(bmi ~ age + EDUC, random = ~age | ID, 
                 data = simLong, n.adapt = 0, mess = FALSE)
 
 parameters(lme1, mess = FALSE)
 
 ## ------------------------------------------------------------------------
-lme2 <- lme_imp(bmi ~ age + EDUC, random = ~age|ID,
+lme2 <- lme_imp(bmi ~ age + EDUC, random = ~age | ID,
                 data = simLong, n.adapt = 0, mess = FALSE,
                 monitor_params = c(analysis_random = TRUE))
 
 parameters(lme2, mess = FALSE)
 
 ## ------------------------------------------------------------------------
-lme3a <- lme_imp(bmi ~ age + EDUC, random = ~age|ID,
+lme3a <- lme_imp(bmi ~ age + EDUC, random = ~age | ID,
                 data = simLong, n.adapt = 0, mess = FALSE,
                 monitor_params = c(analysis_main = TRUE, RinvD = TRUE))
 
 parameters(lme3a, mess = FALSE)
 
 ## ------------------------------------------------------------------------
-lme3b <- lme_imp(bmi ~ age + EDUC, random = ~age|ID,
+lme3b <- lme_imp(bmi ~ age + EDUC, random = ~age | ID,
                 data = simLong, n.adapt = 0, mess = FALSE,
                 monitor_params = c(analysis_main = TRUE,
                                    analysis_random = TRUE,

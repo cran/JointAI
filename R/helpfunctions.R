@@ -339,17 +339,21 @@ extract_fcts <- function(formula, data, complete = FALSE, ...) {
 
   isfun <- sapply(all.names(formula, unique = TRUE), function(x) {
     g <- try(get(x, envir = .GlobalEnv), silent = TRUE)
-    if(!inherits(g, 'try-error'))
+    if (!inherits(g, 'try-error'))
       is.function(g)
     else
       FALSE
   })
 
 
-  funs <- isfun[!names(isfun) %in% c("~", "+", "-", ":", "*", "(", "^", "/", "time") & isfun]
+  funs <- isfun[!names(isfun) %in% c("~", "+", "-", ":", "*", "(", "^", "/", "time", "chol") & isfun]
 
-  if(length(funs) > 0) {
-    funlist <- sapply(names(funs), grep, x = termlabs, value = TRUE)
+  if (length(funs) > 0) {
+    funlist <- sapply(names(funs), function(f)
+      c(grep(paste0("\\(", f, "\\("), x = termlabs, value = TRUE),
+        grep(paste0("^", f, "\\("), x = termlabs, value = TRUE))
+    )
+
     varlist <- lapply(funlist, function(x1) {
       sapply(x1, function(x2) all.vars(as.formula(paste("~", x2))))
     })
@@ -381,12 +385,12 @@ extract_fcts <- function(formula, data, complete = FALSE, ...) {
       partners <- sapply(out$Xc_var,
                          function(x) which(out$Xc_var %in% x), simplify = FALSE)
       anymis <- sapply(partners, function(x) any(!compl[x]))
-      out <- if(any(anymis)){
+      out <- if (any(anymis)) {
         out[anymis, , drop = FALSE]
       }
     }
 
-    if (!is.null(out)){
+    if (!is.null(out)) {
       dupl <- duplicated(out[, -which(names(out) == 'var')]) |
         duplicated(out[, -which(names(out) == 'var')], fromLast = TRUE)
       out$dupl <- duplicated(out[, -which(names(out) == 'var')])
@@ -402,3 +406,21 @@ extract_fcts <- function(formula, data, complete = FALSE, ...) {
   }
 }
 
+
+
+# define family weibull
+weibull <- function(link = 'log') {
+  structure(list(family = "weibull", link = 'log'),
+            class = "family")
+}
+# # define family coxph
+# #' @export
+# prophaz <- function(link = 'log') {
+#   structure(list(family = "prophaz", link = 'log'),
+#             class = "family")
+# }
+
+# #' @export
+# logit <- function(x) {
+#   log(x/(1-x))
+# }

@@ -30,15 +30,13 @@ mod1b <- glm_imp(educ ~ age + gender + creat, data = NHANES,
 mod1c <- glm_imp(educ ~ age + gender + creat, data = NHANES,
                family = binomial(link = 'logit'), n.adapt = 0, mess = FALSE)
 
-mod1a$family
-mod1a$link
+mod1a$analysis_type
 
 ## -------------------------------------------------------------------------------------------------
 mod1d <- glm_imp(educ ~ age + gender + creat, data = NHANES,
                family = binomial(link = 'probit'), n.adapt = 0, mess = FALSE)
 
-mod1d$family
-mod1d$link
+mod1d$analysis_type
 
 ## ---- eval = FALSE--------------------------------------------------------------------------------
 #  SBP ~ age + gender + smoke * creat
@@ -48,20 +46,20 @@ mod1d$link
 
 ## -------------------------------------------------------------------------------------------------
 mod2a <- glm_imp(educ ~ gender * (age + smoke + creat),
-                 data = NHANES, family = 'binomial', mess = FALSE, n.adapt = 0)
+                 data = NHANES, family = binomial(), mess = FALSE, n.adapt = 0)
 
 parameters(mod2a, mess = FALSE)
 
 ## ----multi-way interactions-----------------------------------------------------------------------
 # all two-way interactions:
 mod2b <- glm_imp(educ ~ gender + (age + smoke + creat)^2,
-                 data = NHANES, family = 'binomial', mess = FALSE, n.adapt = 0)
+                 data = NHANES, family = binomial(), mess = FALSE, n.adapt = 0)
 
 parameters(mod2b, mess = FALSE)
 
 # all two- and three-way interactions:
 mod2c <- glm_imp(educ ~ gender + (age + smoke + creat)^3,
-                 data = NHANES, family = 'binomial', mess = FALSE, n.adapt = 0)
+                 data = NHANES, family = binomial(), mess = FALSE, n.adapt = 0)
 
 parameters(mod2c, mess = FALSE)
 
@@ -163,20 +161,8 @@ knitr::kable(tab, row.names = FALSE)
 
 
 ## ---- cache = TRUE--------------------------------------------------------------------------------
-# run the model without iterations
-mod8a_setup <- lm_imp(SBP ~ age + gender + WC + alc + bili + occup + smoke,
-                data = NHANES, n.iter = 0, n.adapt = 0, mess = FALSE)
-
-# extract the automatically chosen imputation methods
-newmeth <- mod8a_setup$meth
-newmeth
-
-# change the method for bili to lognorm
-newmeth['bili'] <- 'lognorm'
-
-# run the model with the specified imputation method
 mod8a <- lm_imp(SBP ~ age + gender + WC + alc + bili + occup + smoke,
-                meth = newmeth,
+                meth = c(bili = 'gamma', WC = 'lognorm'),
                 data = NHANES, n.iter = 100, mess = FALSE, progress.bar = 'none')
 
 mod8a$meth
@@ -188,7 +174,7 @@ mod8a_meth
 
 ## -------------------------------------------------------------------------------------------------
 # number of missing values in the covariates in mod8a
-colSums(is.na(NHANES[, names(newmeth)]))
+colSums(is.na(NHANES[, names(mod8a_meth)]))
 
 # print information on the imputation models (and omit everything but the predictor variables)
 list_impmodels(mod8a, priors = F, regcoef = F, otherpars = F, refcat = F)
@@ -271,4 +257,7 @@ refs_mod10 <-  c(gender = 'female', race = 'Non-Hispanic White', educ = 'low', o
 mod10c <- lm_imp(SBP ~ gender + age + race + educ + occup + smoke,
                  refcats = refs_mod10,
                  data = NHANES, n.adapt = 0, mess = FALSE)
+
+## -------------------------------------------------------------------------------------------------
+default_hyperpars(nranef = 2)
 

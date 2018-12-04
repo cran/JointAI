@@ -16,10 +16,13 @@ lm1 <- lm_imp(SBP ~ gender + age + race + WC + alc + educ + albu + bili,
 ## ----results_lm1, fig.width = 8, fig.height = 5, out.width = '100%'------
 traceplot(lm1)
 
-## ------------------------------------------------------------------------
+## ---- echo = FALSE------------------------------------------------------------
+options(width = 80)
+
+## -----------------------------------------------------------------------------
 summary(lm1)
 
-## ---- echo = F, fig.width = 8, fig.height = 2----------------------------
+## ---- echo = F, fig.width = 8, fig.height = 2---------------------------------
 par(mfrow = c(1, 3), mgp = c(1, 0.6, 0), mar = c(2.5, 1, 2, 1))
 mus <- c(1, -1.5, -2.5)
 
@@ -43,6 +46,6 @@ for (i in seq_along(mus)) {
   abline(v = 0, lty = 2)
 }
 
-## ---- fig.width = 8, fig.height = 5--------------------------------------
+## ---- fig.width = 8, fig.height = 5-------------------------------------------
 densplot(lm1)
 

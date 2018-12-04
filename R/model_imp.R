@@ -1,7 +1,7 @@
 #' Joint analysis and imputation of incomplete data
 #'
-#' Functions to estimate linear, generalized
-#' linear and linear mixed models using MCMC sampling.
+#' Functions to estimate (generalized) linear, (generalized) linear mixed and
+#' parametric (Weibull) survival models using MCMC sampling.
 #'
 #' @param formula a two sided model formula (see \code{\link[stats]{formula}})
 #' @param fixed a two sided formula describing the fixed-effects part of the
@@ -87,7 +87,8 @@
 #' \code{binomial} \tab with links: \code{logit}, \code{probit}, \code{log}, \code{cloglog}\cr
 #' \code{Gamma}    \tab with links: \code{identity}, \code{log}\cr
 #' \code{poisson}  \tab with links: \code{log}, \code{identity}
-#' }}
+#' }
+#' }
 #'
 #'
 #'
@@ -101,7 +102,16 @@
 #' \code{logit} \tab logistic model for binary data\cr
 #' \code{multilogit} \tab multinomial logit model for unordered categorical variables\cr
 #' \code{cumlogit} \tab cumulative logit model for ordered categorical variables
-#' }}
+#' }
+#' When imputation methods are specified for only a subset of the incomplete
+#' covariates involved in a model, the default choices are used for all unspecified
+#' variables.
+#'
+#' The argument \code{meth} also controls the order of the sequence of imputation
+#' models. By default, models are ordered according to the proportion of missing
+#' values. To change this order, a vector with imputation methods for all
+#' incomplete variables (in the desired order) needs to be supplied.
+#' }
 #'
 #' \subsection{Parameters to follow (\code{monitor_params})}{
 #' See also the vignette: \href{https://nerler.github.io/JointAI/articles/SelectingParameters.html}{Parameter Selection}\cr
@@ -145,6 +155,69 @@
 #'
 #' @return An object of class "JointAI".
 #'
+#' @section Note:
+#' \subsection{Coding of variables:}{
+#' The default imputation methods are chosen based on the \code{class} of each
+#' of the incomplete variables, distinguishing between \code{numeric},
+#' \code{factor} with two levels, unordered \code{factor} with >2 levels and
+#' ordered \code{factor} with >2 levels.
+#'
+#' When a continuous incomplete variable has only two different values it is
+#' assumed to be binary and its coding and default imputation model will be
+#' changed accordingly. This behavior can be overwritten when the imputation
+#' method for that variable is specified directly by the user.
+#'
+#' Variables of type `logical` are automatically be converted to unordered factors.
+#'
+#' Contrary to base R behavior, dummy coding (i.e., \code{contr.treatment} contrasts)
+#' are used for ordered factors in any linear predictor.
+#' Since the order of levels in an ordered factor contains information relevant
+#' to the imputation of missing values, it is important that incomplete ordinal
+#' variables are coded as such.
+#' }
+#'
+#' \subsection{Non-linear effects and transformation of variables:}{
+#' \strong{JointAI} handles non-linear effects, transformation of covariates and
+#' interactions the following way:
+#' When, for instance, the model formula contains the function \code{log(x)} and
+#' \code{x} has missing values, \code{x} will be imputed and used in the linear
+#' predictor of models for other incomplete variables, i.e., it is assumed that
+#' the other variables have a linear association with \code{x} but not with
+#' \code{log(x)}. The \code{log()} of the observed and imputed values of
+#' \code{x} is calculated and used in the linear predictor of the analysis model.
+#'
+#' If, instead of using \code{log(x)} in the model formula a pre-calculated
+#' variable \code{logx} would be used instead, this variable is imputed directly
+#' and used in the linear predictors of all models, implying that other incomplete
+#' variables that have \code{logx} in their linear predictors have a linear
+#' association with \code{logx} but not with \code{x}.
+#'
+#' When different transformations of the same incomplete variable are used in
+#' one model it is strongly discouraged to calculate these transformations beforehand
+#' and supply them as different variables.
+#' If, for example, a model formula contains both \code{x} and \code{x2} (where
+#' \code{x2} = \code{x^2}), they are treated as separate variables and imputed
+#' with separate models. Imputed values of \code{x2} are thus not equal to the
+#' square of imputed values of \code{x}.
+#' Instead, \code{x + I(x^2)} should be used in the model formula. Then, only
+#' \code{x} is imputed and used in the linear predictor of models for other
+#' incomplete variables, and \code{x^2} is calculated from the imputed values
+#' of \code{x} internally.
+#'
+#' The same applies to interactions involving incomplete variables.
+#' }
+#' \subsection{Not (yet) possible:}{
+#' \itemize{
+#' \item imputation of time-varying (level-1) covariates
+#' \item multiple nesting levels of random effects (nested or crossed)
+#' \item prediction (using \code{predict}) conditional on random effects
+#' \item the use of splines for incomplete variables
+#' \item the use of \code{\link[survival]{pspline}},
+#'       \code{\link[survival]{frailty}}, \code{\link[survival]{cluster}}
+#'       or \code{\link[survival]{strata}} in survival models
+#' \item left censored or interval censored data
+#' }
+#' }
 #'
 #'
 #' @seealso \code{\link{set_refcat}}, \code{\link{get_imp_meth}},
@@ -162,8 +235,8 @@
 #'   \item \href{https://nerler.github.io/JointAI/articles/SelectingParameters.html}{Parameter Selection}
 #'}
 #'
-#' @examples
 #'
+#' @examples
 #' # Example 1: Linear regression with incomplete covariates
 #' mod1 <- lm_imp(y~C1 + C2 + M2, data = wideDF, n.iter = 100)
 #'
@@ -196,13 +269,13 @@ model_imp <- function(fixed, data, random = NULL, link, family,
 
   # Checks & warnings -------------------------------------------------------
   if (mess)
-    message("This is new software. Please report any bug to the package maintainer.")
+    message("This is new software. Please report any bugs to the package maintainer.")
 
   if (missing(fixed)) {
     stop("No fixed effects structure specified.")
   }
 
-  if (analysis_type != "lme" & !is.null(random)) {
+  if (!analysis_type %in% c("lme", "glme") & !is.null(random)) {
     if (warn)
       warning(gettextf("Random effects structure not used in a model of type %s.",
                        sQuote(analysis_type)), immediate. = TRUE, call. = FALSE)
@@ -239,21 +312,103 @@ model_imp <- function(fixed, data, random = NULL, link, family,
   }
 
 
+  covars <- unique(c(all.vars(fixed),
+                     all.vars(remove_grouping(random)),
+                     if (!is.null(auxvars))
+                       all.vars(as.formula(paste('~',
+                                                 paste(auxvars, collapse = " + "))))
+  ))
+  classes <- unique(unlist(sapply(data[covars], class)))
+
+  if (any(!classes %in% c('numeric', 'ordered', 'factor', 'logical', 'integer'))) {
+    w <- which(!classes %in% c('numeric', 'ordered', 'factor', 'logical', 'integer'))
+    stop(gettextf("Variables of type %s can not be handled.",
+                  paste(dQuote(classes[w]), collapse = ', ')))
+  }
+
+
+  # drop empty categories
+  allvars <- unique(c(all.vars(fixed),
+                      all.vars(random),
+                      if (!is.null(auxvars))
+                        all.vars(as.formula(paste('~',
+                                                  paste(auxvars, collapse = " + "))))
+  ))
+
+  data_orig <- data
+  data[allvars] <- droplevels(data[allvars])
+
+  if (mess) {
+    lvl1 <- sapply(data_orig[allvars], function(x) length(levels(x)))
+    lvl2 <- sapply(data[allvars], function(x) length(levels(x)))
+    if (any(lvl1 != lvl2)) {
+      message(gettextf('Empty levels were dropped from %s.',
+                       dQuote(names(lvl1)[which(lvl1 != lvl2)])))
+    }
+  }
+
+  # convert continuous variable with 2 different values to factor
+  for (k in allvars) {
+    if (all(class(data[, k]) != 'factor') & length(unique(data[, k])) == 2) {
+      data[, k] <- factor(data[, k])
+      if (mess)
+        message(gettextf('The variable %s was converted to a factor.',
+                         dQuote(k)))
+    }
+  }
+
+
+  # convert logicals to factors
+  if (any(unlist(sapply(data[allvars], class)) == 'logical')) {
+    for (x in allvars) {
+      if ('logical' %in% class(data[, x])) {
+        data[, x] <- factor(data[, x])
+        if (mess)
+          message(gettextf('%s was converted to a factor.', dQuote(x)))
+      }
+    }
+  }
+
+
+
   # imputation method ----------------------------------------------------------
+  meth_default <- get_imp_meth(fixed = fixed, random = random, data = data,
+                               auxvars = auxvars)
+
   if (is.null(meth)) {
-    meth <- get_imp_meth(fixed = fixed, random = random, data = data,
-                         auxvars = auxvars)
+    meth <- meth_default
+    meth_user <- NULL
+  } else {
+    meth_user <- meth
+    if (!setequal(names(meth_user), names(meth_default))) {
+      meth <- meth_default
+      meth[names(meth_user)] <- meth_user
+      meth
+    }
+  }
+
+  # warning if JointAI set imputation method for a continuous variable with only
+  # two different values to "logit"
+  for (k in names(meth)[meth == 'logit']) {
+    if (is.numeric(data[, k]) & !k %in% names(meth_user) & warn) {
+      data[, k] <- factor(data[, k])
+      warning(
+        gettextf("\nThe variable %s is coded as continuous but has only two different values. I will consider it binary.\nTo overwrite this behavior, specify a different imputation method for %s using the argument %s.",
+                 dQuote(k), dQuote(k), dQuote("meth")),
+        call. = FALSE, immediate. = TRUE)
+    }
   }
 
 
   if (is.null(Mlist)) {
-    Mlist <- divide_matrices(data, fixed, random = random, auxvars = auxvars,
+    Mlist <- divide_matrices(data, fixed, analysis_type = analysis_type,
+                             random = random, auxvars = auxvars,
                              scale_vars = scale_vars, refcats = refcats,
                              meth = meth, warn = warn, mess = mess)
   }
 
   if (is.null(K)) {
-    K <- get_model_dim(sapply(Mlist, ncol), Mlist$hc_list)
+    K <- get_model_dim(sapply(Mlist, ncol), Mlist$hc_list, analysis_type)
   }
 
   if (is.null(imp_pos)) {
@@ -276,6 +431,15 @@ model_imp <- function(fixed, data, random = NULL, link, family,
                            MoreArgs = list(Mlist$Xc, Mlist$Xcat, K_imp, dest_cols,
                                            Mlist$refs, Mlist$trafos, trunc),
                            SIMPLIFY = FALSE)
+  }
+
+  if (is.null(data_list)) {
+    data_list <- try(get_data_list(analysis_type, family, link, meth, Mlist, K, auxvars,
+                                   scale_pars = scale_pars, hyperpars = hyperpars,
+                                   data = data))
+    scale_pars <- data_list$scale_pars
+    hyperpars <- data_list$hyperpars
+    data_list <- data_list$data_list
   }
 
   # write model ----------------------------------------------------------------
@@ -301,28 +465,26 @@ model_imp <- function(fixed, data, random = NULL, link, family,
   }
 
   if (!file.exists(modelfile) || (file.exists(modelfile) & overwrite == TRUE)) {
+
+    Ntot <- ifelse(analysis_type == 'coxph',
+           sum(data_list$RiskSet != 0),
+           length(data_list[[names(Mlist$y)]]))
+
     write_model(analysis_type = analysis_type, family = family,
-                link = link, meth = meth, Ntot = nrow(Mlist$y),
+                link = link, meth = meth,
+                Ntot = Ntot,
                 N = nrow(Mlist$Xc),
                 y_name = names(Mlist$y), Mlist = Mlist, K = K,
                 imp_par_list = imp_par_list,
                 file = modelfile)
   }
 
-  if (is.null(data_list)) {
-    data_list <- try(get_data_list(analysis_type, family, link, meth, Mlist, K, auxvars,
-                                 scale_pars = scale_pars, hyperpars = hyperpars,
-                                 data = data))
-    scale_pars <- data_list$scale_pars
-    hyperpars <- data_list$hyperpars
-    data_list <- data_list$data_list
-  }
 
   if (is.logical(inits)) {
     inits <- if (inits)
       replicate(n.chains,
                 get_inits.default(meth = meth, Mlist = Mlist, K = K, K_imp = K_imp,
-                       analysis_type = analysis_type, family = family), simplify = FALSE
+                       analysis_type = analysis_type, family = family, link = link), simplify = FALSE
       )
   }
 
@@ -575,3 +737,149 @@ lme_imp <- function(fixed, data, random,
   return(res)
 }
 
+
+#' @rdname model_imp
+#' @aliases glmer_imp
+#' @export
+glme_imp <- function(fixed, data, random, family,
+                    n.chains = 3, n.adapt = 100, n.iter = 0, thin = 1,
+                    monitor_params = NULL, inits = TRUE,
+                    modelname = NULL, modeldir = NULL,
+                    overwrite = NULL, keep_model = FALSE,
+                    quiet = TRUE, progress.bar = "text", warn = TRUE,
+                    mess = TRUE,
+                    auxvars = NULL, meth = NULL, refcats = NULL, trunc = NULL,
+                    scale_vars = NULL, scale_pars = NULL, hyperpars = NULL, ...){
+
+  if (missing(fixed))
+    stop("No fixed effects structure specified.")
+  if (missing(random))
+    stop("No random effects structure specified.")
+  if (missing(data))
+    stop("No dataset given.")
+
+  arglist <- mget(names(formals()), sys.frame(sys.nframe()))
+  arglist$analysis_type <- "glme"
+
+  if (is.character(family)) {
+    family <- get(family, mode = "function", envir = parent.frame())
+    arglist$family <- family()$family
+    arglist$link <- family()$link
+  }
+
+  if (is.function(family)) {
+    arglist$family <- family()$family
+    arglist$link <- family()$link
+  }
+
+  if (inherits(family, "family")) {
+    arglist$family <- family$family
+    arglist$link <- family$link
+  }
+
+  if (!arglist$link %in% c("identity", "log", "logit", "probit", "log",
+                           "cloglog"))
+    stop(gettextf("%s is not an allowed link function.",
+                  dQuote(arglist$link)))
+
+
+
+  thiscall <- as.list(match.call())[-1L]
+  thiscall <- lapply(thiscall, function(x) {
+    if (is.language(x)) eval(x) else x
+  })
+
+  arglist <- c(thecall = match.call(),
+               arglist,
+               thiscall[!names(thiscall) %in% names(arglist)])
+
+
+  res <- do.call(model_imp, arglist)
+  res$call <- match.call()
+
+  return(res)
+}
+
+
+
+#' @rdname model_imp
+#' @export
+survreg_imp <- function(formula, data,
+                   n.chains = 3, n.adapt = 100, n.iter = 0, thin = 1,
+                   monitor_params = NULL, inits = TRUE,
+                   modelname = NULL, modeldir = NULL,
+                   overwrite = NULL, keep_model = FALSE,
+                   quiet = TRUE, progress.bar = "text", warn = TRUE,
+                   mess = TRUE,
+                   auxvars = NULL, meth = NULL, refcats = NULL, trunc = NULL,
+                   scale_vars = NULL, scale_pars = NULL, hyperpars = NULL, ...){
+
+  if (missing(formula))
+    stop("No model formula specified.")
+
+  if (missing(data))
+    stop("No dataset given.")
+
+
+  arglist <- mget(names(formals()), sys.frame(sys.nframe()))
+  arglist$fixed <- arglist$formula
+  arglist$analysis_type <- "survreg"
+  arglist$family <- 'weibull'
+  arglist$link <- "log"
+  arglist$fixed <- formula
+
+  thiscall <- as.list(match.call())[-1L]
+  thiscall <- lapply(thiscall, function(x) {
+    if (is.language(x)) eval(x) else x
+  })
+
+  arglist <- c(thecall = match.call(),
+               arglist,
+               thiscall[!names(thiscall) %in% names(arglist)])
+
+  res <- do.call(model_imp, arglist)
+  res$call <- match.call()
+  return(res)
+}
+
+
+
+
+
+# coxph_imp <- function(formula, data,
+#                      n.chains = 3, n.adapt = 100, n.iter = 0, thin = 1,
+#                      monitor_params = NULL, inits = TRUE,
+#                      modelname = NULL, modeldir = NULL,
+#                      overwrite = NULL, keep_model = FALSE,
+#                      quiet = TRUE, progress.bar = "text", warn = TRUE,
+#                      mess = TRUE,
+#                      auxvars = NULL, meth = NULL, refcats = NULL, trunc = NULL,
+#                      scale_vars = NULL, scale_pars = NULL, hyperpars = NULL, ...){
+#
+#   if (missing(formula))
+#     stop("No model formula specified.")
+#
+#   if (missing(data))
+#     stop("No dataset given.")
+#
+#
+#   arglist <- mget(names(formals()), sys.frame(sys.nframe()))
+#   arglist$fixed <- arglist$formula
+#   arglist$analysis_type <- "coxph"
+#   arglist$family <- 'prophaz'
+#   arglist$link <- "log"
+#   arglist$fixed <- formula
+#
+#   thiscall <- as.list(match.call())[-1L]
+#   thiscall <- lapply(thiscall, function(x) {
+#     if (is.language(x)) eval(x) else x
+#   })
+#
+#   arglist <- c(thecall = match.call(),
+#                arglist,
+#                thiscall[!names(thiscall) %in% names(arglist)])
+#
+#   res <- do.call(model_imp, arglist)
+#   res$call <- match.call()
+#   return(res)
+# }

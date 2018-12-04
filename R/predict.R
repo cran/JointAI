@@ -35,9 +35,13 @@ predDF.formula <- function(formula, dat, var, ...) {
   allvars <- all.vars(formula)
 
   vals <- sapply(allvars, function(k) {
-    if (k == var) {
-      seq(min(dat[, k], na.rm = TRUE),
-          max(dat[, k], na.rm = TRUE), length = 100)
+    if (k %in% var) {
+      if (is.factor(dat[, k])) {
+        unique(dat[, k])
+      } else {
+        seq(min(dat[, k], na.rm = TRUE),
+            max(dat[, k], na.rm = TRUE), length = 100)
+      }
     } else {
       if (is.factor(dat[, k])) {
         factor(levels(dat[, k])[1], levels = levels(dat[, k]))
@@ -51,6 +55,7 @@ predDF.formula <- function(formula, dat, var, ...) {
   })
   expand.grid(vals)
 }
+
 
 
 #' @rdname predDF
@@ -111,27 +116,7 @@ predict.JointAI <- function(object, newdata, quantiles = c(0.025, 0.975),
   if (!inherits(object, "JointAI"))
     stop("Use only with 'JointAI' objects.\n")
 
-  if (is.null(start)) {
-    start <- start(object$sample)
-  } else {
-    start <- max(start, start(object$sample))
-  }
-
-  if (is.null(end)) {
-    end <- end(object$sample)
-  } else {
-    end <- min(end, end(object$sample))
-  }
-
-  if (is.null(thin))
-    thin <- thin(object$sample)
-
-  MCMC <- do.call(rbind,
-                  window(object$MCMC,
-                         start = start,
-                         end = end,
-                         thin = thin)
-  )
+  MCMC <- prep_MCMC(object, start = start, end = end, thin = thin, subset = NULL, ...)
 
 
   mf <- model.frame(object$fixed, object$data)
@@ -142,10 +127,11 @@ predict.JointAI <- function(object, newdata, quantiles = c(0.025, 0.975),
   X <- model.matrix(mt, data = newdata)
   options(contrasts = oldop)
 
-  pred <- sapply(1:nrow(X), function(i) MCMC[, colnames(X)] %*% X[i, ])
+  pred <- sapply(1:nrow(X), function(i) MCMC[, colnames(X), drop = FALSE] %*% X[i, ])
 
   fit <- colMeans(pred)
   quantiles <- apply(pred, 2, quantile, quantiles)
 
-  return(list(fit = fit, quantiles = quantiles))
+  return(list(dat = as.data.frame(cbind(newdata, fit, t(quantiles))),
+              fit = fit, quantiles = quantiles))
 }

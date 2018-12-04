@@ -43,12 +43,12 @@ traceplot <- function(object, ...) {
 #' @export
 traceplot.JointAI <- function(object, start = NULL, end = NULL, thin = NULL,
                               subset = c(analysis_main = TRUE),
-                              nrow = NULL, ncol = NULL,
+                              nrow = NULL, ncol = NULL, keep_aux = FALSE,
                               use_ggplot = FALSE, warn = TRUE,
                               ...) {
 
   prep <- plot_prep(object, start = start, end = end, thin = thin, subset = subset,
-                    nrow = nrow, ncol = ncol, warn = warn)
+                    nrow = nrow, ncol = ncol, warn = warn, keep_aux = keep_aux)
 
 
   if (use_ggplot) {
@@ -61,13 +61,14 @@ traceplot.JointAI <- function(object, start = NULL, end = NULL, thin = NULL,
     ggplot2::ggplot(meltMCMC,
                     ggplot2::aes(iteration, value, color = chain)) +
       ggplot2::geom_line() +
-      ggplot2::facet_wrap('variable', scales = 'free')
+      ggplot2::facet_wrap('variable', scales = 'free',
+                          ncol = prep$ncol, nrow = prep$nrow)
   } else {
     op <- par(mfrow = c(prep$nrow, prep$ncol), mar = c(3.2, 2.5, 2, 1),
               mgp = c(2, 0.6, 0))
 
     for (i in 1:nvar(prep$MCMC)) {
-      matplot(x = prep$time, as.array(prep$MCMC)[, i, ], type = "l",
+      matplot(x = prep$time, as.array(prep$MCMC, drop = FALSE)[, i, ], type = "l",
               xlab = "Iterations", ylab = "",
               main = colnames(prep$MCMC[[1]])[i], ...)
     }
@@ -140,10 +141,11 @@ densplot <- function(object, ...) {
 densplot.JointAI <- function(object, start = NULL, end = NULL, thin = NULL,
                              subset = c(analysis_main = TRUE), vlines = NULL, nrow = NULL,
                              ncol = NULL, joined = FALSE, use_ggplot = FALSE,
-                             warn = TRUE, ...) {
+                             keep_aux = FALSE, warn = TRUE, ...) {
 
   prep <- plot_prep(object, start = start, end = end, thin = thin,
-                    subset = subset, nrow = nrow, ncol = ncol, warn = warn)
+                    subset = subset, nrow = nrow, ncol = ncol, warn = warn,
+                    keep_aux = keep_aux)
 
   if (joined)
     prep$MCMC <- as.mcmc.list(as.mcmc(do.call(rbind, prep$MCMC)))
@@ -155,11 +157,23 @@ densplot.JointAI <- function(object, start = NULL, end = NULL, thin = NULL,
                                             'variable'))
     meltMCMC$chain <- factor(meltMCMC$L1)
 
+    if (joined)
+      p <- ggplot2::ggplot(meltMCMC, ggplot2::aes(value))
+    else
+      p <- ggplot2::ggplot(meltMCMC, ggplot2::aes(value, color = chain))
 
-    ggplot2::ggplot(meltMCMC, ggplot2::aes(value, color = chain)) +
-      ggplot2::geom_density() +
-      ggplot2::facet_wrap('variable', scales = 'free')
+    p + ggplot2::geom_density() +
+      ggplot2::facet_wrap('variable', scales = 'free', ncol = prep$ncol,
+                          nrow = prep$nrow)
   } else {
+    args <- as.list(match.call())
+    if (!is.null(args$col)) {
+      col <- eval(args$col)
+      args <- args[-which(names(args) == "col")]
+    } else {
+      col <- 1:length(prep$MCMC)
+    }
+
     op <- par(mfrow = c(prep$nrow, prep$ncol), mar = c(3, 3, 2, 1),
               mgp = c(2, 0.6, 0))
     for (i in 1:ncol(prep$MCMC[[1]])) {
@@ -177,13 +191,18 @@ densplot.JointAI <- function(object, start = NULL, end = NULL, thin = NULL,
       )
 
       for (j in 1:length(prep$MCMC)) {
-        lines(dens[[j]], col = j)
+        args_lines <- c(list(x = dens[[j]]$x,
+                             y = dens[[j]]$y,
+                             type = 'l',
+                             col = col[j]),
+                        args[names(args) %in% names(formals(plot.xy))]
+        )
+        do.call(lines, args_lines)
       }
       if (!is.null(vlines)) {
         for (l in 1:length(vlines)) {
-          args <- if (is.list(vlines[[l]])) vlines[[l]] else vlines
-          args$v <- args$v[i]
-          do.call(abline, args)
+          args_vline <- if (is.list(vlines[[l]])) vlines[[l]] else vlines
+          do.call(abline, args_vline)
         }
       }
     }
@@ -194,8 +213,8 @@ densplot.JointAI <- function(object, start = NULL, end = NULL, thin = NULL,
 
 # Helpfunction for densityplot and traceplot
 plot_prep <- function(object, start = NULL, end = NULL, thin = NULL, subset = NULL,
-                      nrow = NULL, ncol = NULL, warn = TRUE, ...) {
-  if(is.null(object$sample))
+                      nrow = NULL, ncol = NULL, warn = TRUE, keep_aux = FALSE, ...) {
+  if (is.null(object$sample))
     stop("There is no MCMC sample.")
 
   if (is.null(start))
@@ -207,38 +226,16 @@ plot_prep <- function(object, start = NULL, end = NULL, thin = NULL, subset = NU
   if (is.null(thin))
     thin <- thin(object$sample)
 
-  MCMC <- get_subset(object, subset, as.list(match.call()), warn = warn)
+  MCMC <- get_subset(object, subset, as.list(match.call()), keep_aux = keep_aux,
+                     warn = warn)
   MCMC <- window(MCMC,
                  start = start,
                  end = end,
                  thin = thin)
 
+
   # MCMC <- window(object$sample, start = start, end = end, thin = thin)
   time <- time(MCMC)
-
-  # coefs <- get_coef_names(object$Mlist, object$K)
-  # nams <- colnames(MCMC[[1]])
-  # nams[match(coefs[, 1], nams)] <- coefs[, 2]
-  #
-  # for (i in 1:length(MCMC)) {
-  #   colnames(MCMC[[i]]) <- nams
-  # }
-
-  # scale_pars <- object$scale_pars
-  # if (!is.null(scale_pars)) {
-  #   # re-scale parameters
-  #   MCMC <- as.mcmc.list(lapply(MCMC, function(i) {
-  #     as.mcmc(sapply(colnames(i), rescale, fixed2 = object$Mlist$fixed2, scale_pars = scale_pars,
-  #                    MCMC = i, refs = object$Mlist$refs, object$Mlist$X2_names,
-  #                    object$Mlist$trafos))
-  #   }))
-  # }
-
-  # if (!is.null(subset)) {
-  #   MCMC <- get_subset(subset, MCMC, object)
-  # }
-  #
-  #
 
   # get number of rows and columns of plots
   if (is.null(nrow) & is.null(ncol)) {
@@ -246,26 +243,10 @@ plot_prep <- function(object, start = NULL, end = NULL, thin = NULL, subset = NU
   } else if (is.null(nrow) & !is.null(ncol)) {
     dims <- c(ceiling(ncol(MCMC[[1]])/ncol), ncol)
   } else if (is.null(ncol) & !is.null(nrow)) {
-    dims <- c(ncol, ceiling(ncol(MCMC[[1]])/nrow))
+    dims <- c(nrow, ceiling(ncol(MCMC[[1]])/nrow))
+  } else {
+    dims <- c(nrow, ncol)
   }
-
-  # ask <- ncol(MCMC[[1]]) > 30
-  #
-  # if (is.null(nrow)) {
-  #   if (is.null(ncol)) {
-  #     nrow <- floor(sqrt(ncol(MCMC[[1]])))
-  #   } else {
-  #     nrow <- ceiling(ncol(MCMC[[1]])/ncol)
-  #   }
-  # }
-  #
-  # if (is.null(ncol))
-  #   ncol <- ceiling(ncol(MCMC[[1]])/nrow)
-  #
-  # if (ask) {
-  #   nrow = 5
-  #   ncol = 6
-  # }
 
   return(list(MCMC = MCMC, nrow = dims[1], ncol = dims[2],
               thin = thin, time = time, subset = subset))
@@ -309,30 +290,39 @@ plot_all <- function(data, nrow = NULL, ncol = NULL, fill = grDevices::grey(0.8)
   } else if (is.null(nrow) & !is.null(ncol)) {
     dims <- c(ceiling(ncol(data)/ncol), ncol)
   } else if (is.null(ncol) & !is.null(nrow)) {
-    dims <- c(ncol, ceiling(ncol(data)/nrow))
+    dims <- c(nrow, ceiling(ncol(data)/nrow))
+  } else {
+    dims <- c(nrow, ncol)
   }
+
 
   op <- par(mfrow = dims)
   for (i in 1:ncol(data)) {
     # specify plot title, including % missing values for incomplete variables
-    main <- if (any(is.na(data[, i])) | allNA) {
-      paste0(names(data)[i], " (", round(mean(is.na(data[, i]))*100, 1), "% NA)")
-    } else {
-      names(data)[i]
-    }
 
     if (use_level) {
       if (missing(idvar))
         stop("'idvar' must be specified when 'use_level = TRUE'.")
 
       istvar <- check_tvar(data[, i], data[, idvar])
-      main <- paste0(main, "\n", ifelse(istvar, "level-1", "level-2"))
       if (!istvar)
         x <- data[match(unique(data[, idvar]), data[, idvar]), i]
       else x <- data[, i]
     } else {
       x <- data[, i]
     }
+
+    pNA <- round(mean(is.na(x))*100, 1)
+
+    main <- if (any(is.na(data[, i])) | allNA) {
+      paste0(names(data)[i], " (", pNA, "% NA)")
+    } else {
+      names(data)[i]
+    }
+
+    if (use_level)
+      main <- paste0(main, "\n", ifelse(istvar, "level-1", "level-2"))
+
 
     if (is.factor(x)) {
       if (any(is.na(x))) {
@@ -348,8 +338,8 @@ plot_all <- function(data, nrow = NULL, ncol = NULL, fill = grDevices::grey(0.8)
       }
     } else if (is.character(x)) {
       plot(0, type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "",
-           main = main)
-      text(1, 0, paste0(names(data)[i], " \nis coded as character\nand cannot be plotted."))
+           main = main, bty = 'n')
+      text(1, 0, paste0(names(data)[i], " \nis coded as character\nand cannot be plotted."), xpd = TRUE)
     } else {
       if (is.null(args_hist)) {
         hist(x, ylab = ylab, main = main,

@@ -1,6 +1,6 @@
 #' List imputation models
 #'
-#' Print information on all imputation models used in a JointAI object,
+#' Print information on all models for incomplete covariates used in a JointAI object,
 #' including the model type, names of the parameters used and hyperparameters.
 #'
 #' @inheritParams sharedParams
@@ -9,6 +9,34 @@
 #' @param otherpars logical; should information on other parameters be printed?
 #' @param priors logical; should information on the priors be printed?
 #' @param refcat logical; should information on the reference category be printed?
+#'
+#' @section Note:
+#' The models listed by this function are not the actual imputation models,
+#' but the conditional models that are part of the specification of the joint
+#' distribution of the data.
+#' Briefly, the joint distribution is specified as a sequence of conditional
+#' models
+#' \deqn{p(y | x_1, x_2, x_3, ..., \theta) p(x_1|x_2, x_3, ..., \theta) p(x_2|x_3, ..., \theta) ...}
+#' The actual imputation models are the full conditional distributions derived
+#' from this joint distribution \eqn{p(x_1 | \cdot)}.
+#' Even though the conditional distributions do not contain the outcome and all
+#' other covariates in their linear predictor, since imputations are sampled
+#' from the full conditional distributions, outcome and other covariates are
+#' taken into account implicitly. For more details, see Erler et al. (2016).
+#'
+#' The function \code{list_impmodels} prints information on the conditional
+#' distributions of the incomplete covariates (since they are what is specified;
+#' the full-conditionals are automatically derived within JAGS). The outcome
+#' is, thus, not part of the printed linear predictor, but is still included
+#' during imputation.
+#'
+#'
+#'
+#' @references Erler, N. S., Rizopoulos, D., Rosmalen, J. V., Jaddoe,
+#' V. W., Franco, O. H., & Lesaffre, E. M. (2016).
+#' Dealing with missing covariates in epidemiologic studies: A comparison
+#' between multiple imputation and a full Bayesian approach.
+#' \emph{Statistics in Medicine}, 35(17), 2955-2974.
 #'
 #' @examples
 #' # (set n.adapt = 0 and n.iter = 0 to prevent MCMC sampling to save computational time)
@@ -24,7 +52,14 @@ list_impmodels <- function(object, predvars = TRUE, regcoef = TRUE,
   if (!inherits(object, "JointAI"))
     stop("Use only with 'JointAI' objects.\n")
 
+
   for (i in seq_along(object$meth)) {
+    pv <- if (predvars)
+      paste0("* Predictor variables: \n",
+             tab(), add_breaks(paste(colnames(object$data_list$Xc)[
+               object$imp_par_list[[names(object$meth[i])]]$Xc_cols],
+               collapse = ", ")), "\n")
+
     if (i > 1) cat("\n")
     if (object$meth[i] %in% c("norm", "lognorm")) {
       type <- switch(object$meth[i],
@@ -33,10 +68,11 @@ list_impmodels <- function(object, predvars = TRUE, regcoef = TRUE,
 
       cat(paste0(type$name, " imputation model for '", names(object$meth)[i], "'\n"))
       if (predvars)
-        cat(paste0("* Predictor variables: \n",
-                   tab(), paste(colnames(object$data_list$Xc)[
-                     object$imp_par_list[[names(object$meth[i])]]$Xc_cols],
-                     collapse = ", "), "\n"))
+        cat(pv)
+        # cat(paste0("* Predictor variables: \n",
+        #            tab(), paste(colnames(object$data_list$Xc)[
+        #              object$imp_par_list[[names(object$meth[i])]]$Xc_cols],
+        #              collapse = ", "), "\n"))
       if (regcoef)
         cat(paste0("* Regression coefficients: \n",
                    tab(), "alpha[",
@@ -68,10 +104,11 @@ list_impmodels <- function(object, predvars = TRUE, regcoef = TRUE,
                  tab(), "- rate: rate_", names(object$meth)[i],
                  " = mu_", names(object$meth)[i], " * tau_", names(object$meth)[i], "\n"))
       if (predvars)
-        cat(paste0("* Predictor variables: \n",
-                 tab(), paste(colnames(object$data_list$Xc)[
-                   object$imp_par_list[[names(object$meth[i])]]$Xc_cols],
-                   collapse = ", "), "\n"))
+        cat(pv)
+        # cat(paste0("* Predictor variables: \n",
+        #          tab(), paste(colnames(object$data_list$Xc)[
+        #            object$imp_par_list[[names(object$meth[i])]]$Xc_cols],
+        #            collapse = ", "), "\n"))
       if (regcoef)
         cat(paste0("* Regression coefficients: \n",
                    tab(), "alpha[",
@@ -101,10 +138,11 @@ list_impmodels <- function(object, predvars = TRUE, regcoef = TRUE,
                  tab(), "- shape 2: shape2_", names(object$meth)[i],
                  " = (1 - mu_", names(object$meth)[i], ") * tau_", names(object$meth)[i], "\n"))
       if (predvars)
-        cat(paste0("* Predictor variables: \n",
-                 tab(), paste(colnames(object$data_list$Xc)[
-                   object$imp_par_list[[names(object$meth[i])]]$Xc_cols],
-                   collapse = ", "), "\n"))
+        cat(pv)
+        # cat(paste0("* Predictor variables: \n",
+        #          tab(), paste(colnames(object$data_list$Xc)[
+        #            object$imp_par_list[[names(object$meth[i])]]$Xc_cols],
+        #            collapse = ", "), "\n"))
       if (regcoef)
         cat(paste0("* Regression coefficients: \n",
                    tab(), "alpha[",
@@ -129,10 +167,11 @@ list_impmodels <- function(object, predvars = TRUE, regcoef = TRUE,
       if (refcat)
         cat(paste0("* Reference category: '", object$Mlist$refs[[names(object$meth)[i]]], "'\n"))
       if (predvars)
-        cat(paste0("* Predictor variables: \n",
-                 tab(), paste(colnames(object$data_list$Xc)[
-                   object$imp_par_list[[names(object$meth[i])]]$Xc_cols],
-                   collapse = ", "), "\n"))
+        cat(pv)
+        # cat(paste0("* Predictor variables: \n",
+        #          tab(), add_breaks(paste(colnames(object$data_list$Xc)[
+        #            object$imp_par_list[[names(object$meth[i])]]$Xc_cols],
+        #            collapse = ", ")), "\n"))
       if (regcoef)
         cat(paste0("* Regression coefficients: \n",
                    tab(), "alpha[",
@@ -149,10 +188,11 @@ list_impmodels <- function(object, predvars = TRUE, regcoef = TRUE,
       if (refcat)
         cat(paste0("* Reference category: '", object$Mlist$refs[[names(object$meth)[i]]], "'\n"))
       if (predvars)
-        cat(paste0("* Predictor variables: \n",
-                 tab(), paste(colnames(object$data_list$Xc)[
-                   object$imp_par_list[[names(object$meth[i])]]$Xc_cols],
-                   collapse = ", "), "\n"))
+        cat(pv)
+        # cat(paste0("* Predictor variables: \n",
+        #            tab(), paste(colnames(object$data_list$Xc)[
+        #              object$imp_par_list[[names(object$meth[i])]]$Xc_cols],
+        #              collapse = ", "), "\n"))
       if (regcoef) {
         cat(paste0("* Regression coefficients: \n"))
         for (j in seq_along(attr(object$Mlist$refs[[names(object$meth)[i]]], "dummies"))) {
@@ -176,10 +216,11 @@ list_impmodels <- function(object, predvars = TRUE, regcoef = TRUE,
       if (refcat)
         cat(paste0("* Reference category: '", object$Mlist$refs[[names(object$meth)[i]]], "'\n"))
       if (predvars)
-        cat(paste0("* Predictor variables: \n",
-                   tab(), paste(colnames(object$data_list$Xc)[
-                     object$imp_par_list[[names(object$meth[i])]]$Xc_cols],
-                     collapse = ", "), "\n"))
+        cat(pv)
+        # cat(paste0("* Predictor variables: \n",
+        #            tab(), add_breaks(paste(colnames(object$data_list$Xc)[
+        #              object$imp_par_list[[names(object$meth[i])]]$Xc_cols],
+        #              collapse = ", ")), "\n"))
       if (regcoef)
         cat(paste0("* Regression coefficients (with",
                    if (!object$imp_par_list[[names(object$meth[i])]]$intercept) "out",
@@ -225,6 +266,12 @@ print_seq <- function(min, max) {
     max
   else
     paste0(min, ":", max)
+}
+
+add_breaks <- function(string) {
+  m <- gregexpr(", ", string)[[1]]
+  br <- ifelse(c(0, diff(as.numeric(m) %/% getOption('width'))) > 0, "\n", "")
+  gsub("\n, ", ",\n  ", paste0(strsplit(string, ", ")[[1]], br, collapse = ", "))
 }
 
 

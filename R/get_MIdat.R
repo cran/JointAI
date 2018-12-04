@@ -8,6 +8,7 @@
 #' @inheritParams sharedParams
 #' @param m number of imputed datasets
 #' @param include should the original, incomplete data be included?
+#' @param minspace minimum number of iterations between iterations chosen as imputed values.
 #' @param seed optional seed
 #' @param export_to_SPSS logical; should the completed data be exported to SPSS?
 #' @param resdir optional directory for results (if unspecified and
@@ -37,7 +38,7 @@
 #' @export
 #'
 get_MIdat <- function(object, m = 10, include = TRUE,
-                      start = NULL, seed = NULL,
+                      start = NULL, minspace = 50, seed = NULL,
                       export_to_SPSS = FALSE,
                       resdir = NULL, filename = NULL){
 
@@ -51,7 +52,7 @@ get_MIdat <- function(object, m = 10, include = TRUE,
     set.seed(seed)
 
   DF <- object$data
-  if (object$analysis_type == "lme") {
+  if (object$analysis_type %in% c("lme", "glme")) {
     DFlong <- DF
 
     id <- extract_id(object$random)
@@ -80,10 +81,16 @@ get_MIdat <- function(object, m = 10, include = TRUE,
 
 
   # randomly draw which iterations should be used as imputation
-  imp.iters <- sort(sample.int(nrow(MCMC), size = m))
+  if (nrow(MCMC)/minspace < m)
+    stop(gettextf('The total number of iterations (%s) is too small to select %s iterations with spacing of >= %s.',
+                  nrow(MCMC), m, minspace))
+
+  cand_iters <- seq(from = sample.int(minspace, size = 1), to = nrow(MCMC), by = minspace)
+  imp_iters <- sort(sample(cand_iters, size = m))
+
 
   # reduce MCMC to relevant rows
-  MCMC <- MCMC[imp.iters, , drop = FALSE]
+  MCMC <- MCMC[imp_iters, , drop = FALSE]
 
   DF_list <- list()
   for (i in 1:(m + 1)) {
@@ -173,7 +180,7 @@ get_MIdat <- function(object, m = 10, include = TRUE,
     DF_list <- DF_list[-1]
 
 # build dataset --------------------------------------------------------------------------
-  if (object$analysis_type == "lme") {
+  if (object$analysis_type %in% c("lme", "glme")) {
     DF_list_long <- lapply(DF_list, function(x) {
       DFlong[, colnames(x)] <- x[groups, ]
       DFlong

@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="author" content="Nicole Erler" />
+
+<meta name="date" content="2018-12-04" />
+
+<title>MCMC Settings</title>
+
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+a.sourceLine { display: inline-block; line-height: 1.25; }
+a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
+a.sourceLine:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode { white-space: pre; position: relative; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+code.sourceCode { white-space: pre-wrap; }
+a.sourceLine { text-indent: -1em; padding-left: 1em; }
+}
+pre.numberSource a.sourceLine
+  { position: relative; left: -4em; }
+pre.numberSource a.sourceLine::before
+  { content: attr(data-line-number);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; pointer-events: all; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {  }
+@media screen {
+a.sourceLine::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#header {
+text-align: center;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">MCMC Settings</h1>
+<h4 class="author"><em>Nicole Erler</em></h4>
+<h4 class="date"><em>2018-12-04</em></h4>
+
+
+<div id="TOC">
+<ul>
+<li><a href="#mcmc-related-parameters-in-jointai">MCMC related parameters in <strong>JointAI</strong></a></li>
+<li><a href="#chains-and-iterations">Chains and Iterations</a><ul>
+<li><a href="#number-of-chains">Number of chains</a></li>
+<li><a href="#adaptive-phase">Adaptive phase</a></li>
+<li><a href="#sampling-iterations">Sampling iterations</a><ul>
+<li><a href="#side-note-how-to-evaluate-convergence">Side note: How to evaluate convergence?</a></li>
+<li><a href="#side-note-how-to-check-precision">Side note: How to check precision?</a></li>
+</ul></li>
+<li><a href="#thinning">Thinning</a></li>
+<li><a href="#examples">Examples</a><ul>
+<li><a href="#default-settings">Default settings</a></li>
+<li><a href="#insufficient-adaptation-phase">Insufficient adaptation phase</a></li>
+<li><a href="#thinning-1">Thinning</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#parameters-to-follow">Parameters to follow</a><ul>
+<li><a href="#what-are-nodes">What are nodes?</a></li>
+<li><a href="#specifying-which-nodes-should-be-monitored">Specifying which nodes should be monitored</a></li>
+</ul></li>
+<li><a href="#initial-values">Initial values</a><ul>
+<li><a href="#user-specified-initial-values">User specified initial values</a><ul>
+<li><a href="#initial-values-in-a-list-of-lists">Initial values in a list of lists</a></li>
+<li><a href="#initial-values-as-a-function">Initial values as a function</a></li>
+</ul></li>
+<li><a href="#for-which-nodes-can-initial-values-be-specified">For which nodes can initial values be specified?</a><ul>
+<li><a href="#example">Example:</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#other-arguments">Other arguments</a></li>
+</ul>
+</div>
+
+<p>In <strong>JointAI</strong>, models are estimated in the Bayesian framework, using MCMC (<a href="https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo">Markov Chain Monte Carlo</a>) sampling. The sampling is done by the software <a href="http://mcmc-jags.sourceforge.net/">JAGS</a> (“Just Another Gibbs Sampler”), which performs <a href="https://en.wikipedia.org/wiki/Gibbs_sampling">Gibbs</a> sampling. <strong>JointAI</strong> pre-processes the data to get it into a form that can be passed to JAGS and writes the JAGS model. The R package <a href="https://CRAN.R-project.org/package=rjags"><strong>rjags</strong></a> is used as interface to JAGS.</p>
+<p>Here, we describe how to specify the arguments in the main functions that control MCMC related settings. To learn more about how to specify the other arguments in <strong>JointAI</strong> models, check out the vignette on <a href="https://nerler.github.io/JointAI/articles/ModelSpecification.html"><em>Model Specification</em></a>.</p>
+<p>In this vignette we use the <a href="https://nerler.github.io/JointAI/reference/NHANES.html">NHANES</a> data for examples in cross-sectional data and the dataset <a href="https://nerler.github.io/JointAI/reference/simLong.html">simLong</a> for examples in longitudinal data. For more info on these datasets, check out the vignette <a href="https://nerler.github.io/JointAI/articles/VisualizingIncompleteData.html"><em>Visualizing Incomplete Data</em></a>, in which the distributions of variables and missing values in both sets is explored.</p>
+<p><strong>Note:</strong><br> In many of the examples we use <code>progress.bar = 'none'</code> which prevents printing of the progress of the MCMC sampling, since this would result in lengthy output in the vignette.</p>
+<div id="mcmc-related-parameters-in-jointai" class="section level2">
+<h2>MCMC related parameters in <strong>JointAI</strong></h2>
+<p>The main functions <a href="https://nerler.github.io/JointAI/reference/model_imp.html"><code>*_imp()</code></a> have a number of arguments that specify settings for the MCMC sampling:</p>
+<ul>
+<li><code>n.chains</code>: number of MCMC chains</li>
+<li><code>n.adapt</code>: number of iterations in the adaptive phase</li>
+<li><code>n.iter</code>: number of iterations in the sampling phase</li>
+<li><code>thin</code>: thinning degree</li>
+<li><code>monitor_params</code>: parameters/nodes to be monitored</li>
+<li><code>inits</code>: initial values</li>
+</ul>
+<p>And some other parameters passed to functions from <strong>rjags</strong>:</p>
+<ul>
+<li><code>quiet</code>: should printing of information be suppressed?</li>
+<li><code>progress.bar</code>: type of progress bar</li>
+</ul>
+</div>
+<div id="chains-and-iterations" class="section level2">
+<h2>Chains and Iterations</h2>
+<p>In MCMC sampling, values are drawn from a probability distribution. The distribution the current value is drawn from depends on the previously drawn value (but not on values before that). Values, thus, form a chain. Once the chain has converged, its elements can be seen as a sample from the target posterior distribution.</p>
+<div id="number-of-chains" class="section level3">
+<h3>Number of chains</h3>
+<p>To evaluate convergence of MCMC chains it is helpful to create multiple chains, that have different starting values. The argument <code>n.chains</code> selects the number of chains (by default, <code>n.chains = 3</code>).</p>
+<p>For calculating the model summary, multiple chains are merged.</p>
+</div>
+<div id="adaptive-phase" class="section level3">
+<h3>Adaptive phase</h3>
+<p>JAGS has an adaptive mode, in which samplers are optimized (for example the step size is adjusted). Samples obtained during the adaptive mode do not form a Markov chain and are discarded. The argument <code>n.adapt</code> controls the length of this adaptive phase.</p>
+<p>The default value for <code>n.adapt</code> is 100, which works well in many of the examples considered here. Complex models may require longer adaptive phases. If the adaptive phase is not sufficient for JAGS to optimize the samplers, a warning message will be printed (see example below).</p>
+</div>
+<div id="sampling-iterations" class="section level3">
+<h3>Sampling iterations</h3>
+<p><code>n.iter</code> specifies the number of iterations in the sampling phase, i.e., the length of the MCMC chain. How many samples are required to reach convergence and to have sufficient precision depends on the complexity of data and model, and may range from as few as 100 to several million.</p>
+<div id="side-note-how-to-evaluate-convergence" class="section level4">
+<h4>Side note: How to evaluate convergence?</h4>
+<p>Convergence can for instance be evaluated visually using a <a href="https://nerler.github.io/JointAI/reference/traceplot.html"><code>traceplot()</code></a> or using the Gelman-Rubin diagnostic criterion<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> (implemented in <a href="https://nerler.github.io/JointAI/reference/GR_crit.html"><code>GR_crit()</code></a>). The latter compares within and between chain variability and requires the JointAI object to have at least two chains.</p>
+</div>
+<div id="side-note-how-to-check-precision" class="section level4">
+<h4>Side note: How to check precision?</h4>
+<p>Precision of the MCMC sample can be checked with the function <a href="https://nerler.github.io/JointAI/reference/MC_error.html"><code>MC_error()</code></a>. It calculates the Monte Carlo error (the error that is made since the sample is finite) and compares is to the standard deviation of the posterior sample. A rule of thumb is that the Monte Carlo error should not be more than 5% of the standard deviation.<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a></p>
+</div>
+</div>
+<div id="thinning" class="section level3">
+<h3>Thinning</h3>
+<p>In settings with high autocorrelation i.e., there are no large jumps in the chain but sampled values are always close to the previous value, it may take many iterations before a sample is created that sufficiently represents the whole range of the posterior distribution.</p>
+<p>Processing of such long chains can be slow and take a lot of memory. The parameter <code>thin</code> allows to specify if and how much the MCMC chains should be thinned out before storing them. By default <code>thin = 1</code> is used, which corresponds to keeping all values. A value <code>thin = 10</code> would result in keeping every 10th value and discarding all other values.</p>
+</div>
+<div id="examples" class="section level3">
+<h3>Examples</h3>
+<div id="default-settings" class="section level4">
+<h4>Default settings</h4>
+<p><code>n.adapt = 100</code> and <code>thin = 1</code> with 100 sampling iterations</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1">mod1 &lt;-<span class="st"> </span><span class="kw">lm_imp</span>(SBP <span class="op">~</span><span class="st"> </span>alc, <span class="dt">data =</span> NHANES, <span class="dt">n.iter =</span> <span class="dv">100</span>, <span class="dt">progress.bar =</span> <span class="st">'none'</span>)</a></code></pre></div>
+<p>The relevant part of the model summary (obtained with <a href="https://nerler.github.io/JointAI/reference/summary.JointAI.html"><code>summary()</code></a>) shows that the first 100 iterations (adaptive phase) were discarded, and the 100 iterations that follow form the posterior sample. Thinning was set to 1 and there are 3 chains.</p>
+<pre><code>#&gt; [...]
+#&gt; MCMC settings:
+#&gt; Iterations = 101:200
+#&gt; Sample size per chain = 100 
+#&gt; Thinning interval = 1 
+#&gt; Number of chains = 3</code></pre>
+</div>
+<div id="insufficient-adaptation-phase" class="section level4">
+<h4>Insufficient adaptation phase</h4>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" data-line-number="1">mod2 &lt;-<span class="st"> </span><span class="kw">lm_imp</span>(SBP <span class="op">~</span><span class="st"> </span>alc, <span class="dt">data =</span> NHANES, <span class="dt">n.adapt =</span> <span class="dv">10</span>, <span class="dt">n.iter =</span> <span class="dv">100</span>, <span class="dt">progress.bar =</span> <span class="st">'none'</span>)</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2"><span class="co">#&gt; Warning in rjags::jags.model(file = modelfile, data = data_list, inits = inits, : Adaptation</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3"><span class="co">#&gt; incomplete</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4"><span class="co">#&gt; </span><span class="al">NOTE</span><span class="co">: Stopping adaptation</span></a></code></pre></div>
+<p>Specifying <code>n.adapt = 10</code> results in a warning message. The relevant part of the model summary from the resulting model is:</p>
+<pre><code>#&gt; [...]
+#&gt; MCMC settings:
+#&gt; Iterations = 11:110
+#&gt; Sample size per chain = 100 
+#&gt; Thinning interval = 1 
+#&gt; Number of chains = 3</code></pre>
+</div>
+<div id="thinning-1" class="section level4">
+<h4>Thinning</h4>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" data-line-number="1">mod3 &lt;-<span class="st"> </span><span class="kw">lm_imp</span>(SBP <span class="op">~</span><span class="st"> </span>alc, <span class="dt">data =</span> NHANES, <span class="dt">n.iter =</span> <span class="dv">500</span>, <span class="dt">thin =</span> <span class="dv">10</span>, <span class="dt">progress.bar =</span> <span class="st">'none'</span>)</a></code></pre></div>
+<p>Here, iterations 110 until 600 are used in the output, but due to thinning interval of ten, the resulting MCMC chains contain only 50 samples instead of 500, that is, the samples from iteration 110, 120, 130, …</p>
+<pre><code>#&gt; [...]
+#&gt; MCMC settings:
+#&gt; Iterations = 110:600
+#&gt; Sample size per chain = 50 
+#&gt; Thinning interval = 10 
+#&gt; Number of chains = 3</code></pre>
+</div>
+</div>
+</div>
+<div id="parameters-to-follow" class="section level2">
+<h2>Parameters to follow</h2>
+<p>JAGS only saves the values of MCMC chains for those nodes for which the user has specified that they should be monitored. This is also the case in <strong>JointAI</strong>.</p>
+<div id="what-are-nodes" class="section level3">
+<h3>What are nodes?</h3>
+<p>Nodes are variables in the Bayesian framework, i.e., everything that is observed or unobserved. This includes the data and parameters that are estimated, but also missing values in the data or parts of the data that are generally unobserved, such as random effects or latent class indicators.</p>
+</div>
+<div id="specifying-which-nodes-should-be-monitored" class="section level3">
+<h3>Specifying which nodes should be monitored</h3>
+<p>For this purpose, <a href="https://nerler.github.io/JointAI/reference/model_imp.html"><code>lm_imp()</code></a>, <a href="https://nerler.github.io/JointAI/reference/model_imp.html"><code>glm_imp()</code></a> and <a href="https://nerler.github.io/JointAI/reference/model_imp.html"><code>lme_imp()</code></a> have an argument <code>monitor_params</code>.</p>
+<p>For details, explanation and examples see the vignette <a href="https://nerler.github.io/JointAI/articles/SelectingParameters.html"><em>Parameter Selection</em></a>.</p>
+</div>
+</div>
+<div id="initial-values" class="section level2">
+<h2>Initial values</h2>
+<p>Initial values are the starting point for the MCMC sampler. Setting good initial values, i.e., initial values that are likely under the posterior distribution, can speed up convergence. By default, the argument <code>inits = TRUE</code>, which means that initial values are generated automatically by <strong>JointAI</strong>. When <code>inits = FALSE</code>, initial values are generated by JAGS.</p>
+<div id="user-specified-initial-values" class="section level3">
+<h3>User specified initial values</h3>
+<p>It is also possible to supply initial values directly as</p>
+<ul>
+<li>a list or</li>
+<li>a function.</li>
+</ul>
+<p>Initial values can be specified for every unobserved node, that is, parameters and missing values, but it is possible to only specify initial values for a subset of nodes.</p>
+<div id="initial-values-in-a-list-of-lists" class="section level4">
+<h4>Initial values in a list of lists</h4>
+<p>A list containing initial values should have the same length as the number of chains, where each element is a named list of initial values. Initial values should differ between the chains.</p>
+<p>For example, to create initial values for the parameter vector <code>beta</code> and the precision parameter <code>tau_SBP</code> for three chains:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" data-line-number="1">init_list &lt;-<span class="st"> </span><span class="kw">lapply</span>(<span class="dv">1</span><span class="op">:</span><span class="dv">3</span>, <span class="cf">function</span>(i) {</a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="kw">list</span>(<span class="dt">beta =</span> <span class="kw">rnorm</span>(<span class="dv">4</span>), </a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">       <span class="dt">tau_SBP =</span> <span class="kw">rgamma</span>(<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>))</a>
+<a class="sourceLine" id="cb7-4" data-line-number="4">})</a>
+<a class="sourceLine" id="cb7-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb7-6" data-line-number="6">init_list</a>
+<a class="sourceLine" id="cb7-7" data-line-number="7"><span class="co">#&gt; [[1]]</span></a>
+<a class="sourceLine" id="cb7-8" data-line-number="8"><span class="co">#&gt; [[1]]$beta</span></a>
+<a class="sourceLine" id="cb7-9" data-line-number="9"><span class="co">#&gt; [1] -1.2995363 -0.8698701  1.0543623 -0.1486396</span></a>
+<a class="sourceLine" id="cb7-10" data-line-number="10"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb7-11" data-line-number="11"><span class="co">#&gt; [[1]]$tau_SBP</span></a>
+<a class="sourceLine" id="cb7-12" data-line-number="12"><span class="co">#&gt; [1] 1.479009</span></a>
+<a class="sourceLine" id="cb7-13" data-line-number="13"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb7-14" data-line-number="14"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb7-15" data-line-number="15"><span class="co">#&gt; [[2]]</span></a>
+<a class="sourceLine" id="cb7-16" data-line-number="16"><span class="co">#&gt; [[2]]$beta</span></a>
+<a class="sourceLine" id="cb7-17" data-line-number="17"><span class="co">#&gt; [1] -0.7215865 -0.7787781 -0.6181664  1.6052045</span></a>
+<a class="sourceLine" id="cb7-18" data-line-number="18"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb7-19" data-line-number="19"><span class="co">#&gt; [[2]]$tau_SBP</span></a>
+<a class="sourceLine" id="cb7-20" data-line-number="20"><span class="co">#&gt; [1] 0.1708875</span></a>
+<a class="sourceLine" id="cb7-21" data-line-number="21"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb7-22" data-line-number="22"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb7-23" data-line-number="23"><span class="co">#&gt; [[3]]</span></a>
+<a class="sourceLine" id="cb7-24" data-line-number="24"><span class="co">#&gt; [[3]]$beta</span></a>
+<a class="sourceLine" id="cb7-25" data-line-number="25"><span class="co">#&gt; [1] -0.2227807 -0.4625003 -0.7372436  0.2611442</span></a>
+<a class="sourceLine" id="cb7-26" data-line-number="26"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb7-27" data-line-number="27"><span class="co">#&gt; [[3]]$tau_SBP</span></a>
+<a class="sourceLine" id="cb7-28" data-line-number="28"><span class="co">#&gt; [1] 1.499624</span></a></code></pre></div>
+<p>The list is then passed to the argument <code>inits</code>. User provided lists of initial values are stored in the JointAI object:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" data-line-number="1">mod4a &lt;-<span class="st"> </span><span class="kw">lm_imp</span>(SBP <span class="op">~</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>WC, <span class="dt">data =</span> NHANES, <span class="dt">progress.bar =</span> <span class="st">'none'</span>,</a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">                <span class="dt">inits =</span> init_list)</a>
+<a class="sourceLine" id="cb8-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb8-4" data-line-number="4">mod4a<span class="op">$</span>mcmc_settings<span class="op">$</span>inits</a>
+<a class="sourceLine" id="cb8-5" data-line-number="5"><span class="co">#&gt; [[1]]</span></a>
+<a class="sourceLine" id="cb8-6" data-line-number="6"><span class="co">#&gt; [[1]]$beta</span></a>
+<a class="sourceLine" id="cb8-7" data-line-number="7"><span class="co">#&gt; [1] -1.2995363 -0.8698701  1.0543623 -0.1486396</span></a>
+<a class="sourceLine" id="cb8-8" data-line-number="8"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb8-9" data-line-number="9"><span class="co">#&gt; [[1]]$tau_SBP</span></a>
+<a class="sourceLine" id="cb8-10" data-line-number="10"><span class="co">#&gt; [1] 1.479009</span></a>
+<a class="sourceLine" id="cb8-11" data-line-number="11"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb8-12" data-line-number="12"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb8-13" data-line-number="13"><span class="co">#&gt; [[2]]</span></a>
+<a class="sourceLine" id="cb8-14" data-line-number="14"><span class="co">#&gt; [[2]]$beta</span></a>
+<a class="sourceLine" id="cb8-15" data-line-number="15"><span class="co">#&gt; [1] -0.7215865 -0.7787781 -0.6181664  1.6052045</span></a>
+<a class="sourceLine" id="cb8-16" data-line-number="16"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb8-17" data-line-number="17"><span class="co">#&gt; [[2]]$tau_SBP</span></a>
+<a class="sourceLine" id="cb8-18" data-line-number="18"><span class="co">#&gt; [1] 0.1708875</span></a>
+<a class="sourceLine" id="cb8-19" data-line-number="19"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb8-20" data-line-number="20"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb8-21" data-line-number="21"><span class="co">#&gt; [[3]]</span></a>
+<a class="sourceLine" id="cb8-22" data-line-number="22"><span class="co">#&gt; [[3]]$beta</span></a>
+<a class="sourceLine" id="cb8-23" data-line-number="23"><span class="co">#&gt; [1] -0.2227807 -0.4625003 -0.7372436  0.2611442</span></a>
+<a class="sourceLine" id="cb8-24" data-line-number="24"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb8-25" data-line-number="25"><span class="co">#&gt; [[3]]$tau_SBP</span></a>
+<a class="sourceLine" id="cb8-26" data-line-number="26"><span class="co">#&gt; [1] 1.499624</span></a></code></pre></div>
+</div>
+<div id="initial-values-as-a-function" class="section level4">
+<h4>Initial values as a function</h4>
+<p>Initial values can be specified by a function. The function should either take no arguments or a single argument called <code>chain</code>, and return a named list that supplies values for one chain.</p>
+<p>For example, to create inital values for the parameter vectors <code>beta</code> and <code>alpha</code>:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" data-line-number="1">inits_fun &lt;-<span class="st"> </span><span class="cf">function</span>() {</a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">  <span class="kw">list</span>(<span class="dt">beta =</span> <span class="kw">rnorm</span>(<span class="dv">4</span>),</a>
+<a class="sourceLine" id="cb9-3" data-line-number="3">       <span class="dt">alpha =</span> <span class="kw">rnorm</span>(<span class="dv">3</span>))</a>
+<a class="sourceLine" id="cb9-4" data-line-number="4">}</a>
+<a class="sourceLine" id="cb9-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb9-6" data-line-number="6"><span class="kw">inits_fun</span>()</a>
+<a class="sourceLine" id="cb9-7" data-line-number="7"><span class="co">#&gt; $beta</span></a>
+<a class="sourceLine" id="cb9-8" data-line-number="8"><span class="co">#&gt; [1] -0.2727562 -0.2795425 -0.1957527  0.3865116</span></a>
+<a class="sourceLine" id="cb9-9" data-line-number="9"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb9-10" data-line-number="10"><span class="co">#&gt; $alpha</span></a>
+<a class="sourceLine" id="cb9-11" data-line-number="11"><span class="co">#&gt; [1] 0.6313753 0.9355431 0.7734924</span></a>
+<a class="sourceLine" id="cb9-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb9-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb9-14" data-line-number="14">mod4b &lt;-<span class="st"> </span><span class="kw">lm_imp</span>(SBP <span class="op">~</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>WC, <span class="dt">data =</span> NHANES, <span class="dt">progress.bar =</span> <span class="st">'none'</span>,</a>
+<a class="sourceLine" id="cb9-15" data-line-number="15">                <span class="dt">inits =</span> inits_fun)</a>
+<a class="sourceLine" id="cb9-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb9-17" data-line-number="17">mod4b<span class="op">$</span>mcmc_settings<span class="op">$</span>inits</a>
+<a class="sourceLine" id="cb9-18" data-line-number="18"><span class="co">#&gt; function() {</span></a>
+<a class="sourceLine" id="cb9-19" data-line-number="19"><span class="co">#&gt;   list(beta = rnorm(4),</span></a>
+<a class="sourceLine" id="cb9-20" data-line-number="20"><span class="co">#&gt;        alpha = rnorm(3))</span></a>
+<a class="sourceLine" id="cb9-21" data-line-number="21"><span class="co">#&gt; }</span></a>
+<a class="sourceLine" id="cb9-22" data-line-number="22"><span class="co">#&gt; &lt;bytecode: 0x000000001386ba70&gt;</span></a></code></pre></div>
+<p>When a function is supplied, the function, but not the actual values is stored in the JointAI object.</p>
+</div>
+</div>
+<div id="for-which-nodes-can-initial-values-be-specified" class="section level3">
+<h3>For which nodes can initial values be specified?</h3>
+<p>Initial values can be specified for all unobserved stochastic nodes, i.e., parameters or unobserved data for which a distribution is specified in the JAGS model.</p>
+<p>Inital values have to be supplied in the format the parameter or unobserved value is used in the JAGS model.</p>
+<p>To find out which nodes there are in a model, the function <code>coef()</code> from package <strong>rjags</strong> can be used. It returns a list with the current values of the MCMC chains, by default the first chain. Elements of the inital values should have the same structure as the elements in this list.</p>
+<div id="example" class="section level4">
+<h4>Example:</h4>
+<p>We are using a longitudinal model and the <code>simLong</code> data in this example. The output is abbreviated to show the relevant characteristics.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" data-line-number="1">mod4c &lt;-<span class="st"> </span><span class="kw">lme_imp</span>(bmi <span class="op">~</span><span class="st"> </span>time <span class="op">+</span><span class="st"> </span>HEIGHT_M <span class="op">+</span><span class="st"> </span>hc <span class="op">+</span><span class="st"> </span>SMOKE, <span class="dt">random =</span> <span class="op">~</span><span class="st"> </span>time <span class="op">|</span><span class="st"> </span>ID,</a>
+<a class="sourceLine" id="cb10-2" data-line-number="2">                 <span class="dt">data =</span> simLong, <span class="dt">progress.bar =</span> <span class="st">'none'</span>)</a>
+<a class="sourceLine" id="cb10-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb10-4" data-line-number="4"><span class="kw">coef</span>(mod4c<span class="op">$</span>model)</a></code></pre></div>
+<pre><code>#&gt; $RinvD
+#&gt;          [,1]      [,2]
+#&gt; [1,] 1.028083        NA
+#&gt; [2,]       NA 0.2349163
+#&gt; 
+#&gt; $Xc
+#&gt;        [,1]       [,2] [,3] [,4]
+#&gt;   [1,]   NA         NA   NA   NA
+#&gt;   [2,]   NA         NA   NA   NA
+#&gt;   [3,]   NA         NA   NA   NA
+#&gt; 
+#&gt; [...]
+#&gt; 
+#&gt;   [9,]   NA         NA   NA   NA
+#&gt;  [10,]   NA         NA   NA   NA
+#&gt;  [11,]   NA -1.5208035   NA   NA
+#&gt;  [12,]   NA         NA   NA   NA
+#&gt; 
+#&gt; [...]
+#&gt; 
+#&gt; [498,]   NA         NA   NA   NA
+#&gt; [499,]   NA         NA   NA   NA
+#&gt; 
+#&gt; $Xcat
+#&gt;        [,1]
+#&gt;   [1,]   NA
+#&gt;   [2,]   NA
+#&gt;   [3,]   NA
+#&gt; 
+#&gt; [...]
+#&gt; 
+#&gt;  [35,]   NA
+#&gt;  [36,]   NA
+#&gt;  [37,]    1
+#&gt;  [38,]   NA
+#&gt;  [39,]    1
+#&gt;  [40,]   NA
+#&gt;  [41,]   NA
+#&gt; 
+#&gt; [...]
+#&gt; 
+#&gt; [498,]   NA
+#&gt; [499,]   NA
+#&gt; 
+#&gt; $alpha
+#&gt; [1] -0.007947985 -0.002403037
+#&gt; 
+#&gt; $b
+#&gt;            [,1]        [,2]
+#&gt;   [1,] 16.35337 -1.91232469
+#&gt;   [2,] 18.92922 -1.32261424
+#&gt;   [3,] 15.73310 -0.88070042
+#&gt;   [4,] 18.13042 -0.76116505
+#&gt;   [5,] 14.45357 -0.41300231
+#&gt;   [6,] 17.55362 -0.96329273
+#&gt; 
+#&gt; [...]
+#&gt; 
+#&gt; [496,] 14.31769 -1.46642473
+#&gt; [497,] 15.93877 -0.79078109
+#&gt; [498,] 14.61694 -1.17746873
+#&gt; [499,] 14.58357 -0.58934464
+#&gt; 
+#&gt; $beta
+#&gt; [1] 16.48923658  0.04855539 -0.05471580  0.10887890 -1.17770728  1.19268157
+#&gt; 
+#&gt; $delta_SMOKE
+#&gt; [1] -0.8540864
+#&gt; 
+#&gt; $gamma_SMOKE
+#&gt; [1] 1.127806       NA
+#&gt; 
+#&gt; $invD
+#&gt;            [,1]       [,2]
+#&gt; [1,]  0.6847447 -0.1678952
+#&gt; [2,] -0.1678952  6.4420629
+#&gt; 
+#&gt; $mu_b
+#&gt;        [,1]      [,2]
+#&gt;   [1,]   NA -1.177707
+#&gt;   [2,]   NA -1.177707
+#&gt;   [3,]   NA -1.177707
+#&gt; 
+#&gt; [...]
+#&gt; 
+#&gt; [497,]   NA -1.177707
+#&gt; [498,]   NA -1.177707
+#&gt; [499,]   NA -1.177707
+#&gt; 
+#&gt; $tau_HEIGHT_M
+#&gt; [1] 1.039257
+#&gt; 
+#&gt; $tau_bmi
+#&gt; [1] 1.315459</code></pre>
+<p><code>RinvD</code> is the scale matrix in the Wishart prior for the inverse of the random effects design matrix <code>D</code>. In the data that is passed JAGS (which is stored in the element <code>data_list</code> in a JointAI object), this matrix is specified as diagonal matrix, with unknown diagonal elements:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" data-line-number="1">mod4c<span class="op">$</span>data_list[<span class="st">'RinvD'</span>]</a>
+<a class="sourceLine" id="cb12-2" data-line-number="2"><span class="co">#&gt; $RinvD</span></a>
+<a class="sourceLine" id="cb12-3" data-line-number="3"><span class="co">#&gt;      [,1] [,2]</span></a>
+<a class="sourceLine" id="cb12-4" data-line-number="4"><span class="co">#&gt; [1,]   NA    0</span></a>
+<a class="sourceLine" id="cb12-5" data-line-number="5"><span class="co">#&gt; [2,]    0   NA</span></a></code></pre></div>
+<p>These diagonal elements are estimated in the model and have a Gamma prior. The corresponding part of the JAGS model is:</p>
+<pre><code>#&gt; [...]
+#&gt;   # Priors for the covariance of the random effects
+#&gt;   for (k in 1:2){
+#&gt;     RinvD[k, k] ~ dgamma(a_diag_RinvD, b_diag_RinvD)
+#&gt;   }
+#&gt;   invD[1:2, 1:2] ~ dwish(RinvD[ , ], KinvD)
+#&gt;   D[1:2, 1:2] &lt;- inverse(invD[ , ])
+#&gt; [...]</code></pre>
+<p>The element <code>RinvD</code> in the initial values has to be a 2 <span class="math inline">\(\times\)</span> 2 matrix, with positive values on the diagonal and <code>NA</code> as off-diagonal elements, since these are fixed in the data.</p>
+<p>The following element in the output of <code>coef(mod4c$model)</code> is <code>Xc</code>, the fixed effects design matrix containing baseline covariates. The corresponding matrix in the data is</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="kw">head</span>(mod4c<span class="op">$</span>data_list<span class="op">$</span>Xc, <span class="dv">15</span>)</a>
+<a class="sourceLine" id="cb14-2" data-line-number="2"><span class="co">#&gt;        (Intercept)   HEIGHT_M SMOKEsmoked until pregnancy was known</span></a>
+<a class="sourceLine" id="cb14-3" data-line-number="3"><span class="co">#&gt; 1.1              1  1.4568523                                    NA</span></a>
+<a class="sourceLine" id="cb14-4" data-line-number="4"><span class="co">#&gt; 10.1             1 -1.2863098                                    NA</span></a>
+<a class="sourceLine" id="cb14-5" data-line-number="5"><span class="co">#&gt; 100.11           1 -1.1350146                                    NA</span></a>
+<a class="sourceLine" id="cb14-6" data-line-number="6"><span class="co">#&gt; 101.1            1  0.2962555                                    NA</span></a>
+<a class="sourceLine" id="cb14-7" data-line-number="7"><span class="co">#&gt; 102.4            1  0.7211347                                    NA</span></a>
+<a class="sourceLine" id="cb14-8" data-line-number="8"><span class="co">#&gt; 103.15           1 -1.8893248                                    NA</span></a>
+<a class="sourceLine" id="cb14-9" data-line-number="9"><span class="co">#&gt; 104.4            1 -0.8216534                                    NA</span></a>
+<a class="sourceLine" id="cb14-10" data-line-number="10"><span class="co">#&gt; 105.2            1  0.5784470                                    NA</span></a>
+<a class="sourceLine" id="cb14-11" data-line-number="11"><span class="co">#&gt; 106.1            1  0.3689238                                    NA</span></a>
+<a class="sourceLine" id="cb14-12" data-line-number="12"><span class="co">#&gt; 107.1            1 -0.6264986                                    NA</span></a>
+<a class="sourceLine" id="cb14-13" data-line-number="13"><span class="co">#&gt; 108.7            1         NA                                    NA</span></a>
+<a class="sourceLine" id="cb14-14" data-line-number="14"><span class="co">#&gt; 109.1            1  0.5398961                                    NA</span></a>
+<a class="sourceLine" id="cb14-15" data-line-number="15"><span class="co">#&gt; 11.1             1  0.2053576                                    NA</span></a>
+<a class="sourceLine" id="cb14-16" data-line-number="16"><span class="co">#&gt; 110.26           1  0.6703233                                    NA</span></a>
+<a class="sourceLine" id="cb14-17" data-line-number="17"><span class="co">#&gt; 111.1            1  1.6552801                                    NA</span></a>
+<a class="sourceLine" id="cb14-18" data-line-number="18"><span class="co">#&gt;        SMOKEcontinued smoking in pregnancy</span></a>
+<a class="sourceLine" id="cb14-19" data-line-number="19"><span class="co">#&gt; 1.1                                     NA</span></a>
+<a class="sourceLine" id="cb14-20" data-line-number="20"><span class="co">#&gt; 10.1                                    NA</span></a>
+<a class="sourceLine" id="cb14-21" data-line-number="21"><span class="co">#&gt; 100.11                                  NA</span></a>
+<a class="sourceLine" id="cb14-22" data-line-number="22"><span class="co">#&gt; 101.1                                   NA</span></a>
+<a class="sourceLine" id="cb14-23" data-line-number="23"><span class="co">#&gt; 102.4                                   NA</span></a>
+<a class="sourceLine" id="cb14-24" data-line-number="24"><span class="co">#&gt; 103.15                                  NA</span></a>
+<a class="sourceLine" id="cb14-25" data-line-number="25"><span class="co">#&gt; 104.4                                   NA</span></a>
+<a class="sourceLine" id="cb14-26" data-line-number="26"><span class="co">#&gt; 105.2                                   NA</span></a>
+<a class="sourceLine" id="cb14-27" data-line-number="27"><span class="co">#&gt; 106.1                                   NA</span></a>
+<a class="sourceLine" id="cb14-28" data-line-number="28"><span class="co">#&gt; 107.1                                   NA</span></a>
+<a class="sourceLine" id="cb14-29" data-line-number="29"><span class="co">#&gt; 108.7                                   NA</span></a>
+<a class="sourceLine" id="cb14-30" data-line-number="30"><span class="co">#&gt; 109.1                                   NA</span></a>
+<a class="sourceLine" id="cb14-31" data-line-number="31"><span class="co">#&gt; 11.1                                    NA</span></a>
+<a class="sourceLine" id="cb14-32" data-line-number="32"><span class="co">#&gt; 110.26                                  NA</span></a>
+<a class="sourceLine" id="cb14-33" data-line-number="33"><span class="co">#&gt; 111.1                                   NA</span></a></code></pre></div>
+<p>Again, the matrix <code>Xc</code> in the inital values has the same dimension as <code>Xc</code> in the data, and values where there are missing values in <code>Xc</code>, e.g., <code>Xc[11, 2]</code> and <code>NA</code> elsewhere. There are no inital values specified for the third and fourth column, since these columns contain the dummy variables corresponding to the categorical variable <code>SMOKE</code> and are calculated from a column in the matrix <code>Xcat</code>, which contains the original version of <code>SMOKE</code>:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="kw">head</span>(mod4c<span class="op">$</span>data_list<span class="op">$</span>Xcat)</a>
+<a class="sourceLine" id="cb15-2" data-line-number="2"><span class="co">#&gt;        SMOKE</span></a>
+<a class="sourceLine" id="cb15-3" data-line-number="3"><span class="co">#&gt; 1.1        3</span></a>
+<a class="sourceLine" id="cb15-4" data-line-number="4"><span class="co">#&gt; 10.1       1</span></a>
+<a class="sourceLine" id="cb15-5" data-line-number="5"><span class="co">#&gt; 100.11     1</span></a>
+<a class="sourceLine" id="cb15-6" data-line-number="6"><span class="co">#&gt; 101.1      3</span></a>
+<a class="sourceLine" id="cb15-7" data-line-number="7"><span class="co">#&gt; 102.4      3</span></a>
+<a class="sourceLine" id="cb15-8" data-line-number="8"><span class="co">#&gt; 103.15     1</span></a></code></pre></div>
+<p>The relevant part of the JAGS model is:</p>
+<pre><code>#&gt; [...]
+#&gt; 
+#&gt;   # ordinal model for SMOKE
+#&gt;   Xcat[i, 1] ~ dcat(p_SMOKE[i, 1:3])
+#&gt; 
+#&gt; [...]
+#&gt; 
+#&gt;   Xc[i, 3] &lt;- ifelse(Xcat[i, 1] == 2, 1, 0)
+#&gt;   Xc[i, 4] &lt;- ifelse(Xcat[i, 1] == 3, 1, 0)
+#&gt; [...]</code></pre>
+<p>Where <code>Xcat</code> in the data has missing values (e.g., rows 37 and 39), inital values need to be specified.</p>
+<p>Elements that are completely unobserved, like the parameter vectors <code>alpha</code> and <code>beta</code>, the random effects <code>b</code> or scalar parameters <code>delta_SMOKE</code> and <code>gamma_SMOKE</code> are entirely specified in the initial values.</p>
+</div>
+</div>
+</div>
+<div id="other-arguments" class="section level2">
+<h2>Other arguments</h2>
+<p>There are two more arguments in <code>*_imp()</code> that are passed directly to the <strong>rjags</strong> functions <code>jags.model()</code> or <code>coda.samples()</code>:</p>
+<ul>
+<li><code>quiet</code>: should messages generated during compilation be suppressed?</li>
+<li><code>progress.bar</code>: allows to select the type of progress bar. Possible values are <code>&quot;text&quot;</code>, <code>&quot;gui&quot;</code> and <code>&quot;none&quot;</code>.</li>
+</ul>
+</div>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p> Gelman, A., Meng, X. L., &amp; Stern, H. (1996). Posterior predictive assessment of model fitness via realized discrepancies. Statistica Sinica, 733-760.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+<li id="fn2"><p>See p. 195 of Lesaffre, E., &amp; Lawson, A. B. (2012). Bayesian Biostatistics. John Wiley &amp; Sons.<a href="#fnref2" class="footnote-back">↩</a></p></li>
+</ol>
+</div>
+
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

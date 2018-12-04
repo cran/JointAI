@@ -1,3 +1,73 @@
+# JointAI 0.4.0
+
+## Bug fixes
+* `RinvD` is no longer selected to be monitored in random intercept model (`RinvD` is not used in such a model)
+* fixed various bugs for models in which only the intercept is used (no covariates)
+
+## Minor changes
+* `summary()`: reduced default number of digits
+* continuous variables with two distinct values are converted to factor
+* argument `meth` now uses default values if only specified for subst of incomplete variables
+* `get_MIdat()`: argument `minspace` added to ensure spacing of iterations selected as imputations
+* `densplot()`: accepts additional options, e.g., `lwd`, `col`, ...
+
+
+##  Extensions
+* `coef()` method added for `JointAI` object and `summary.JointAI` object
+* `confint()` method added for `JointAI` object
+* `print()` method added for `JointAI` object
+* `survreg_imp()` added to perform analysis of parametric (Weibull) survival models
+* `glme_imp()` added to perform generalized linear mixed modeling
+* extended documentation; two new vignettes on MCMC parameters and functions for after the model is estimated;
+  added messages about coding of ordinal variables
+
+
+--------------------------------------------------------------------------------
+# JointAI 0.3.4
+
+## Bug fixes
+* `traceplot()`, `densplot()`: specification of `nrow` AND `ncol` possible; fixed bug when only `nrow` specified
+
+# JointAI 0.3.3
+
+## Bug fixes
+* remove deprecated code specifying `contrast.arg` that now in some cases cause error
+* fixed problem identifying non-linear functions in formula when the name of another variable contains the function name
+
+--------------------------------------------------------------------------------
+# JointAI 0.3.2
+
+## Bug fixes
+* `lme_imp()`: fixed error in JAGS model when interaction between random slope variable and longiudinal variable 
+
+## Minor changes
+* unused levels of factores are dropped 
+ 
+--------------------------------------------------------------------------------
+# JointAI 0.3.1
+
+## Bug fixes
+* `plot_all()` uses correct level-2 %NA in title
+* `simWide`: case with no observed bmi values removed
+* `traceplot()`, `densplot()`: `ncol` and `nrow` now work with `use_ggplot = TRUE`
+* `traceplot()`, `densplot()`: error in specification of `nrow` fixed
+* `densplot()`: use of color fixed
+* functions with argument `subset` now return random effects covariance matrix correctly
+* `summary()` displayes output with rowname when only one node is returned and fixed display of `D` matrix
+* `GR_crit()`: Literature reference corrected
+* `predict()`: prediction with varying factor fixed
+* no scaling for variables involved in a function to avoid problems with re-scaling
+
+## Minor changes
+* `plot_all()` uses `xpd = TRUE` when printing text for character variables
+* `list_impmodels()` uses linebreak when output of predictor variables exceeds
+  `getOption("width")`
+* `summary()` now displays tail-probabilities for off-diagonal elements of `D`
+* added option to show/hide constant effects of auxiliary variables in plots
+* `predict()`: now also returns `newdata` extended with prediction
+
+  
+--------------------------------------------------------------------------------
 # JointAI 0.3.0
 
 ## Bug fixes

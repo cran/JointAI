@@ -27,12 +27,18 @@ build_JAGS <- function(analysis_type, family = NULL, link = NULL, meth = NULL,
 
   analysis_model <- switch(analysis_type,
                            "lme" = lme_model,
+                           "glme" = glme_model,
                            "lm" = lm_model,
-                           "glm" = glm_model)
+                           "glm" = glm_model,
+                           "survreg" = survreg_model,
+                           "coxph" = coxph_model)
   analysis_priors <- switch(analysis_type,
                             "lme" = lme_priors,
+                            "glme" = glme_priors,
                             "glm" = glm_priors,
-                            "lm" = lm_priors)
+                            "lm" = lm_priors,
+                            "survreg" = survreg_priors,
+                            "coxph" = coxph_priors)
 
 
   # Interactions within cross-sectional variables inlcuding missing values
@@ -67,17 +73,20 @@ build_JAGS <- function(analysis_type, family = NULL, link = NULL, meth = NULL,
     Xc_pos <- lapply(splitnam, match, colnames(Mlist$Xc))
     Xl_pos <- lapply(splitnam, match, colnames(Mlist$Xl))
     Xil_pos <- match(names(splitnam), colnames(Xil))
+    Z_pos <- lapply(splitnam, match, colnames(Mlist$Z))
 
     mat1 <- sapply(names(splitnam), function(x) {
       a <- vector("character", length(splitnam[[x]]))
       a[which(!is.na(Xc_pos[[x]]))] <- "Xc"
       a[which(!is.na(Xl_pos[[x]]))] <- "Xl"
+      a[which(!is.na(Z_pos[[x]]))] <- 'Z'
       a
     }, simplify = FALSE)
     mat1_col <- sapply(names(splitnam), function(x) {
       a <- vector("numeric", length(splitnam[[x]]))
       a[which(!is.na(Xc_pos[[x]]))] <- Xc_pos[[x]][which(!is.na(Xc_pos[[x]]))]
       a[which(!is.na(Xl_pos[[x]]))] <- Xl_pos[[x]][which(!is.na(Xl_pos[[x]]))]
+      a[which(!is.na(Z_pos[[x]]))] <- Z_pos[[x]][which(!is.na(Z_pos[[x]]))]
       a
     }, simplify = FALSE)
 

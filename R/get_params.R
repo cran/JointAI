@@ -35,30 +35,30 @@ get_params <- function(meth, analysis_type, family,
                        alphas = NULL, tau_imp = NULL, gamma_imp = NULL,
                        delta_imp = NULL, other = NULL, ...){
 
-
   if (is.null(y_name)) {
     y_name <- names(y)
   }
   if (missing(family))
     family <- attr(analysis_type, "family")
 
-
   if (analysis_main) {
     if (is.null(betas)) betas <- TRUE
-    if (!family %in% c("binomial", "poisson")) {
-      if (is.null(tau_y)) tau_y <- TRUE
+    if (family %in% c("gaussian", "gamma", 'weibull')) {
       if (is.null(sigma_y)) sigma_y <- TRUE
     }
-    if (analysis_type == "lme") {
-      if (is.null(D)) D <- TRUE
-    }
   }
+  if (analysis_type %in% c("lme", "glme")) {
+    if (is.null(Zcols))
+      Zcols <- ncol(Z)
+    if (analysis_main & is.null(D)) D <- TRUE
+  }
+
 
   if (analysis_random) {
     if (is.null(ranef)) ranef <- TRUE
     if (is.null(invD)) invD <- TRUE
     if (is.null(D)) D <- TRUE
-    if (is.null(RinvD)) RinvD <- TRUE
+    if (is.null(RinvD) & Zcols > 1) RinvD <- TRUE
   }
 
   if (imp_pars) {
@@ -68,13 +68,11 @@ get_params <- function(meth, analysis_type, family,
     if (is.null(delta_imp)) delta_imp <- TRUE
   }
 
-
   arglist <- mget(names(formals()), sys.frame(sys.nframe()))
 
   for (i in names(arglist)) {
     if (is.null(arglist[[i]]) & i != "other") assign(i, FALSE)
   }
-
 
   params <- c(if (betas) "beta",
               if (tau_y) paste0("tau_", y_name),
@@ -92,11 +90,7 @@ get_params <- function(meth, analysis_type, family,
               other
   )
 
-  if (analysis_type == "lme") {
-    if (is.null(Zcols)) {
-      Zcols <- colnames(Z)
-    }
-
+  if (analysis_type %in% c("lme", "glme")) {
     params <- c(params,
                 if (ranef) "b",
                 if (invD) unlist(sapply(1:Zcols, function(x)
@@ -109,7 +103,7 @@ get_params <- function(meth, analysis_type, family,
 
   if (imps) {
     repl_list <- lapply(imp_par_list, function(x)
-      if(x$dest_mat == 'Xtrafo') x[c('dest_col', 'trafo_cols')]
+      if (x$dest_mat == 'Xtrafo') x[c('dest_col', 'trafo_cols')]
     )
 
     Xc_NA <- if (any(is.na(Xc))) which(is.na(Xc), arr.ind = TRUE)

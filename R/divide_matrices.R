@@ -11,7 +11,7 @@
 # @return a list containing matrices and other objects needed for other functions
 # @export
 
-divide_matrices <- function(data, fixed, random = NULL, auxvars = NULL,
+divide_matrices <- function(data, fixed, analysis_type, random = NULL, auxvars = NULL,
                             scale_vars = NULL, refcats = NULL, meth, warn = TRUE,
                             mess = TRUE, ...) {
   id <- extract_id(random, warn = warn)
@@ -22,15 +22,23 @@ divide_matrices <- function(data, fixed, random = NULL, auxvars = NULL,
     1:nrow(data)
   }
 
-  y <- data[, extract_y(fixed), drop = FALSE]
+  if (analysis_type %in% c('survreg', 'coxph')) {
+    s <- with(data, extract_y(fixed))
+    outnam <- all.vars(as.formula(paste0(s, "~1")))
+      y <- data[, outnam[1], drop = FALSE]
+      cens <- data[, outnam[2], drop = FALSE]
+  } else {
+    y <- data[, extract_y(fixed), drop = FALSE]
+    cens <- NULL
+  }
 
   # preliminary design matrix
   X <- model.matrix(fixed, model.frame(fixed, data, na.action = na.pass))
 
   # variables that do not have a main effect in fixed are added to the auxiliary variables
-  trafosX <- extract_fcts(fixed, data, complete = TRUE)
+  trafosX <- extract_fcts(fixed[c(1,3)], data, complete = TRUE)
   add_to_aux <- trafosX$var[which(!trafosX$var %in% c(colnames(X), auxvars))]
-  if(length(add_to_aux) > 0)
+  if (length(add_to_aux) > 0)
     auxvars <- c(auxvars, unique(add_to_aux))
 
   # remove grouping specification from random effects formula
@@ -45,7 +53,11 @@ divide_matrices <- function(data, fixed, random = NULL, auxvars = NULL,
   fixed2 <- as.formula(paste(c(sub(":", "*", deparse(fixed), fixed = TRUE),
                                auxvars), collapse = " + "))
 
+  if (any(unlist(sapply(data[, all.vars(fixed2)], class)) == 'ordered') & mess)
+    message("Note: ordered factors are included as dummy variables into the linear predictor (not as orthogonal polynomials).")
+
   refs <- get_refs(fixed2, data, refcats)
+
   for (i in names(refs)) {
     data[, i] <- relevel(factor(data[, i], ordered = FALSE), as.character(refs[[i]]))
   }
@@ -83,19 +95,16 @@ divide_matrices <- function(data, fixed, random = NULL, auxvars = NULL,
   }
 
   # Xtrafo ---------------------------------------------------------------------
-  trafos <- extract_fcts(fixed2, data)
+  trafos <- extract_fcts(fixed2[c(1,3)], data)
   if (any(trafos$type %in% c('ns', 'bs')))
     stop("Splines are currently not implemented for incomplete variables.")
-  fcts <- extract_fcts(fixed2, data, complete = TRUE)
+  fcts <- extract_fcts(fixed2[c(1,3)], data, complete = TRUE)
   Xtrafo <- if (!is.null(trafos)) {
     fmla_trafo <- as.formula(
       paste("~", paste0(unique(trafos$var), collapse = " + "))
     )
-    if (!any(sapply(data[, all.vars(fmla_trafo), drop = FALSE], is.factor)))
-      contr <- NULL
     model.matrix(fmla_trafo,
-                 model.frame(fmla_trafo, data, na.action = na.pass),
-                 contrasts.arg = contr
+                 model.frame(fmla_trafo, data, na.action = na.pass)
     )[match(unique(groups), groups), -1, drop = FALSE]
   }
   if (!is.null(Xtrafo)) {
@@ -192,12 +201,12 @@ divide_matrices <- function(data, fixed, random = NULL, auxvars = NULL,
     excl <- c(excl, unique(trafos$Xc_var))
     excl <- excl[!excl %in% compl_fcts_vars]
 
-    if (!is.null(trafos)) {
-      qdrtrafos <- unlist(sapply(split(trafos, trafos$var), function(x) {
-        if (all(x$Xc_var %in% c(x$var, paste0("I(", x$var, "^2)")))) x$Xc_var
-      }))
-      excl <- excl[!excl %in% qdrtrafos]
-    }
+    # if (!is.null(trafos)) {
+    #   qdrtrafos <- unlist(sapply(split(trafos, trafos$var), function(x) {
+    #     if (all(x$Xc_var %in% c(x$var, paste0("I(", x$var, "^2)")))) x$Xc_var
+    #   }))
+    #   excl <- excl[!excl %in% qdrtrafos]
+    # }
 
     scale_vars <- scale_vars[which(!scale_vars %in% excl)]
     if (length(scale_vars) == 0) scale_vars <- NULL
@@ -205,7 +214,7 @@ divide_matrices <- function(data, fixed, random = NULL, auxvars = NULL,
 
 
   return(list(y = y, Xc = Xc, Xic = Xic, Xl = Xl, Xil = Xil, Xcat = Xcat,
-              Xtrafo = Xtrafo, Z = Z,
+              Xtrafo = Xtrafo, Z = Z, cens = cens,
               trafos = trafos, hc_list = hc_list, refs = refs,
               auxvars = auxvars, groups = groups, scale_vars = scale_vars,
               fixed2 = fixed2, X2_names = colnames(X2)))
