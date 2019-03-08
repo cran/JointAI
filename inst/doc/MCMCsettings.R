@@ -62,29 +62,33 @@ mod4b$mcmc_settings$inits
 
 ## ---- eval = FALSE--------------------------------------------------------------------------------
 #  mod4c <- lme_imp(bmi ~ time + HEIGHT_M + hc + SMOKE, random = ~ time | ID,
-#                   data = simLong, progress.bar = 'none')
+#                   data = simLong, no_model = 'time', progress.bar = 'none')
 #  
 #  coef(mod4c$model)
 
 ## ----echo = FALSE, message = FALSE----------------------------------------------------------------
 mod4c <- lme_imp(bmi ~ time + HEIGHT_M + hc + SMOKE, random = ~ time | ID,
-                 data = simLong, progress.bar = 'none')
+                 data = simLong, no_model = 'time', progress.bar = 'none')
 
 a4 <- capture.output(coef(mod4c$model))
 cat(
-  paste0(paste(a4[1:10], collapse = "\n"), # start
+  paste0(paste(a4[1:14], collapse = "\n"), # start
          '\n\n[...]\n\n',
-         paste(a4[16:19], collapse = "\n"), # values in Xc
+         paste(a4[21:24], collapse = "\n"), # values in Xc
          '\n\n[...]\n\n',
-         paste(a4[505:512], collapse = "\n"), # end Xc
+         paste(a4[510:516], collapse = "\n"), # end Xc
          '\n\n[...]\n\n',
-         paste(a4[544:550], collapse = "\n"), # values Xcat
+         paste(a4[550:555], collapse = "\n"), # values Xcat
          '\n\n[...]\n\n',
-         paste(a4[1007:1020], collapse = "\n"), # end Xcat
+         paste(a4[1012:1022], collapse = "\n"), # end Xcat; alpha; begin b
          '\n\n[...]\n\n',
-         paste(a4[1510:1533], collapse = "\n"), # start b
+         paste(a4[1515:1524], collapse = "\n"), # end b; start b_hc
          '\n\n[...]\n\n',
-         paste(a4[2027:2036], collapse = "\n")
+         paste(a4[2018:2045], collapse = "\n"), # end b_hc; betas, delta, gamma, invD, begin mu_b
+         '\n\n[...]\n\n',
+         paste(a4[2540:2546], collapse = "\n"), # end mu_b; begin mu_b_hc
+         '\n\n[...]\n\n',
+         paste(a4[3042:3053], collapse = "\n")
   )
 )
 
@@ -94,7 +98,7 @@ a4mod <- capture.output(mod4c$model)
 mod4c$data_list['RinvD']
 
 ## ---- echo = FALSE--------------------------------------------------------------------------------
-cat(paste0('[...]\n', paste(a4mod[26:31], collapse = '\n'), '\n[...]\n'))
+cat(paste0('[...]\n', paste(a4mod[28:33], collapse = '\n'), '\n[...]\n'))
 
 ## -------------------------------------------------------------------------------------------------
 head(mod4c$data_list$Xc, 15)
@@ -103,7 +107,7 @@ head(mod4c$data_list$Xc, 15)
 head(mod4c$data_list$Xcat)
 
 ## ---- echo = FALSE--------------------------------------------------------------------------------
-cat(paste0('[...]\n\n',
+cat(paste0('[...]\n',
            paste(a4mod[54:55], collapse = '\n'),
            '\n\n[...]\n\n',
            paste(a4mod[65:66], collapse = '\n'),

@@ -1,3 +1,50 @@
+# JointAI 0.5.0
+ 
+## Important
+* the argument `meth` has changed to `models`
+
+## Bug fixes
+* `add_samples()`: bug that copied the last chain to all other chains fixed
+* bugfix for the order of columns in the matrix `Xc`, so that specification of
+  functions of covariates in auxiliary variables works better
+* adding vertical lines to a `densplot()` issue (all plots showed all lines) fixed
+* nested functions involving powers made possible
+* typo causing issue in poisson glm and glme removed
+
+## Minor changes
+* `plot_all()`, `densplot()`, and `traceplot()` limit the number of plots on one
+  page to 64 when rows and columns of the layout are not user specified (to 
+  avoid the 'figure margins too large' error)
+* change in `longDF` example data: new version containing complete and incomplete
+  categorical longitudinal variables (and variable names L1 and L2 changed to c1 and c2)
+* Some minor changes in notes, warnings and error messages
+* The funciton `list_impmodels()` changed to `list_models()`
+  (but `list_impmodels()` is kept as an alias for now)
+* improved handling of functional forms of covariates (also in longitudinal 
+  covariates and random effects)
+
+
+## New Features / Extensions
+* `clm_imp()` and `clmm_imp()`: new functions for analysis of **ordinal (mixed) models**
+* It is now possible to impute **incomplete longitudinal covariates**
+  (continuous, binary and ordered factors).
+* `coxph_imp()`: new function to fit Cox proportional hazards models with 
+  incomplete (baseline) covariates
+* Argument `no_model` allows to specify names of completely observed variables
+  for which no model should be specified (e.g., "time" in a mixed model)
+* **Shrinkage:** argument `ridge = TRUE` allows to use shrinkage priors on the 
+  precision of the regression coefficients in the analysis model
+* `plot_all()` can now handle variables from classes `Date` and `POSIXt`
+* new argument `parallel` allows different MCMC chains to be sampled in parallel
+* new argument `ncores` allows to specify the maximum number of cores to be used
+* new argument `seed` added for reproducible results; also a sampler (`.RNG.name`)
+  and seed value for the sampler (`.RNG.seed`) are set or added to user-provided
+  inital values (necessary for parallel sampling and reproducibility of results)
+* `plot_imp_distr()`: new function to plot distribution of observed and imputed values
+
+--------------------------------------------------------------------------------
+
+
 # JointAI 0.4.0
 
 ## Bug fixes
@@ -7,12 +54,13 @@
 ## Minor changes
 * `summary()`: reduced default number of digits
 * continuous variables with two distinct values are converted to factor
-* argument `meth` now uses default values if only specified for subst of incomplete variables
+* argument `meth` now uses default values if only specified for subset of incomplete variables
 * `get_MIdat()`: argument `minspace` added to ensure spacing of iterations selected as imputations
 * `densplot()`: accepts additional options, e.g., `lwd`, `col`, ...
+* `list_models()` replaces the function `list_impmodels()` (which is now an alias)
 
 
-##  Extensions
+## Extensions
 * `coef()` method added for `JointAI` object and `summary.JointAI` object
 * `confint()` method added for `JointAI` object
 * `print()` method added for `JointAI` object
@@ -23,6 +71,7 @@
 
 
 --------------------------------------------------------------------------------
+
 # JointAI 0.3.4
 
 ## Bug fixes
@@ -38,10 +87,10 @@
 # JointAI 0.3.2
 
 ## Bug fixes
-* `lme_imp()`: fixed error in JAGS model when interaction between random slope variable and longiudinal variable 
+* `lme_imp()`: fixed error in JAGS model when interaction between random slope variable and longitudinal variable 
 
 ## Minor changes
-* unused levels of factores are dropped 
+* unused levels of factors are dropped 
  
 --------------------------------------------------------------------------------
 # JointAI 0.3.1
@@ -53,7 +102,7 @@
 * `traceplot()`, `densplot()`: error in specification of `nrow` fixed
 * `densplot()`: use of color fixed
 * functions with argument `subset` now return random effects covariance matrix correctly
-* `summary()` displayes output with rowname when only one node is returned and fixed display of `D` matrix
+* `summary()` displays output with rowname when only one node is returned and fixed display of `D` matrix
 * `GR_crit()`: Literature reference corrected
 * `predict()`: prediction with varying factor fixed
 * no scaling for variables involved in a function to avoid problems with re-scaling
@@ -75,7 +124,7 @@
 * categorical imputation models now use min-max trick to prevent probabilities outside [0, 1]
 * initial value generation for logistic analysis model fixed
 * bugfix in re-ordering columns when a function is part of the linear predictor
-* bugfix in intial values for categorical covariates
+* bugfix in initial values for categorical covariates
 * bugfix in finding imputation method when function of variable is specified as
   auxiliary variable
 

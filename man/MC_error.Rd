@@ -8,15 +8,17 @@
 MC_error(x, subset = NULL, start = NULL, end = NULL, thin = NULL,
   digits = 2, warn = TRUE, ...)
 
-\method{plot}{MCElist}(x, scaled = TRUE, plotpars = NULL,
+\method{plot}{MCElist}(x, data_scale = TRUE, plotpars = NULL,
   ablinepars = list(v = 0.05), ...)
 }
 \arguments{
-\item{x}{object inheriting from class "JointAI"}
+\item{x}{object inheriting from class 'JointAI'}
 
 \item{subset}{subset of parameters/variables/nodes (columns in the MCMC sample).
 Uses the same logic as the argument \code{monitor_params} in
-\code{\link{lm_imp}}, \code{\link{glm_imp}} and \code{\link{lme_imp}}.}
+\code{\link{lm_imp}}, \code{\link{glm_imp}}, \code{\link{clm_imp}},
+\code{\link{lme_imp}}, \code{\link{glme_imp}}, \code{\link{survreg_imp}}
+and \code{\link{coxph_imp}}.}
 
 \item{start}{the first iteration of interest (see \code{\link[coda]{window.mcmc}})}
 
@@ -50,7 +52,9 @@ given directly by \strong{JointAI}.}
   (spectral variance method with a Bartlett window).}
 }}
 
-\item{scaled}{use the scaled or unscaled version, default is \code{TRUE}}
+\item{data_scale}{show the Monte Carlo error of the sample transformed back
+to the scale of the data (\code{TRUE}) or on the sampling scale (this
+requires the argument \code{keep_scaled_mcmc = TRUE} in the JointAI model)}
 
 \item{plotpars}{optional; list of parameters passed to \code{\link[graphics]{plot}()}}
 

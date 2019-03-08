@@ -15,8 +15,7 @@ plot_all(NHANES)
 
 ## ---- fig.width = 8, fig.height = 10------------------------------------------
 par(mar = c(2.5, 3, 2.5, 1), mgp = c(2, 0.8, 0))
-plot_all(NHANES, allNA = TRUE, fill = '#18bc9c', border = '#2C3E50',
-         ncol = 3, nclass = 30)
+plot_all(NHANES, allNA = TRUE, fill = '#18bc9c', border = '#2C3E50', ncol = 3, nclass = 30)
 
 ## ---- fig.width = 8, fig.height = 10------------------------------------------
 par(mar = c(2.5, 3, 2.5, 1), mgp = c(2, 0.8, 0))

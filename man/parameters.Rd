@@ -7,7 +7,7 @@
 parameters(object, mess = TRUE, warn = TRUE)
 }
 \arguments{
-\item{object}{object inheriting from class "JointAI"}
+\item{object}{object inheriting from class 'JointAI'}
 
 \item{mess}{logical; should messages be given? Default is
 \code{TRUE}. Note: this applies only to messages
@@ -20,7 +20,7 @@ given directly by \strong{JointAI}.}
 \item{...}{currently not used}
 }
 \description{
-Returns the names of the parameters/nodes of an object of class "JointAI" for
+Returns the names of the parameters/nodes of an object of class 'JointAI' for
 which a monitor is set.
 }
 \examples{

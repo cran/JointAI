@@ -2,10 +2,14 @@
 % Please edit documentation in R/plots.R
 \name{densplot}
 \alias{densplot}
+\alias{densplot.mcmc.list}
 \alias{densplot.JointAI}
 \title{Plot posterior density from JointAI model}
 \usage{
 densplot(object, ...)
+
+\method{densplot}{mcmc.list}(object, start = NULL, end = NULL,
+  thin = NULL, ...)
 
 \method{densplot}{JointAI}(object, start = NULL, end = NULL,
   thin = NULL, subset = c(analysis_main = TRUE), vlines = NULL,
@@ -13,7 +17,7 @@ densplot(object, ...)
   keep_aux = FALSE, warn = TRUE, ...)
 }
 \arguments{
-\item{object}{object inheriting from class "JointAI"}
+\item{object}{object inheriting from class 'JointAI'}
 
 \item{...}{additional parameters passed to \code{\link[graphics]{plot}}}
 
@@ -25,7 +29,9 @@ densplot(object, ...)
 
 \item{subset}{subset of parameters/variables/nodes (columns in the MCMC sample).
 Uses the same logic as the argument \code{monitor_params} in
-\code{\link{lm_imp}}, \code{\link{glm_imp}} and \code{\link{lme_imp}}.}
+\code{\link{lm_imp}}, \code{\link{glm_imp}}, \code{\link{clm_imp}},
+\code{\link{lme_imp}}, \code{\link{glme_imp}}, \code{\link{survreg_imp}}
+and \code{\link{coxph_imp}}.}
 
 \item{vlines}{list, where each element is a named list of parameters that
 can be passed to \code{\link[graphics]{abline}} to create

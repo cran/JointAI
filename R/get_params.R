@@ -1,43 +1,19 @@
-# Get parameters to follow
-# @param meth imputation method
-# @param analysis_type analysis model type
-# @param y_name name of the outcome variable
-# @param Zcols number of columns in random effects design matrix
-# @param Xc matrix
-# @param Xtrafo matrix
-# @param Xcat matrix
-# @param analysis_main logical
-# @param analysis_random logical
-# @param imp_pars logical
-# @param betas logical
-# @param tau_y logical
-# @param sigma_y logical
-# @param ranef logical
-# @param invD logical
-# @param D logical
-# @param RinvD logical
-# @param alphas logical
-# @param tau_imp logical
-# @param gamma_imp logical
-# @param delta_imp logical
-# @param shaperate_imp logical
-# @param imps logical
-# @export
-get_params <- function(meth, analysis_type, family,
-                       Xc, Xcat, Xtrafo, y_name = NULL, y = NULL, Zcols = NULL, Z = NULL,
+
+get_params <- function(models, analysis_type, family, Mlist,
                        imp_par_list = NULL,
                        analysis_main = TRUE,
                        analysis_random = FALSE,
                        imp_pars = FALSE,
                        imps = NULL,
+                       ppc = NULL,
                        betas = NULL, tau_y = NULL, sigma_y = NULL,
+                       gamma_y = NULL, delta_y = NULL,
                        ranef = NULL, invD = NULL, D = NULL, RinvD = NULL,
                        alphas = NULL, tau_imp = NULL, gamma_imp = NULL,
                        delta_imp = NULL, other = NULL, ...){
 
-  if (is.null(y_name)) {
-    y_name <- names(y)
-  }
+  y_name <- colnames(Mlist$y)
+
   if (missing(family))
     family <- attr(analysis_type, "family")
 
@@ -46,10 +22,11 @@ get_params <- function(meth, analysis_type, family,
     if (family %in% c("gaussian", "gamma", 'weibull')) {
       if (is.null(sigma_y)) sigma_y <- TRUE
     }
+    if (family %in% c('ordinal')) {
+      gamma_y <- TRUE
+    }
   }
-  if (analysis_type %in% c("lme", "glme")) {
-    if (is.null(Zcols))
-      Zcols <- ncol(Z)
+  if (analysis_type %in% c("lme", "glme", "clmm")) {
     if (analysis_main & is.null(D)) D <- TRUE
   }
 
@@ -58,7 +35,7 @@ get_params <- function(meth, analysis_type, family,
     if (is.null(ranef)) ranef <- TRUE
     if (is.null(invD)) invD <- TRUE
     if (is.null(D)) D <- TRUE
-    if (is.null(RinvD) & Zcols > 1) RinvD <- TRUE
+    if (is.null(RinvD) & Mlist$nranef > 1) RinvD <- TRUE
   }
 
   if (imp_pars) {
@@ -75,42 +52,67 @@ get_params <- function(meth, analysis_type, family,
   }
 
   params <- c(if (betas) "beta",
+              if (gamma_y) paste0("gamma_", y_name),
+              if (delta_y) paste0("delta_", y_name),
               if (tau_y) paste0("tau_", y_name),
-              if (sigma_y) paste0("sigma_", y_name),
+              if (sigma_y) {
+                if (family == 'weibull')
+                  paste0("shape_", y_name)
+                else
+                  paste0("sigma_", y_name)
+              },
               if (alphas) "alpha",
-              if (tau_imp & any(meth %in% c("norm", "lognorm", "gamma", "beta"))) {
-                paste0("tau_", names(meth)[meth %in% c("norm", "lognorm", "gamma", "beta")])
+              if (tau_imp & any(models %in% c("norm", "lognorm", "gamma", "beta"))) {
+                paste0("tau_", names(models)[models %in% c("norm", "lognorm", "gamma", "beta")])
               },
-              if (gamma_imp & any(meth == "cumlogit")) {
-                paste0("gamma_", names(meth)[meth == "cumlogit"])
+              if (gamma_imp & any(models == "cumlogit")) {
+                paste0("gamma_", names(models)[models == "cumlogit"])
               },
-              if (delta_imp & any(meth == "cumlogit")) {
-                paste0("delta_", names(meth)[meth == "cumlogit"])
+              if (delta_imp & any(models == "cumlogit")) {
+                paste0("delta_", names(models)[models == "cumlogit"])
               },
+              # if (ppc) paste0('ppc_', c(y_name, names(models))),
               other
   )
 
-  if (analysis_type %in% c("lme", "glme")) {
+  if (analysis_type %in% c("lme", "glme", "clmm")) {
     params <- c(params,
                 if (ranef) "b",
-                if (invD) unlist(sapply(1:Zcols, function(x)
+                if (invD) unlist(sapply(1:Mlist$nranef, function(x)
                   paste0("invD[", 1:x, ",", x,"]"))),
-                if (D) unlist(sapply(1:Zcols, function(x)
+                if (D) unlist(sapply(1:Mlist$nranef, function(x)
                   paste0("D[", 1:x, ",", x,"]"))),
-                if (RinvD) paste0("RinvD[", 1:Zcols, ",", 1:Zcols,"]")
+                if (RinvD) paste0("RinvD[", 1:Mlist$nranef, ",", 1:Mlist$nranef,"]")
     )
   }
 
   if (imps) {
     repl_list <- lapply(imp_par_list, function(x)
-      if (x$dest_mat == 'Xtrafo') x[c('dest_col', 'trafo_cols')]
+      if (x$dest_mat %in% c('Xtrafo')) x[c('dest_col', 'trafo_cols')]
     )
 
-    Xc_NA <- if (any(is.na(Xc))) which(is.na(Xc), arr.ind = TRUE)
-    Xc_NA <- Xc_NA[Xc_NA[, 2] %in% which(colSums(!is.na(Xc)) > 0), ]
-    Xcat_NA <- if (any(is.na(Xcat))) which(is.na(Xcat), arr.ind = TRUE)
-    Xtrafo_NA <- if (any(is.na(Xtrafo))) which(is.na(Xtrafo), arr.ind = TRUE)
-    if (any(is.na(Xtrafo))) {
+    repl_list_long <- lapply(imp_par_list, function(x)
+      if (x$dest_mat %in% c('Xltrafo')) x[c('dest_col', 'trafo_cols')]
+    )
+
+    Xc_NA <- if (any(is.na(Mlist$Xc))) which(is.na(Mlist$Xc), arr.ind = TRUE)
+    if (!is.null(Xc_NA))
+      Xc_NA <- Xc_NA[Xc_NA[, 2] %in% which(colSums(!is.na(Mlist$Xc)) > 0), , drop = FALSE]
+
+    Xcat_NA <- if (any(is.na(Mlist$Xcat))) which(is.na(Mlist$Xcat), arr.ind = TRUE)
+    Xlcat_NA <- if (any(is.na(Mlist$Xlcat))) which(is.na(Mlist$Xlcat), arr.ind = TRUE)
+    Xtrafo_NA <- if (any(is.na(Mlist$Xtrafo))) which(is.na(Mlist$Xtrafo), arr.ind = TRUE)
+    Xltrafo_NA <- if (any(is.na(Mlist$Xltrafo))) which(is.na(Mlist$Xltrafo), arr.ind = TRUE)
+
+    Xl_NA <- if (any(is.na(Mlist$Xl))) which(is.na(Mlist$Xl), arr.ind = TRUE)
+    if (!is.null(Xl_NA))
+      Xl_NA <- Xl_NA[Xl_NA[, 2] %in% which(colSums(!is.na(Mlist$Xl)) > 0), , drop = FALSE]
+
+    Z_NA <- if (any(is.na(Mlist$Z))) which(is.na(Mlist$Z), arr.ind = TRUE)
+    if (!is.null(Z_NA))
+      Z_NA <- Z_NA[Z_NA[, 2] %in% which(colSums(!is.na(Mlist$Z)) > 0), , drop = FALSE]
+
+    if (any(is.na(Mlist$Xtrafo))) {
       Xtrafo_NA_Xc <- matrix(nrow = 0, ncol = 2)
       for (i in seq_along(repl_list)) {
         for (j in seq_along(repl_list[[i]]$trafo_cols)) {
@@ -123,14 +125,47 @@ get_params <- function(meth, analysis_type, family,
       }
     }
 
+    if (any(is.na(Mlist$Xltrafo))) {
+      Xltrafo_NA_Z <- Xltrafo_NA_Xl <- matrix(nrow = 0, ncol = 2)
+      for (i in seq_along(repl_list_long)) {
+        for (j in seq_along(unlist(sapply(repl_list_long[[i]]$trafo_cols, '[[', 'Xl')))) {
+          Xltrafo_NA_Xl_add <- Xltrafo_NA[Xltrafo_NA[, 'col'] == repl_list_long[[i]]$dest_col, ]
+
+          Xltrafo_NA_Xl_add[, 'col'] <- gsub(repl_list_long[[i]]$dest_col,
+                                             unlist(sapply(repl_list_long[[i]]$trafo_cols, '[[', 'Xl'))[j],
+                                            Xltrafo_NA_Xl_add[, 'col'])
+          Xltrafo_NA_Xl <- rbind(Xltrafo_NA_Xl, Xltrafo_NA_Xl_add)
+        }
+        for (j in seq_along(unlist(sapply(repl_list_long[[i]]$trafo_cols, '[[', 'Z')))) {
+          Xltrafo_NA_Z_add <- Xltrafo_NA[Xltrafo_NA[, 'col'] == repl_list_long[[i]]$dest_col, ]
+
+          Xltrafo_NA_Z_add[, 'col'] <- gsub(repl_list_long[[i]]$dest_col,
+                                             unlist(sapply(repl_list_long[[i]]$trafo_cols, '[[', 'Z'))[j],
+                                             Xltrafo_NA_Z_add[, 'col'])
+          Xltrafo_NA_Z <- rbind(Xltrafo_NA_Z, Xltrafo_NA_Z_add)
+        }
+      }
+    }
+
+
     params <- c(params,
-                if (!is.null(Xc_NA))
+                if (!is.null(Xc_NA) && nrow(Xc_NA) > 0)
                   paste0("Xc[", apply(Xc_NA, 1, paste, collapse = ","), "]"),
-                if (!is.null(Xtrafo_NA))
+                if (!is.null(Xl_NA) && nrow(Xl_NA) > 0)
+                  paste0("Xl[", apply(Xl_NA, 1, paste, collapse = ","), "]"),
+                if (!is.null(Z_NA) && nrow(Z_NA) > 0)
+                  paste0("Z[", apply(Z_NA, 1, paste, collapse = ","), "]"),
+                if (!is.null(Xtrafo_NA) && nrow(Xtrafo_NA) > 0)
                   c(paste0("Xtrafo[", apply(Xtrafo_NA, 1, paste, collapse = ","), "]"),
                     paste0("Xc[", apply(Xtrafo_NA_Xc, 1, paste, collapse = ","), "]")),
-                if (!is.null(Xcat_NA))
-                  paste0("Xcat[", apply(Xcat_NA, 1, paste, collapse = ","), "]")
+                if (!is.null(Xltrafo_NA) && nrow(Xltrafo_NA) > 0)
+                  c(paste0("Xltrafo[", apply(Xltrafo_NA, 1, paste, collapse = ","), "]"),
+                    paste0("Xl[", apply(Xltrafo_NA_Xl, 1, paste, collapse = ","), "]"),
+                    paste0("Z[", apply(Xltrafo_NA_Z, 1, paste, collapse = ","), "]")),
+                if (!is.null(Xcat_NA) && nrow(Xcat_NA) > 0)
+                  paste0("Xcat[", apply(Xcat_NA, 1, paste, collapse = ","), "]"),
+                if (!is.null(Xlcat_NA) && nrow(Xlcat_NA) > 0)
+                  paste0("Xlcat[", apply(Xlcat_NA, 1, paste, collapse = ","), "]")
     )
   }
 

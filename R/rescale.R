@@ -1,26 +1,5 @@
 
-rescale <- function(x, fixed2, scale_pars, MCMC, refs, X2_names, trafos) {
-  # if (!x %in% c("(Intercept)", colnames(scale_pars))) {
-  #   MCMC[, x]
-  # } else {
-  coef_lvl <- X2_names
-
-  coefs <- colnames(attr(terms(fixed2), "factors")) # colnames(MCMC)
-
-  # for (i in coefs[coefs %in% names(refs)]) {
-  #    lvls <- levels(refs[[i]])[levels(refs[[i]]) != refs[[i]]]
-  #    orig <- unname(unlist(sapply(gen_pat(i), grep, coefs, value = TRUE)))
-  #    for (j in lvls) {
-  #      coef_lvl <- append(coef_lvl, gsub(i, paste0(i, j), orig))
-  #    }
-  #    coef_lvl <- coef_lvl[which(!coef_lvl %in% orig)]
-  # }
-
-  # for (i in seq_along(refs)) {
-  #   coef_lvl <- append(coef_lvl, attr(refs[[i]], "dummies"))
-  #   coef_lvl <- coef_lvl[-which(coef_lvl == names(refs)[i])]
-  # }
-
+rescale <- function(x, fixed2, scale_pars, MCMC, refs, coef_lvl) {
   x_split <- unlist(strsplit(x, ":"))
 
   coef_split <- sapply(coef_lvl, splitstring2, x = x, x_split = x_split, simplify = FALSE)
@@ -51,25 +30,13 @@ rescale <- function(x, fixed2, scale_pars, MCMC, refs, X2_names, trafos) {
     0
   }
 
-  # square <- if (x %in% trafos$var & any(trafos$fct == paste0(x, "^2"))) {
-  #   qdr_var <- trafos$Xc_var[which(trafos$var == x &
-  #                                          trafos$fct == paste0(x, "^2"))]
-  #   2 * as.numeric(MCMC[ , qdr_var])/scale_pars["scale", x]^2 * scale_pars["center", x]
-  # } else {
-  #   0
-  # }
-
-  new_vec <- vec / prod(scale_pars["scale", unlist(strsplit(x, ":"))]) - inter_sum# - square
-
+  new_vec <- vec / prod(scale_pars["scale", unlist(strsplit(x, ":"))]) - inter_sum
   new_vec
-  # }
 }
 
 
-splitstring = function(input, pattern){
-  # pat <- paste0(c(":", "^"), pattern)
+splitstring = function(input, pattern) {
   splitres = strsplit(input, pattern)[[1]]
-
 
   T1 <- splitres[1] == "" | substr(splitres[1],
                                    start = nchar(splitres[1]),
@@ -97,7 +64,6 @@ splitstring2 <- function(input, x, x_split) {
       input <- paste0(c(split_input[splitmatch], split_input[!splitmatch]), collapse = ":")
     }
   }
-  # pat <- paste0(c(":", "^"), pattern)
   splitres <- strsplit(input, x, fixed = TRUE)[[1]]
 
 

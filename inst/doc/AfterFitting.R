@@ -9,7 +9,7 @@ library(JointAI)
 options(width = 100)
 
 ## ---- message = FALSE, fig.width = 7, fig.height = 4, out.width = '100%'--------------------------
-mod13a <- lm_imp(SBP ~ gender + WC + alc +  creat, data = NHANES, n.iter = 500)
+mod13a <- lm_imp(SBP ~ gender + WC + alc + creat, data = NHANES, n.iter = 500)
 
 traceplot(mod13a)
 
@@ -24,7 +24,7 @@ traceplot(mod13a, ncol = 3, use_ggplot = TRUE) +
 
 ## ---- fig.width = 7, fig.height = 3.5, out.width = '100%'-----------------------------------------
 densplot(mod13a, ncol = 3, col = c("darkred", "darkblue", "darkgreen"),
-         vlines = list(list(v = rep(0, nrow(summary(mod13a)$stats)),
+         vlines = list(list(v = c(rep(0, nrow(summary(mod13a)$stats) - 1), NA),
                             col = grey(0.8))))
 
 
@@ -38,22 +38,33 @@ densplot(mod13a, ncol = 3,
 )
 
 ## ----ggdens15a, fig.width = 7, fig.height = 3.5, out.width = '100%'-------------------------------
-# make a dataset containing the quantiles of the posterior sample:
-library("reshape2")
-quantDF <- melt(summary(mod13a)$stat[, c('2.5%', '97.5%')],
-                varnames = c('variable', 'quantile'))
-
 # fit the complete-case version of the model
 mod13a_cc <- lm(SBP ~ gender + WC + alc +  creat, data = NHANES)
 
-# make a dataset with coefficients and confidence intervals from the
-# complete case analysis
-ccDF <- data.frame(variable = c(names(coef(mod13a_cc)), 'sigma_SBP'),
-                   coef = c(coef(mod13a_cc), summary(mod13a_cc)$sigma),
-                   rbind(confint(mod13a_cc), c(NA, NA)),
-                   stringsAsFactors = FALSE
-)
 
+# make a dataset containing the quantiles of the posterior sample and confidence
+# intervals from the complete case analysis:
+quantDF <- rbind(data.frame(variable = rownames(summary(mod13a)$stat),
+                            type = '2.5%',
+                            model = 'JointAI',
+                            value = summary(mod13a)$stat[, c('2.5%')]
+                            ),
+                 data.frame(variable = rownames(summary(mod13a)$stat),
+                            type = '97.5%',
+                            model = 'JointAI',
+                            value = summary(mod13a)$stat[, c('97.5%')]
+                 ),
+                 data.frame(variable = names(coef(mod13a_cc)),
+                            type = '2.5%',
+                            model = 'cc',
+                            value = confint(mod13a_cc)[, '2.5 %']
+                 ),
+                 data.frame(variable = names(coef(mod13a_cc)),
+                            type = '97.5%',
+                            model = 'cc',
+                            value = confint(mod13a_cc)[, '97.5 %']
+                 )
+)
 
 
 # ggplot version, excluding tau_SBP from the plot:
@@ -63,18 +74,11 @@ p13a <- densplot(mod13a, ncol = 3, use_ggplot = TRUE, joined = TRUE,
 
 
 # add vertical lines for the:
-# - coefficient from the compl. case analysis
 # - confidence intervals from the compl. case analysis
 # - quantiles of the posterior distribution
 
 p13a +
-  geom_vline(data = ccDF, aes(xintercept = coef, color = 'cc')) +
-  geom_vline(data = ccDF, aes(xintercept = X2.5.., color = 'cc'),
-             lty = 2, na.rm = T) +
-  geom_vline(data = ccDF, aes(xintercept = X97.5.., color = 'cc'),
-             lty = 2, na.rm = T) +
-  geom_vline(data = subset(quantDF, variable != 'tau_SBP'),
-                  aes(xintercept = value, color = 'JointAI'), lty = 2) +
+  geom_vline(data = quantDF, aes(xintercept = value, color = model), lty = 2) +
   scale_color_manual(name = 'CI from model: ', 
                      limits = c('JointAI', 'cc'),
                      values = c('blue', 'red'),
@@ -87,7 +91,7 @@ summary(mod13a)
 library(splines)
 mod13b <- lme_imp(bmi ~ GESTBIR + ETHN + HEIGHT_M + ns(age, df = 3),
                   random = ~ ns(age, df = 3) | ID, data = simLong,
-                  n.iter = 250)
+                  n.iter = 250, no_model = 'age')
 
 summary(mod13b)
 
@@ -123,8 +127,8 @@ MC_error(mod13a)
 
 ## ----MCE15a, fig.width = 8, fig.height = 3, out.width = '100%'------------------------------------
 par(mar = c(3, 5, 0.5, 0.5), mgp = c(2, 0.6, 0), mfrow = c(1, 2))
-plot(MC_error(mod13a))  # left panel
-plot(MC_error(mod13a, end = 250))  # right panel
+plot(MC_error(mod13a))  # left panel: all iterations 101:600
+plot(MC_error(mod13a, end = 250))  # right panel: iterations 101:250
 
 ## ---- message = FALSE-----------------------------------------------------------------------------
 mod13c <- update(mod13a, monitor_params = c(imp_pars = TRUE))
@@ -148,7 +152,7 @@ sub3
 #  # re-fit the model monitoring the random effects
 #  mod13e <- update(mod13b, monitor_params = c(ranef = TRUE))
 #  
-#  # exract random intercepts and random slopes
+#  # extract random intercepts and random slopes
 #  ri <- grep('^b\\[[[:digit:]]+,1\\]$', colnames(mod13e$MCMC[[1]]), value = T)
 #  rs <- grep('^b\\[[[:digit:]]+,2\\]$', colnames(mod13e$MCMC[[1]]), value = T)
 #  
@@ -162,7 +166,7 @@ options(width = 70)
 ## -------------------------------------------------------------------
 predict(mod13a, newdata = NHANES[27, ])
 
-## ---- fig.width = 6, fig.height = 4, out.width = '90%'--------------
+## ---- fig.width = 7, fig.height = 4.5, out.width = '90%'------------
 # create dataset for prediction
 newDF <- predDF(mod13b, var = "age")
 
@@ -176,5 +180,8 @@ matplot(pred$dat$age, pred$dat[, c('fit', '2.5%', '97.5%')],
 
 
 ## -------------------------------------------------------------------
-impDF <- get_MIdat(mod13d, m = 3, seed = 2018)
+impDF <- get_MIdat(mod13d, m = 10, seed = 2018)
+
+## -------------------------------------------------------------------
+plot_imp_distr(impDF, nrow = 1)
 

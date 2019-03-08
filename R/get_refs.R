@@ -1,7 +1,7 @@
 
 get_refs <- function(fmla, data, refcats = NULL) {
 
-  covars <- all.vars(fmla)[all.vars(fmla) != extract_y(fmla)]
+  covars <- all.vars(fmla)[!all.vars(fmla) %in% c(extract_outcome(fmla))]
   if (length(covars) > 0) {
 
     factors <- covars[sapply(data[, covars, drop = FALSE], is.factor)]
@@ -57,7 +57,9 @@ get_refs <- function(fmla, data, refcats = NULL) {
 #'
 #' The function asks questions and, depending on the answers given by the user,
 #' returns the input for the argument \code{refcats} in the functions
-#' \code{\link{lm_imp}}, \code{\link{glm_imp}} and \code{\link{lme_imp}}.
+#' \code{\link{lm_imp}}, \code{\link{glm_imp}}, \code{\link{clm_imp}},
+#' \code{\link{lme_imp}}, \code{\link{glme_imp}}, \code{\link{clmm_imp}},
+#' \code{\link{survreg_imp}} and \code{\link{coxph_imp}}.
 #'
 #' @param data a \code{data.frame}
 #' @param formula optional; model formula (used to select subset of relevant columns of \code{data})
@@ -74,7 +76,6 @@ get_refs <- function(fmla, data, refcats = NULL) {
 #'
 #' # insert the returned string as argument refcats
 #' mod1 <- lm_imp(SBP ~ age + race + creat + educ, data = NHANES, refcats = 'largest')
-
 #'
 #' # Example 2:
 #' # specify a model formula
@@ -98,7 +99,7 @@ set_refcat <- function(data, formula, covars, auxvars) {
   if (missing(formula) & missing(covars) & missing(auxvars)) {
     covars <- colnames(data)
   } else  if (missing(covars) & !missing(formula)) {
-    covars <- all.vars(formula)[all.vars(formula) != extract_y(formula)]
+    covars <- all.vars(formula)[!all.vars(formula) %in% c(extract_outcome(formula))]
   }
   if (!missing(auxvars))
     covars <- unique(c(covars, auxvars))
@@ -114,7 +115,7 @@ set_refcat <- function(data, formula, covars, auxvars) {
                'Specify the reference categories individually.'),
              title = "\nHow do you want to specify the reference categories?")
 
-  if(q1 == 4) {
+  if (q1 == 4) {
     q2 <- q3 <- setNames(numeric(length(factors)), factors)
     for(i in seq_along(factors)) {
       q2[i] <- menu(levels(data[, factors[i]]),

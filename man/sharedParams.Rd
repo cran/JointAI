@@ -4,11 +4,18 @@
 \alias{sharedParams}
 \title{Parameters used by several functions in JointAI.}
 \arguments{
-\item{object}{object inheriting from class "JointAI"}
+\item{object}{object inheriting from class 'JointAI'}
+
+\item{no_model}{names of variables for which no model should be specified.
+Note that this is only possible for completely observed
+variables and may imply assumptions of independence between
+the excluded variable and incomplete variables.}
 
 \item{subset}{subset of parameters/variables/nodes (columns in the MCMC sample).
 Uses the same logic as the argument \code{monitor_params} in
-\code{\link{lm_imp}}, \code{\link{glm_imp}} and \code{\link{lme_imp}}.}
+\code{\link{lm_imp}}, \code{\link{glm_imp}}, \code{\link{clm_imp}},
+\code{\link{lme_imp}}, \code{\link{glme_imp}}, \code{\link{survreg_imp}}
+and \code{\link{coxph_imp}}.}
 
 \item{start}{the first iteration of interest (see \code{\link[coda]{window.mcmc}})}
 
@@ -37,6 +44,16 @@ This requires specification of the argument \code{idvar}.}
 \item{idvar}{name of the column that specifies the multi-level grouping structure}
 
 \item{keep_aux}{logical; Should constant effects of auxiliary variables be kept in the output?}
+
+\item{ridge}{logical; should the parameters of the main model be penalized using ridge regression? Default is \code{FALSE}}
+
+\item{parallel}{logical; should the chains be sampled using parallel computation? Default is \code{FALSE}}
+
+\item{ncores}{number of cores to use for parallel computation; if left empty all except two cores will be used}
+
+\item{seed}{optional seed value for reproducibility}
+
+\item{ppc}{logical: should monitors for posterior predictive checks be set? (not yet used)}
 }
 \description{
 Parameters used by several functions in JointAI.

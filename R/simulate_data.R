@@ -9,20 +9,26 @@
 #'        create or list of parameters to create normally distributed variables
 #'        from. If norm is an integer, the mean and standard deviation are
 #'        drawn from distributions.
-#' @param bin integer giving the number of binary variables or list
-#' @param multi integer giving the number of multinomial variables or list
-#' @param ord integer giving the number of ordinal variables or list
-#' @param count integer giving the number of ordinal variables or list (not yet used)
-#' @param long integer giving the number of longitudinal (normally distributed)
-#'        variables or list containing parameters
+#' @param bin integer giving the number of binary variables or a character vector containing their names
+#' @param multi integer giving the number of multinomial variables or a character vector containing their names
+#' @param ord integer giving the number of ordinal variables or a character vector containing their names
+#' @param count integer giving the number of count variables or a character vector containing their names
+#' @param longnorm integer giving the number of longitudinal (normally distributed)
+#'        variables or a character vector containing their names
+#' @param longbin integer giving the number of longitudinal binary
+#'        variables or a character vector containing their names
+#' @param longord integer giving the number of longitudinal ordered factors
+#'         or a character vector containing their names
+#' @param longcount integer giving the number of longitudinal count variables
+#'         or a character vector containing their names
 #' @param coef vector of parameters used to create the outcome (optional), if
 #'        NULL, the parameters are drawn from a normal distribution
-#' @param misvar vector of variable names or positions (??? check this) to
+#' @param misvar vector of variable names or positions to
 #'        specify which variables are incomplete
 #' @param nmisvar integer specifying the total number of incomplete variables,
 #'        necessary when misvar is NULL and incomplete variables are chosen
 #'        randomly
-#' @param format "long" or "wide" ("wide" not yet implemented)
+#' @param seed optional seed value
 #'
 #' @details The time variable has a uniform distribution between tmin and tmax.
 #'          At the moment only the integer option is implemented for the
@@ -30,15 +36,16 @@
 #' @export
 #' @keywords internal
 sim_data <- function(N = 100, Jmin = 1, Jmax = 6, tmin = 0, tmax = 5,
-                     norm = 2, bin = 2, multi = 2, ord = 2, count = NULL,
-                     long = 2,
+                     norm = 2, bin = 2, multi = 2, ord = 2, count = 2,
+                     longnorm = 2, longbin = 2, longord = 2, longcount = 2,
                      coef = NULL, misvar = NULL, nmisvar = 7,
-                     format = "long") {
+                     seed = NULL) {
+
+  if (!is.null(seed))
+    set.seed(seed)
 
   # time-constant covariates -------------------------------------------------------------
-  if (is.list(norm)) {
-    stop("Not yet implemented")
-  } else {
+  if (length(norm) > 0) {
     if (is.character(norm)) {
       norm.names <- norm
       n.norm <- length(norm.names)
@@ -53,9 +60,7 @@ sim_data <- function(N = 100, Jmin = 1, Jmax = 6, tmin = 0, tmax = 5,
     colnames(DF.norm) <- norm.names
   }
 
-  if (is.list(bin)) {
-    stop("Not yet implemented")
-  } else {
+  if (length(bin) > 0) {
     if (is.character(bin)) {
       bin.names <- bin
       n.bin <- length(bin)
@@ -68,9 +73,7 @@ sim_data <- function(N = 100, Jmin = 1, Jmax = 6, tmin = 0, tmax = 5,
     DF.bin <- sapply(1:n.bin, function(i) factor(rbinom(N, size = 1, pbin[i])))
     colnames(DF.bin) <- bin.names
   }
-  if (is.list(multi)) {
-    stop("Not yet implemented")
-  } else {
+  if (length(multi) > 0) {
     if (is.character(multi)) {
       multi.names <- multi
       n.multi <- length(multi.names)
@@ -86,9 +89,7 @@ sim_data <- function(N = 100, Jmin = 1, Jmax = 6, tmin = 0, tmax = 5,
     colnames(DF.multi) <- multi.names
   }
 
-  if (is.list(ord)) {
-    stop("Not yet implemented")
-  } else {
+  if (length(ord) > 0) {
     if (is.character(ord)) {
       ord.names <- ord
       n.ord <- length(ord.names)
@@ -99,37 +100,101 @@ sim_data <- function(N = 100, Jmin = 1, Jmax = 6, tmin = 0, tmax = 5,
     }
     ncat.ord <- sample(3:5, n.ord, replace = TRUE)
     DF.ord <- sapply(1:n.ord,
-                     function(i) factor(sample.int(ncat.multi[i],
+                     function(i) factor(sample.int(ncat.ord[i],
                                                    N, replace = TRUE)))
     colnames(DF.ord) <- ord.names
   }
 
-  DF <- data.frame(DF.norm, DF.bin, DF.multi, DF.ord)
+  if (length(count) > 0) {
+    if (is.character(count)) {
+      count.names <- count
+      n.count <- length(count.names)
+    }
+    if (length(count) == 1 & is.numeric(count)) {
+      n.count <- count
+      count.names <- paste0("Xcount", 1:n.count)
+    }
+    lambda.count <- runif(n.count, 0.5, 5)
+    DF.count <- sapply(1:n.count, function(i) rpois(N, lambda = lambda.count[i]))
+    colnames(DF.count) <- count.names
+  }
+
+  DF <- data.frame(DF.norm, DF.bin, DF.multi, DF.ord, DF.count)
   covars <- names(DF)
 
   # observation times of outcome ---------------------------------------------------------
   nrep <- sample(Jmin:Jmax, N, replace = TRUE)
   DF <- DF[rep(1:N, times = nrep), ]
 
-  if (is.list(long)) {
+  if (is.list(longnorm)) {
     stop("Not yet implemented")
   } else {
-    if (is.character(long)) {
-      long.names <- long
-      n.long <- length(long.names)
+    if (is.character(longnorm)) {
+      longnorm.names <- longnorm
+      n.longnorm <- length(longnorm.names)
     }
-    if (length(long) == 1 & is.numeric(long)) {
-      n.long <- long
-      long.names <- paste0("Xl", 1:n.long)
+    if (length(longnorm) == 1 & is.numeric(longnorm)) {
+      n.longnorm <- longnorm
+      longnorm.names <- paste0("Xlnorm", 1:n.longnorm)
     }
-    mu.long <- rnorm(n.long)
-    sig.long <- rgamma(n.long, 0.8, 2)
-    DF.long <- sapply(1:n.long,
-                      function(i) rnorm(nrow(DF), mu.long[i], sig.long[i]))
-    colnames(DF.long) <- long.names
+    mu.longnorm <- rnorm(n.longnorm)
+    sig.longnorm <- rgamma(n.longnorm, 0.8, 2)
+    DF.longnorm <- sapply(1:n.longnorm,
+                      function(i) rnorm(nrow(DF), mu.longnorm[i], sig.longnorm[i]))
+    colnames(DF.longnorm) <- longnorm.names
   }
 
-  DF <- cbind(DF, DF.long)
+  if (is.list(longbin)) {
+    stop("Not yet implemented")
+  } else {
+    if (is.character(longbin)) {
+      longbin.names <- longbin
+      n.longbin <- length(longbin)
+    }
+    if (length(longbin) == 1 & is.numeric(longbin)) {
+      n.longbin <- longbin
+      longbin.names <- paste0("Xlbin", 1:n.longbin)
+    }
+    plongbin <- runif(n.longbin)
+    DF.longbin <- sapply(1:n.longbin,
+                         function(i) factor(rbinom(nrow(DF), size = 1, plongbin[i])))
+    colnames(DF.longbin) <- longbin.names
+  }
+
+  if (is.list(longord)) {
+    stop("Not yet implemented")
+  } else {
+    if (is.character(longord)) {
+      longord.names <- longord
+      n.longord <- length(longord.names)
+    }
+    if (length(longord) == 1 & is.numeric(longord)) {
+      n.longord <- longord
+      longord.names <- paste0("Xlord", 1:n.longord)
+    }
+    ncat.longord <- sample(3:5, n.longord, replace = TRUE)
+    DF.longord <- sapply(1:n.longord,
+                     function(i) factor(sample.int(ncat.longord[i],
+                                                   nrow(DF), replace = TRUE)))
+    colnames(DF.longord) <- longord.names
+  }
+
+  if (length(longcount) > 0) {
+    if (is.character(longcount)) {
+      longcount.names <- longcount
+      n.longcount <- length(longcount.names)
+    }
+    if (length(longcount) == 1 & is.numeric(longcount)) {
+      n.longcount <- longcount
+      longcount.names <- paste0("Xlcount", 1:n.longcount)
+    }
+    lambda.longcount <- runif(n.longcount, 0.5, 5)
+    DF.longcount <- sapply(1:n.longcount,
+                           function(i) rpois(nrow(DF), lambda = lambda.longcount[i]))
+    colnames(DF.longcount) <- longcount.names
+  }
+
+  DF <- cbind(DF, DF.longnorm, DF.longbin, DF.longord, DF.longcount)
 
   DF$id <- rep(1:N, times = nrep)
   DF$time <- unlist(sapply(1:N, function(i) sort(runif(nrep[i], tmin, tmax))))
@@ -141,6 +206,7 @@ sim_data <- function(N = 100, Jmin = 1, Jmax = 6, tmin = 0, tmax = 5,
 
   X <- model.matrix(fmla, DF)
   DF[, ord.names] <- lapply(DF[, ord.names], as.ordered)
+  DF[, longord.names] <- lapply(DF[, longord.names], as.ordered)
 
   if (is.null(coef)) {
     coef <- rnorm(ncol(X))

@@ -39,6 +39,24 @@ traceplot <- function(object, ...) {
   UseMethod("traceplot")
 }
 
+
+#' @rdname traceplot
+#' @export
+traceplot.mcmc.list <- function(object, start = NULL, end = NULL, thin = NULL, ...) {
+
+  if (is.null(start))
+    start <- start(object)
+
+  if (is.null(end))
+    end <- end(object)
+
+  if (is.null(thin))
+    thin <- thin(object)
+
+  coda::traceplot(window(object, start = start, end = end, thin = thin), ...)
+}
+
+
 #' @rdname traceplot
 #' @export
 traceplot.JointAI <- function(object, start = NULL, end = NULL, thin = NULL,
@@ -52,9 +70,8 @@ traceplot.JointAI <- function(object, start = NULL, end = NULL, thin = NULL,
 
 
   if (use_ggplot) {
-    meltMCMC <- reshape2::melt(lapply(prep$MCMC, as.matrix),
-                               varnames = c('iteration',
-                                            'variable'))
+    meltMCMC <- melt_matrix_list(lapply(prep$MCMC, as.matrix),
+                                 varnames = c('iteration', 'variable'))
     meltMCMC$chain <- factor(meltMCMC$L1)
 
 
@@ -138,6 +155,23 @@ densplot <- function(object, ...) {
 
 #' @rdname densplot
 #' @export
+densplot.mcmc.list <- function(object, start = NULL, end = NULL, thin = NULL, ...) {
+
+  if (is.null(start))
+    start <- start(object)
+
+  if (is.null(end))
+    end <- end(object)
+
+  if (is.null(thin))
+    thin <- thin(object)
+
+  coda::densplot(window(object, start = start, end = end, thin = thin), ...)
+}
+
+
+#' @rdname densplot
+#' @export
 densplot.JointAI <- function(object, start = NULL, end = NULL, thin = NULL,
                              subset = c(analysis_main = TRUE), vlines = NULL, nrow = NULL,
                              ncol = NULL, joined = FALSE, use_ggplot = FALSE,
@@ -152,9 +186,8 @@ densplot.JointAI <- function(object, start = NULL, end = NULL, thin = NULL,
 
 
   if (use_ggplot) {
-    meltMCMC <- reshape2::melt(lapply(prep$MCMC, as.matrix),
-                               varnames = c('iteration',
-                                            'variable'))
+    meltMCMC <- melt_matrix_list(lapply(prep$MCMC, as.matrix),
+                                 varnames = c('iteration', 'variable'))
     meltMCMC$chain <- factor(meltMCMC$L1)
 
     if (joined)
@@ -199,9 +232,13 @@ densplot.JointAI <- function(object, start = NULL, end = NULL, thin = NULL,
         )
         do.call(lines, args_lines)
       }
+
       if (!is.null(vlines)) {
         for (l in 1:length(vlines)) {
           args_vline <- if (is.list(vlines[[l]])) vlines[[l]] else vlines
+          if (length(args_vline$v) > 1) {
+            args_vline$v <- args_vline$v[i]
+          }
           do.call(abline, args_vline)
         }
       }
@@ -214,32 +251,34 @@ densplot.JointAI <- function(object, start = NULL, end = NULL, thin = NULL,
 # Helpfunction for densityplot and traceplot
 plot_prep <- function(object, start = NULL, end = NULL, thin = NULL, subset = NULL,
                       nrow = NULL, ncol = NULL, warn = TRUE, keep_aux = FALSE, ...) {
-  if (is.null(object$sample))
+  if (is.null(object$MCMC))
     stop("There is no MCMC sample.")
 
   if (is.null(start))
-    start <- start(object$sample)
+    start <- start(object$MCMC)
 
   if (is.null(end))
-    end <- end(object$sample)
+    end <- end(object$MCMC)
 
   if (is.null(thin))
-    thin <- thin(object$sample)
+    thin <- thin(object$MCMC)
 
-  MCMC <- get_subset(object, subset, as.list(match.call()), keep_aux = keep_aux,
+  MCMC <- get_subset(object, subset, keep_aux = keep_aux,
                      warn = warn)
   MCMC <- window(MCMC,
                  start = start,
                  end = end,
                  thin = thin)
 
-
-  # MCMC <- window(object$sample, start = start, end = end, thin = thin)
   time <- time(MCMC)
 
   # get number of rows and columns of plots
   if (is.null(nrow) & is.null(ncol)) {
-    dims <- grDevices::n2mfrow(ncol(MCMC[[1]]))
+    dims <- if (ncol(MCMC[[1]]) > 64) {
+      grDevices::n2mfrow(49)
+    } else {
+      grDevices::n2mfrow(ncol(MCMC[[1]]))
+    }
   } else if (is.null(nrow) & !is.null(ncol)) {
     dims <- c(ceiling(ncol(MCMC[[1]])/ncol), ncol)
   } else if (is.null(ncol) & !is.null(nrow)) {
@@ -256,8 +295,8 @@ plot_prep <- function(object, start = NULL, end = NULL, thin = NULL, subset = NU
 #' Visualize the distribution of all variables in the dataset
 #'
 #' Plots a grid of histograms (for continuous variables) and barplots (for
-#' categorical variables) together with the proportion of missing values and
-#' the name of each variable.
+#' categorical variables) together with the proportion of missing values in
+#' each variable.
 #' @param data a \code{data.frame} (or a \code{matrix})
 #' @param fill color the histograms and bars are filled with
 #' @param border color of the borders of the histograms and bars
@@ -286,7 +325,11 @@ plot_all <- function(data, nrow = NULL, ncol = NULL, fill = grDevices::grey(0.8)
 
   # get number of rows and columns of plots
   if (is.null(nrow) & is.null(ncol)) {
-    dims <- grDevices::n2mfrow(ncol(data))
+    dims <- if (ncol(data) > 64) {
+      grDevices::n2mfrow(49)
+    } else {
+      grDevices::n2mfrow(ncol(data))
+    }
   } else if (is.null(nrow) & !is.null(ncol)) {
     dims <- c(ceiling(ncol(data)/ncol), ncol)
   } else if (is.null(ncol) & !is.null(nrow)) {
@@ -340,6 +383,24 @@ plot_all <- function(data, nrow = NULL, ncol = NULL, fill = grDevices::grey(0.8)
       plot(0, type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "",
            main = main, bty = 'n')
       text(1, 0, paste0(names(data)[i], " \nis coded as character\nand cannot be plotted."), xpd = TRUE)
+    } else if (class(x) %in% c('Date', 'POSIXt')) {
+      if (is.null(args_hist)) {
+        breaks <-  seq(min(x, na.rm  = TRUE), max(x, na.rm = TRUE), length.out = 10 + 1)
+        hist(as.numeric(x), ylab = ylab, main = main, xaxt = 'n',
+             col = fill, border = border, xlab = xlab,
+             breaks = as.numeric(breaks))
+        axis(side = 1, at = as.numeric(breaks), labels = breaks)
+      } else {
+        nclass <- ifelse(is.na(args_hist['nclass']), 10, args_hist['nclass'])
+        breaks <- seq(min(x, na.rm  = TRUE),
+                      max(x, na.rm = TRUE),
+                      length.out = nclass + 1)
+
+        hist(as.numeric(x), ylab = ylab, main = main, xaxt = 'n',
+             col = fill, border = border, xlab = xlab, args_hist,
+             breaks = as.numeric(breaks))
+        axis(side = 1, at = as.numeric(breaks), labels = breaks, args_hist)
+      }
     } else {
       if (is.null(args_hist)) {
         hist(x, ylab = ylab, main = main,

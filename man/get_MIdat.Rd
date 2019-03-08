@@ -9,7 +9,7 @@ get_MIdat(object, m = 10, include = TRUE, start = NULL,
   resdir = NULL, filename = NULL)
 }
 \arguments{
-\item{object}{object inheriting from class "JointAI"}
+\item{object}{object inheriting from class 'JointAI'}
 
 \item{m}{number of imputed datasets}
 
@@ -31,9 +31,10 @@ get_MIdat(object, m = 10, include = TRUE, start = NULL,
 }
 \value{
 A dataframe containing the imputed values (and original data) stacked.
-       The variable \code{Imputation_} identifies the imputations.
+       The variable \code{Imputation_} identifies the imputations, while
+       \code{.rownr} identifies rows of the rows of the original data.
        In cross-sectional datasets the
-       variable \code{.imp} is added as subject identifier.
+       variable \code{.id} is added as subject identifier.
 }
 \description{
 Creates a dataset containing multiple imputed datasets stacked onto each other
@@ -43,7 +44,7 @@ These data can be automatically exported to SPSS (i.e., a .txt file containing t
 the \href{https://CRAN.R-project.org/package=foreign}{\strong{foreign}} package needs to be installed.
 }
 \examples{
-# fit a model and monitor the imputed values with monitor_params = c(imps = TRUE)#'
+# fit a model and monitor the imputed values with monitor_params = c(imps = TRUE)
 mod <- lm_imp(y~C1 + C2 + M2, data = wideDF, monitor_params = c(imps = TRUE), n.iter = 100)
 
 # Example 1: without export to SPSS
@@ -57,4 +58,7 @@ MIs <- get_MIdat(mod, m = 3, seed = 123, resdir = temp_dir,
                  export_to_SPSS = TRUE)
 
 }
+}
+\seealso{
+\code{\link{plot_imp_distr}}
 }

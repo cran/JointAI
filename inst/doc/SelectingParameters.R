@@ -9,7 +9,7 @@ library("JointAI")
 
 ## ---- echo = F-----------------------------------------------------------
 tab <- rbind(
-c("`analysis_main`", "`betas`, `tau_y` and `sigma_y`"),
+c("`analysis_main`", "`betas` and `sigma_y` (and `D` in mixed models)"),
 c("`analysis_random`", "`ranef`, `D`, `invD`, `RinvD`"),
 c('`imp_pars`', '`alphas`, `tau_imp`, `gamma_imp`, `delta_imp`'),
 c('`imps`', 'imputed values'),
@@ -30,40 +30,37 @@ colnames(tab) = c('name/key word', 'what is monitored')
 
 knitr::kable(tab)
 
-## ----lm1_1---------------------------------------------------------------
-lm1 <- lm_imp(SBP ~ gender + WC + alc + creat, data = NHANES, 
-              n.adpat = 0, mess = FALSE)
+## ----lm1_1, message = FALSE----------------------------------------------
+lm1 <- lm_imp(SBP ~ gender + WC + alc + creat, data = NHANES,  n.adpat = 0)
 
-parameters(lm1, mess = FALSE)
+parameters(lm1)
 
-## ----lm2_1---------------------------------------------------------------
+## ----lm2_1, message = FALSE----------------------------------------------
 lm2 <- lm_imp(SBP ~ age + WC + alc + smoke + occup,
-              data = NHANES, n.adapt = 0, mess = FALSE,
+              data = NHANES, n.adapt = 0,
               monitor_params = c(imps = TRUE, analysis_main = FALSE)
 )
 
-parameters(lm2, mess = FALSE)
+parameters(lm2)
 
-## ----lm3_1---------------------------------------------------------------
-lm3 <- lm_imp(SBP ~ age + WC + alc + smoke + occup,
-              data = NHANES, n.adapt = 0, mess = FALSE,
-              monitor_params = c(imp_pars = TRUE, analysis_main = FALSE),
+## ----lm3_1, message = FALSE----------------------------------------------
+lm3 <- lm_imp(SBP ~ age + WC + alc + smoke + occup, data = NHANES, n.adapt = 0,
+              monitor_params = c(imp_pars = TRUE, analysis_main = FALSE)
 )
 
-parameters(lm3, mess = FALSE)
+parameters(lm3)
 
 ## ----list_lm2------------------------------------------------------------
 list_impmodels(lm2)
 
 ## ---- echo = FALSE-------------------------------------------------------
-tab <- rbind(object = 'a JointAI object',
+tab <- rbind(object = "'an object of class 'JointAI'",
              m = "number of datasets to be created",
              include = "logical; should the original data be included?",
              start = paste0("the first iteration that may be randomly chosen",
                             " (i.e., all previous iterations are discarded as burn-in)"),
              minspace = 'minimum number of iterations between iterations chosen as imputed values',
-             seed = "optional seed value in order to make the random selection
-                     of iterations reproducible",
+             seed = "optional seed value in order to make the random selection of iterations reproducible",
              export_to_SPSS = paste0("logical; should the datasets be exported", 
                                      " to SPSS, i.e., written as .txt and .sps file? ",
                                      "If `export_to_SPSS = FALSE` (default) the",
@@ -76,49 +73,43 @@ colnames(tab) <- c('argument', 'explanation')
 
 knitr::kable(tab, row.names = FALSE)
 
-## ------------------------------------------------------------------------
-lme1 <- lme_imp(bmi ~ age + EDUC, random = ~age | ID, 
-                data = simLong, n.adapt = 0, mess = FALSE)
+## ---- message = FALSE----------------------------------------------------
+lme1 <- lme_imp(bmi ~ age + EDUC, random = ~age | ID, data = simLong, n.adapt = 0)
 
-parameters(lme1, mess = FALSE)
+parameters(lme1)
 
-## ------------------------------------------------------------------------
-lme2 <- lme_imp(bmi ~ age + EDUC, random = ~age | ID,
-                data = simLong, n.adapt = 0, mess = FALSE,
+## ---- message = FALSE----------------------------------------------------
+lme2 <- lme_imp(bmi ~ age + EDUC, random = ~age | ID, data = simLong, n.adapt = 0,
                 monitor_params = c(analysis_random = TRUE))
 
-parameters(lme2, mess = FALSE)
+parameters(lme2)
 
-## ------------------------------------------------------------------------
-lme3a <- lme_imp(bmi ~ age + EDUC, random = ~age | ID,
-                data = simLong, n.adapt = 0, mess = FALSE,
+## ---- message = FALSE----------------------------------------------------
+lme3a <- lme_imp(bmi ~ age + EDUC, random = ~age | ID, data = simLong, n.adapt = 0,
                 monitor_params = c(analysis_main = TRUE, RinvD = TRUE))
 
-parameters(lme3a, mess = FALSE)
+parameters(lme3a)
 
-## ------------------------------------------------------------------------
-lme3b <- lme_imp(bmi ~ age + EDUC, random = ~age | ID,
-                data = simLong, n.adapt = 0, mess = FALSE,
+## ---- message = FALSE----------------------------------------------------
+lme3b <- lme_imp(bmi ~ age + EDUC, random = ~age | ID, data = simLong, n.adapt = 0,
                 monitor_params = c(analysis_main = TRUE,
                                    analysis_random = TRUE,
                                    RinvD = FALSE,
                                    ranef = FALSE))
 
-parameters(lme3b, mess = FALSE)
+parameters(lme3b)
 
-## ------------------------------------------------------------------------
-lm4 <- lm_imp(SBP ~ gender + WC + alc + creat,
-              data = NHANES, n.adapt = 0, mess = FALSE, progress.bar = 'none',
+## ---- message = FALSE----------------------------------------------------
+lm4 <- lm_imp(SBP ~ gender + WC + alc + creat, data = NHANES,
               monitor_params = list(analysis_main = FALSE,
                                     other = c('p_alc[1:3]', "mu_creat[1]")))
 
 parameters(lm4)
 
-## ---- fig.width = 7, fig.height = 6, cache = TRUE------------------------
+## ---- fig.width = 7, fig.height = 6, warning = FALSE---------------------
 # Run a model monitoring analysis parameters and imputation parameters
-lm5 <- lm_imp(SBP ~ gender + WC + alc + creat,
-              data = NHANES, n.iter = 100, mess = FALSE, progress.bar = 'none',
-              monitor_params = c(imp_pars = TRUE))
+lm5 <- lm_imp(SBP ~ gender + WC + alc + creat, data = NHANES, n.iter = 100,
+              progress.bar = 'none', monitor_params = c(imp_pars = TRUE))
 
 # model summary
 summary(lm5)
@@ -135,12 +126,12 @@ GR_crit(lm5)
 # Monte Carlo Error of the MCMC sample
 MC_error(lm5)
 
-## ---- cache = TRUE, fig.height = 1.5-------------------------------------
+## ---- fig.height = 1.5, message = FALSE----------------------------------
 # Re-run the model from above, now creating MCMC samples
 lm4 <- lm_imp(SBP ~ gender + WC + alc + creat,
-              data = NHANES, n.iter = 100, mess = FALSE,  progress.bar = 'none',
+              data = NHANES, n.iter = 100, progress.bar = 'none',
               monitor_params = list(analysis_main = FALSE,
-                                    other = c('p_alc[1:3]', "mu_creat[1]")))
+                                    other = c('mu_alc[1:3]', "mu_creat[1]")))
 
 traceplot(lm4, ncol = 4)
 
@@ -151,11 +142,11 @@ GR_crit(lm5, subset = c(analysis_main = FALSE, imp_pars = TRUE))
 ## ----trace_lm5, fig.width = 5, fig.height = 2, out.width = "60%"---------
 summary(lm5, subset = list(other = c('creat', 'alc>=1')))
 
-## ----lm2_2, cache = TRUE, fig.height = 2, fig.width = 5, out.width = "60%"----
+## ----lm2_2, fig.height = 2, fig.width = 5, out.width = "60%", message = FALSE----
 # Re-run the model from above, now creating MCMC samples
 lm2 <- lm_imp(SBP ~ age + WC + alc + smoke + occup,
-              data = NHANES, n.iter = 100, mess = FALSE,  progress.bar = 'none',
-              monitor_params = c(imps = TRUE, analysis_main = FALSE),
+              data = NHANES, n.iter = 100, progress.bar = 'none',
+              monitor_params = c(imps = TRUE, analysis_main = FALSE)
 )
 
 # select only imputed values for 'WC' (3rd column of Xc)
@@ -164,9 +155,9 @@ sub3
 
 traceplot(lm2, subset = list(other = sub3), ncol = 2)
 
-## ---- fig.height = 4-----------------------------------------------------
-lme4 <- lme_imp(bmi ~ age + EDUC, random = ~age|ID,
-                data = simLong, n.iter = 100, mess = FALSE, progress.bar = 'none',
+## ---- fig.height = 4, message = FALSE------------------------------------
+lme4 <- lme_imp(bmi ~ age + EDUC, random = ~age | ID,
+                data = simLong, n.iter = 100, progress.bar = 'none',
                 monitor_params = c(analysis_main = FALSE, ranef = TRUE))
 
 # exract random intercepts

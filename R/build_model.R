@@ -1,41 +1,24 @@
 # Function to build JAGS model
-# @param analysis_type analysis model type (character string)
-# @param family model family
-# @param link link function
-# @param meth named vector specifying imputation methods and ordering
-# @param Ntot number of observations
-# @param N number of individuals
-# @param y_name name of outcome variable
-# @param Mlist list of design matrices
-# @param Z random effects design matrix
-# @param Xic design matrix of time-constant interactions
-# @param Xl design matrix of time-varying covariates
-# @param Xil design matrix of interactions involving time-varying covariates
-# @param hc_list list specifying hierarchical centring structure
-# @param K matrix specifying range of regression coefficients used for each
-# component of the analysis model
-# @param imp_par_list output from get_imp_par_list
-# @export
-build_JAGS <- function(analysis_type, family = NULL, link = NULL, meth = NULL,
-                       Ntot, N, y_name,  Mlist = NULL,
-                        Z = NULL, Xic = NULL, Xl = NULL, Xil = NULL,
-                        hc_list = NULL, K, imp_par_list, ...) {
+
+build_JAGS <- function(analysis_type, family = NULL, link = NULL, models = NULL,
+                       Ntot, Mlist = NULL, K, imp_par_list, ...) {
   arglist <- as.list(match.call())[-1]
-  if (is.null(arglist$Xic)) {
-    arglist$Xic <- Mlist$Xic
-  }
 
   analysis_model <- switch(analysis_type,
                            "lme" = lme_model,
                            "glme" = glme_model,
+                           "clmm" = clmm_model,
                            "lm" = lm_model,
                            "glm" = glm_model,
+                           "clm" = clm_model,
                            "survreg" = survreg_model,
                            "coxph" = coxph_model)
   analysis_priors <- switch(analysis_type,
                             "lme" = lme_priors,
                             "glme" = glme_priors,
+                            "clmm" = clmm_priors,
                             "glm" = glm_priors,
+                            "clm" = clm_priors,
                             "lm" = lm_priors,
                             "survreg" = survreg_priors,
                             "coxph" = coxph_priors)
@@ -45,23 +28,20 @@ build_JAGS <- function(analysis_type, family = NULL, link = NULL, meth = NULL,
   Xic <- Mlist$Xic
 
   interactions <- if (!is.null(Xic)) {
-    #if (any(is.na(Xic))) {
       splitnam <- sapply(colnames(Xic)[apply(is.na(Xic), 2, any)],
                          strsplit, split = ":")
       Xc_pos <- lapply(splitnam, match, colnames(Mlist$Xc))
       Xic_pos <- match(colnames(Xic)[apply(is.na(Xic), 2, any)], colnames(Xic))
-      #  the above line may be too complicated (left over from previous version)
 
-      paste0(
+      paste0('\n\n',
         tab(), "# ------------------------------------------------------ #", "\n",
         tab(), "# Interactions involving only cross-sectional covariates #", "\n",
         tab(), "# ------------------------------------------------------ #", "\n\n",
-        tab(), "for (i in 1:", N, ") {", "\n",
+        tab(), "for (i in 1:", Mlist$N, ") {", "\n",
         paste0(paste_interactions(index = "i", mat0 = "Xic", mat1 = "Xc",
                                   mat0_col = Xic_pos, mat1_col = Xc_pos),
                collapse = "\n"), "\n",
         tab(), "}", "\n")
-    # }
   }
 
   # Interactions within longitudinal variables
@@ -90,7 +70,7 @@ build_JAGS <- function(analysis_type, family = NULL, link = NULL, meth = NULL,
       a
     }, simplify = FALSE)
 
-    paste0(
+    paste0('\n\n',
       tab(), "# ---------------------------------------------- #", "\n",
       tab(), "# Interactions involving longitudinal covariates #", "\n",
       tab(), "# ---------------------------------------------- #", "\n\n",
@@ -99,26 +79,47 @@ build_JAGS <- function(analysis_type, family = NULL, link = NULL, meth = NULL,
                                 mat0_col = Xil_pos, mat1_col = mat1_col),
              collapse = "\n"), "\n",
       tab(), "}", "\n")
-    # }
   }
 
   # imputation section of the model
+  imp_par_list_baseline <- imp_par_list[sapply(imp_par_list, '[[', 'impmeth') %in%
+                                          c('norm', 'logit', 'cumlogit',
+                                            'multilogit', 'gamma', 'beta',
+                                            'lognorm')]
 
-  imputation_part <- if (!is.null(meth)) {
-    paste0(
-      tab(), "# ----------------- #", "\n",
-      tab(), "# Imputation models #", "\n",
-      tab(), "# ----------------- #", "\n\n",
-      tab(), "for (i in 1:", N, ") {", "\n",
-      paste0(sapply(imp_par_list, paste_imp_model), collapse = "\n"),
+  imp_par_list_long <- imp_par_list[sapply(imp_par_list, '[[', 'impmeth') %in%
+                                      c('lmm', 'glmm_gamma', 'glmm_logit',
+                                        'glmm_poisson', 'clmm')]
+
+
+  imputation_part_baseline <- if (length(imp_par_list_baseline) > 0) {
+    paste0('\n\n',
+      tab(), "# ----------------------------------------- #", "\n",
+      tab(), "# Imputation models for baseline covariates #", "\n",
+      tab(), "# ----------------------------------------- #", "\n\n",
+      tab(), "for (i in 1:", Mlist$N, ") {", "\n",
+      paste0(sapply(imp_par_list_baseline, paste_imp_model), collapse = "\n"),
       tab(), "}", "\n\n",
       tab(), "# -------------------------------- #", "\n",
       tab(), "# Priors for the imputation models #", "\n",
-      tab(), "# -------------------------------- #", "\n\n",
-      paste0(sapply(imp_par_list, paste_imp_priors), collapse = "\n")
+      tab(), "# -------------------------------- #", "\n",
+      paste0(sapply(imp_par_list_baseline, paste_imp_priors), collapse = "\n")
     )
   }
 
+  imputation_part_long <- if (length(imp_par_list_long) > 0) {
+    paste0('\n\n',
+           tab(), "# ---------------------------------- #", "\n",
+           tab(), "# Models for longitudinal covariates #", "\n",
+           tab(), "# ---------------------------------- #", "\n\n",
+           paste0(sapply(imp_par_list_long, paste_imp_model), collapse = "\n"),
+           "\n\n",
+           tab(), "# --------------------------------------------- #", "\n",
+           tab(), "# Priors for models for longitudinal covariates #", "\n",
+           tab(), "# --------------------------------------------- #", "\n",
+           paste0(sapply(imp_par_list_long, paste_imp_priors), collapse = "\n")
+    )
+  }
 
 
   # Analysis part and insert the rest
@@ -134,10 +135,10 @@ build_JAGS <- function(analysis_type, family = NULL, link = NULL, meth = NULL,
     tab(), "# Priors for the analysis model #", "\n",
     tab(), "# ----------------------------- #", "\n\n",
     paste0(do.call(analysis_priors, arglist), collapse = "\n"),
-    "\n\n",
-    imputation_part, "\n\n",
-    interactions, "\n",
-    interactions_long, "\n",
+    imputation_part_baseline, "\n",
+    imputation_part_long, "\n",
+    interactions,
+    interactions_long,
     "}"
   )
 }
@@ -146,5 +147,16 @@ build_JAGS <- function(analysis_type, family = NULL, link = NULL, meth = NULL,
 
 
 
+write_model <- function(analysis_type, family = NULL, link = NULL,
+                        models = NULL, Ntot, Mlist, K, imp_par_list, file = NULL,
+                        package = "JAGS") {
+
+  arglist <- as.list(match.call())[-1]
+
+  build_model <- switch(package,
+                        "JAGS" = build_JAGS)
+
+  cat(do.call(build_model, arglist), file = file)
+}
 
 
