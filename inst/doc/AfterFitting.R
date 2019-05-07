@@ -39,11 +39,11 @@ densplot(mod13a, ncol = 3,
 
 ## ----ggdens15a, fig.width = 7, fig.height = 3.5, out.width = '100%'-------------------------------
 # fit the complete-case version of the model
-mod13a_cc <- lm(SBP ~ gender + WC + alc +  creat, data = NHANES)
+mod13a_cc <- lm(formula(mod13a), data = NHANES)
 
 
-# make a dataset containing the quantiles of the posterior sample and confidence
-# intervals from the complete case analysis:
+# make a dataset containing the quantiles of the posterior sample and
+# confidence intervals from the complete case analysis:
 quantDF <- rbind(data.frame(variable = rownames(summary(mod13a)$stat),
                             type = '2.5%',
                             model = 'JointAI',
@@ -67,18 +67,17 @@ quantDF <- rbind(data.frame(variable = rownames(summary(mod13a)$stat),
 )
 
 
-# ggplot version, excluding tau_SBP from the plot:
-p13a <- densplot(mod13a, ncol = 3, use_ggplot = TRUE, joined = TRUE,
-                 subset = c(analysis_main = TRUE, tau_y = FALSE)) +
+# ggplot version:
+p13a <- densplot(mod13a, ncol = 3, use_ggplot = TRUE, joined = TRUE) +
   theme(legend.position = 'bottom')
 
 
 # add vertical lines for the:
-# - confidence intervals from the compl. case analysis
+# - confidence intervals from the complete case analysis
 # - quantiles of the posterior distribution
-
 p13a +
-  geom_vline(data = quantDF, aes(xintercept = value, color = model), lty = 2) +
+  geom_vline(data = quantDF, aes(xintercept = value, color = model),
+             lty = 2) +
   scale_color_manual(name = 'CI from model: ', 
                      limits = c('JointAI', 'cc'),
                      values = c('blue', 'red'),
@@ -90,8 +89,9 @@ summary(mod13a)
 ## ---- message = FALSE-----------------------------------------------------------------------------
 library(splines)
 mod13b <- lme_imp(bmi ~ GESTBIR + ETHN + HEIGHT_M + ns(age, df = 3),
-                  random = ~ ns(age, df = 3) | ID, data = simLong,
-                  n.iter = 250, no_model = 'age')
+                  random = ~ ns(age, df = 1) | ID,
+                  subset(simLong, !is.na(bmi)),
+                  n.iter = 500, no_model = 'age', seed = 2019)
 
 summary(mod13b)
 
@@ -182,6 +182,6 @@ matplot(pred$dat$age, pred$dat[, c('fit', '2.5%', '97.5%')],
 ## -------------------------------------------------------------------
 impDF <- get_MIdat(mod13d, m = 10, seed = 2018)
 
-## -------------------------------------------------------------------
+## ---- fig.width = 7, fig.height = 2.5-------------------------------
 plot_imp_distr(impDF, nrow = 1)
 

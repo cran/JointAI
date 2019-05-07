@@ -1,3 +1,29 @@
+
+# JointAI 0.5.1
+
+## Bug fixes
+* bug in ordinal models with only completely observed variables fixed 
+  (all necessary data is not passed to JAGS)
+* enable thinning when using parallel sampling
+* matrix `Xl` is no longer included in `data_list` when it is not used in the model
+* bugfix in `subset` when specified as vector
+* bugfix in ridge regression (gave an error message)
+* bugfix in recognition of binary factors that are coded as numeric and have missing values
+* bugfix in `summary`: range of iterations is printed correctly now when argument `end` is used
+* bugfix: error that occured in re-scaling when reference category was changed is solved
+* bugfix in survival models: coding of censoring variable fixed
+
+
+## Minor changes
+* `summary()` calls `GR_crit()` with argument `autoburnin = FALSE` unless specified otherwise via `...`
+* when `inits` is specified as a function, the function is evaluated and the resulting list passed to JAGS (previously the function was passed to JAGS)
+* the example data `simong` and `simWide` have changed (more variables, less subjects)
+* added check if there are incomplete covariates before setting `imp_pars = TRUE`
+  (when user specified via `monitor_params` or `subset`)
+* in `survreg_imp` the sign of the regression coefficient is now opposite to match the one from `survreg`
+
+--------------------------------------------------------------------------------
+
 # JointAI 0.5.0
  
 ## Important

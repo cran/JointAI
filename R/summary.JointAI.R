@@ -31,7 +31,11 @@ summary.JointAI <- function(object, start = NULL, end = NULL, thin = NULL,
   if (is.null(object$MCMC))
     stop("There is no MCMC sample.")
 
-  MCMC <- prep_MCMC(object, start = start, end = end, thin = thin, subset = subset, warn = warn, ...)
+  cl <- as.list(match.call())[-1]
+  autoburnin <- if (is.null(cl$autoburnin)) FALSE else eval(cl$autoburnin)
+
+  MCMC <- prep_MCMC(object, start = start, end = end, thin = thin,
+                    subset = subset, warn = warn, mess = mess, ...)
 
   # create results matrix
   statnames <- c("Mean", "SD", paste0(quantiles * 100, "%"), "tail-prob.", "GR-crit")
@@ -44,12 +48,13 @@ summary.JointAI <- function(object, start = NULL, end = NULL, thin = NULL,
   stats[, paste0(quantiles * 100, "%")] <- t(apply(MCMC, 2, quantile, quantiles))
   stats[, "tail-prob."] <- apply(MCMC, 2, computeP)
   stats[, "GR-crit"] <- GR_crit(object = object, start = start, end = end, thin = thin,
-                                warn = warn, subset = subset, ...)[[1]][, "Upper C.I."]
+                                warn = warn, mess = FALSE,
+                                subset = subset, autoburnin = autoburnin)[[1]][, "Upper C.I."]
 
   out <- list()
   out$call <- object$call
   out$start <- ifelse(is.null(start), start(object$MCMC), max(start, start(object$MCMC)))
-  out$end <- ifelse(is.null(end), end(object$MCMC), max(end, end(object$MCMC)))
+  out$end <- ifelse(is.null(end), end(object$MCMC), min(end, end(object$MCMC)))
   out$thin <- thin(object$MCMC)
   out$nchain <- nchain(object$MCMC)
   out$stats <- stats
@@ -88,7 +93,8 @@ summary.JointAI <- function(object, start = NULL, end = NULL, thin = NULL,
                                             get_aux(object),
                                             rownames(out$sigma),
                                             rownames(out$weibull),
-                                            paste0("tau_", names(object$Mlist$y))), , drop = FALSE]
+                                            paste0("tau_", names(object$Mlist$y))),
+                    , drop = FALSE]
 
   out$analysis_type <- object$analysis_type
   out$size <- nrow(object$data)
@@ -165,7 +171,7 @@ coef.JointAI <- function(object, start = NULL, end = NULL, thin = NULL,
     stop("There is no MCMC sample.\n")
   }
 
-  MCMC <- prep_MCMC(object, start, end, thin, subset)
+  MCMC <- prep_MCMC(object, start, end, thin, subset, mess = mess, warn = warn)
 
   coefs <- colMeans(MCMC)[intersect(colnames(MCMC),
                                     get_coef_names(object$Mlist, object$K)[, 2])]
@@ -219,7 +225,7 @@ confint.JointAI <- function(object, parm = NULL, level = 0.95,
   if (is.null(quantiles) & !is.null(level))
     quantiles <- c((1 - level)/2, 1 - (1 - level)/2)
 
-  MCMC <- prep_MCMC(object, start, end, thin, subset)
+  MCMC <- prep_MCMC(object, start, end, thin, subset, mess = mess, warn = warn)
 
   cis <- t(apply(MCMC, 2, quantile, quantiles))
 
@@ -235,7 +241,7 @@ print.JointAI <- function(x, digits = max(4, getOption("digits") - 4), ...) {
 
 
   MCMC <- if (!is.null(x$MCMC))
-    prep_MCMC(x, start = NULL, end = NULL, thin = NULL, subset = NULL)
+    prep_MCMC(x, start = NULL, end = NULL, thin = NULL, subset = NULL, ...)
 
 
   cat("\nCall:\n")

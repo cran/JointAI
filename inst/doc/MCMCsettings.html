@@ -12,7 +12,7 @@
 
 <meta name="author" content="Nicole Erler" />
 
-<meta name="date" content="2019-03-08" />
+<meta name="date" content="2019-05-07" />
 
 <title>MCMC Settings</title>
 
@@ -37,7 +37,7 @@ a.sourceLine { text-indent: -1em; padding-left: 1em; }
 pre.numberSource a.sourceLine
   { position: relative; left: -4em; }
 pre.numberSource a.sourceLine::before
-  { content: attr(data-line-number);
+  { content: attr(title);
     position: relative; left: -1em; text-align: right; vertical-align: baseline;
     border: none; pointer-events: all; display: inline-block;
     -webkit-touch-callout: none; -webkit-user-select: none;
@@ -291,6 +291,9 @@ code > span.al { color: #ff0000; font-weight: bold; }
 code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61717; background-color: #e3d2d2; } 
 </style>
 
+
+
+
 </head>
 
 <body>
@@ -299,8 +302,8 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 
 
 <h1 class="title toc-ignore">MCMC Settings</h1>
-<h4 class="author"><em>Nicole Erler</em></h4>
-<h4 class="date"><em>2019-03-08</em></h4>
+<h4 class="author">Nicole Erler</h4>
+<h4 class="date">2019-05-07</h4>
 
 
 <div id="TOC">
@@ -325,7 +328,7 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <li><a href="#specifying-which-nodes-should-be-monitored">Specifying which nodes should be monitored</a></li>
 </ul></li>
 <li><a href="#initial-values">Initial values</a><ul>
-<li><a href="#user-specified-initial-values">User specified initial values</a><ul>
+<li><a href="#user-specified-initial-values">User-specified initial values</a><ul>
 <li><a href="#initial-values-in-a-list-of-lists">Initial values in a list of lists</a></li>
 <li><a href="#initial-values-as-a-function">Initial values as a function</a></li>
 </ul></li>
@@ -336,10 +339,10 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 </ul>
 </div>
 
-<p>In <strong>JointAI</strong>, models are estimated in the Bayesian framework, using MCMC (<a href="https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo">Markov Chain Monte Carlo</a>) sampling. The sampling is done by the software <a href="http://mcmc-jags.sourceforge.net/">JAGS</a> (“Just Another Gibbs Sampler”), which performs <a href="https://en.wikipedia.org/wiki/Gibbs_sampling">Gibbs</a> sampling. <strong>JointAI</strong> pre-processes the data to get it into a form that can be passed to JAGS and writes the JAGS model. The R package <a href="https://CRAN.R-project.org/package=rjags"><strong>rjags</strong></a> is used as interface to JAGS.</p>
+<p>In <strong>JointAI</strong>, models are estimated in the Bayesian framework, using MCMC (<a href="https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo">Markov Chain Monte Carlo</a>) sampling. The sampling is done by the software <a href="http://mcmc-jags.sourceforge.net/">JAGS</a> (“Just Another Gibbs Sampler”), which performs <a href="https://en.wikipedia.org/wiki/Gibbs_sampling">Gibbs</a> sampling. <strong>JointAI</strong> pre-processes the data to get it into a form that can be passed to JAGS and writes the JAGS model. The R package <a href="https://CRAN.R-project.org/package=rjags"><strong>rjags</strong></a> is used as an interface to JAGS.</p>
 <p>Here, we describe how to specify the arguments in the main functions that control MCMC related settings. To learn more about how to specify the other arguments in <strong>JointAI</strong> models, check out the vignette on <a href="https://nerler.github.io/JointAI/articles/ModelSpecification.html"><em>Model Specification</em></a>.</p>
-<p>In this vignette we use the <a href="https://nerler.github.io/JointAI/reference/NHANES.html">NHANES</a> data for examples in cross-sectional data and the dataset <a href="https://nerler.github.io/JointAI/reference/simLong.html">simLong</a> for examples in longitudinal data. For more info on these datasets, check out the vignette <a href="https://nerler.github.io/JointAI/articles/VisualizingIncompleteData.html"><em>Visualizing Incomplete Data</em></a>, in which the distributions of variables and missing values in both sets is explored.</p>
-<p><strong>Note:</strong><br> In many of the examples we use <code>progress.bar = 'none'</code> which prevents printing of the progress of the MCMC sampling, since this would result in lengthy output in the vignette.</p>
+<p>In this vignette, we use the <a href="https://nerler.github.io/JointAI/reference/NHANES.html">NHANES</a> data for examples in cross-sectional data and the dataset <a href="https://nerler.github.io/JointAI/reference/simLong.html">simLong</a> for examples in longitudinal data. For more info on these datasets, check out the vignette <a href="https://nerler.github.io/JointAI/articles/VisualizingIncompleteData.html"><em>Visualizing Incomplete Data</em></a>, in which the distributions of variables and missing values in both sets is explored.</p>
+<p><strong>Note:</strong><br> In many of the examples, we use <code>progress.bar = &#39;none&#39;</code> which prevents printing of the progress of the MCMC sampling, since this would result in lengthy output in the vignette.</p>
 <div id="mcmc-related-parameters-in-jointai" class="section level2">
 <h2>MCMC related parameters in <strong>JointAI</strong></h2>
 <p>The main functions <a href="https://nerler.github.io/JointAI/reference/model_imp.html"><code>*_imp()</code></a> have a number of arguments that specify settings for the MCMC sampling:</p>
@@ -362,10 +365,10 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 </div>
 <div id="chains-and-iterations" class="section level2">
 <h2>Chains and Iterations</h2>
-<p>In MCMC sampling, values are drawn from a probability distribution. The distribution the current value is drawn from depends on the previously drawn value (but not on values before that). Values, thus, form a chain. Once the chain has converged, its elements can be seen as a sample from the target posterior distribution.</p>
+<p>In MCMC sampling, values are drawn from a probability distribution. The distribution of the current value is drawn from depends on the previously drawn value (but not on values before that). Values, thus, form a chain. Once the chain has converged, its elements can be seen as a sample from the target posterior distribution.</p>
 <div id="number-of-chains" class="section level3">
 <h3>Number of chains</h3>
-<p>To evaluate convergence of MCMC chains it is helpful to create multiple chains, that have different starting values. The argument <code>n.chains</code> selects the number of chains (by default, <code>n.chains = 3</code>).</p>
+<p>To evaluate the convergence of MCMC chains it is helpful to create multiple chains, that have different starting values. The argument <code>n.chains</code> selects the number of chains (by default, <code>n.chains = 3</code>).</p>
 <p>For calculating the model summary, multiple chains are merged.</p>
 </div>
 <div id="adaptive-phase" class="section level3">
@@ -378,24 +381,24 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <p><code>n.iter</code> specifies the number of iterations in the sampling phase, i.e., the length of the MCMC chain. How many samples are required to reach convergence and to have sufficient precision depends on the complexity of data and model, and may range from as few as 100 to several million.</p>
 <div id="side-note-how-to-evaluate-convergence" class="section level4">
 <h4>Side note: How to evaluate convergence?</h4>
-<p>Convergence can for instance be evaluated visually using a <a href="https://nerler.github.io/JointAI/reference/traceplot.html"><code>traceplot()</code></a> or using the Gelman-Rubin diagnostic criterion<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> (implemented in <a href="https://nerler.github.io/JointAI/reference/GR_crit.html"><code>GR_crit()</code></a>, but also returned with the model summary). The latter compares within and between chain variability and requires the JointAI object to have at least two chains.</p>
+<p>Convergence can, for instance, be evaluated visually using a <a href="https://nerler.github.io/JointAI/reference/traceplot.html"><code>traceplot()</code></a> or using the Gelman-Rubin diagnostic criterion<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> (implemented in <a href="https://nerler.github.io/JointAI/reference/GR_crit.html"><code>GR_crit()</code></a>, but also returned with the model summary). The latter compares within and between chain variability and requires the JointAI object to have at least two chains.</p>
 </div>
 <div id="side-note-how-to-check-precision" class="section level4">
 <h4>Side note: How to check precision?</h4>
-<p>Precision of the MCMC sample can be checked with the function <a href="https://nerler.github.io/JointAI/reference/MC_error.html"><code>MC_error()</code></a>. It calculates the Monte Carlo error (the error that is made since the sample is finite) and compares is to the standard deviation of the posterior sample. A rule of thumb is that the Monte Carlo error should not be more than 5% of the standard deviation.<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a></p>
+<p>The precision of the MCMC sample can be checked with the function <a href="https://nerler.github.io/JointAI/reference/MC_error.html"><code>MC_error()</code></a>. It calculates the Monte Carlo error (the error that is made since the sample is finite) and compares it to the standard deviation of the posterior sample. A rule of thumb is that the Monte Carlo error should not be more than 5% of the standard deviation.<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a></p>
 </div>
 </div>
 <div id="thinning" class="section level3">
 <h3>Thinning</h3>
 <p>In settings with high autocorrelation i.e., there are no large jumps in the chain but sampled values are always close to the previous value, it may take many iterations before a sample is created that sufficiently represents the whole range of the posterior distribution.</p>
-<p>Processing of such long chains can be slow and take a lot of memory. The parameter <code>thin</code> allows to specify if and how much the MCMC chains should be thinned out before storing them. By default <code>thin = 1</code> is used, which corresponds to keeping all values. A value <code>thin = 10</code> would result in keeping every 10th value and discarding all other values.</p>
+<p>Processing of such long chains can be slow and take a lot of memory. The parameter <code>thin</code> allows to user to specify if and how much the MCMC chains should be thinned out before storing them. By default <code>thin = 1</code> is used, which corresponds to keeping all values. A value <code>thin = 10</code> would result in keeping every 10th value and discarding all other values.</p>
 </div>
 <div id="examples" class="section level3">
 <h3>Examples</h3>
 <div id="default-settings" class="section level4">
 <h4>Default settings</h4>
 <p><code>n.adapt = 100</code> and <code>thin = 1</code> with 100 sampling iterations</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1">mod1 &lt;-<span class="st"> </span><span class="kw">lm_imp</span>(SBP <span class="op">~</span><span class="st"> </span>alc, <span class="dt">data =</span> NHANES, <span class="dt">n.iter =</span> <span class="dv">100</span>, <span class="dt">progress.bar =</span> <span class="st">'none'</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1">mod1 &lt;-<span class="st"> </span><span class="kw">lm_imp</span>(SBP <span class="op">~</span><span class="st"> </span>alc, <span class="dt">data =</span> NHANES, <span class="dt">n.iter =</span> <span class="dv">100</span>, <span class="dt">progress.bar =</span> <span class="st">&#39;none&#39;</span>)</a></code></pre></div>
 <p>The relevant part of the model summary (obtained with <a href="https://nerler.github.io/JointAI/reference/summary.JointAI.html"><code>summary()</code></a>) shows that the first 100 iterations (adaptive phase) were discarded, and the 100 iterations that follow form the posterior sample. Thinning was set to 1 and there are 3 chains.</p>
 <pre><code>#&gt; [...]
 #&gt; MCMC settings:
@@ -406,10 +409,10 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 </div>
 <div id="insufficient-adaptation-phase" class="section level4">
 <h4>Insufficient adaptation phase</h4>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" data-line-number="1">mod2 &lt;-<span class="st"> </span><span class="kw">lm_imp</span>(SBP <span class="op">~</span><span class="st"> </span>alc, <span class="dt">data =</span> NHANES, <span class="dt">n.adapt =</span> <span class="dv">10</span>, <span class="dt">n.iter =</span> <span class="dv">100</span>, <span class="dt">progress.bar =</span> <span class="st">'none'</span>)</a>
-<a class="sourceLine" id="cb3-2" data-line-number="2"><span class="co">#&gt; Warning in rjags::jags.model(file = modelfile, data = data_list, inits = inits, : Adaptation</span></a>
-<a class="sourceLine" id="cb3-3" data-line-number="3"><span class="co">#&gt; incomplete</span></a>
-<a class="sourceLine" id="cb3-4" data-line-number="4"><span class="co">#&gt; </span><span class="al">NOTE</span><span class="co">: Stopping adaptation</span></a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" title="1">mod2 &lt;-<span class="st"> </span><span class="kw">lm_imp</span>(SBP <span class="op">~</span><span class="st"> </span>alc, <span class="dt">data =</span> NHANES, <span class="dt">n.adapt =</span> <span class="dv">10</span>, <span class="dt">n.iter =</span> <span class="dv">100</span>, <span class="dt">progress.bar =</span> <span class="st">&#39;none&#39;</span>)</a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="co">#&gt; Warning in rjags::jags.model(file = modelfile, data = data_list, inits = inits, : Adaptation</span></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="co">#&gt; incomplete</span></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="co">#&gt; </span><span class="al">NOTE</span><span class="co">: Stopping adaptation</span></a></code></pre></div>
 <p>Specifying <code>n.adapt = 10</code> results in a warning message. The relevant part of the model summary from the resulting model is:</p>
 <pre><code>#&gt; [...]
 #&gt; MCMC settings:
@@ -420,7 +423,7 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 </div>
 <div id="thinning-1" class="section level4">
 <h4>Thinning</h4>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" data-line-number="1">mod3 &lt;-<span class="st"> </span><span class="kw">lm_imp</span>(SBP <span class="op">~</span><span class="st"> </span>alc, <span class="dt">data =</span> NHANES, <span class="dt">n.iter =</span> <span class="dv">500</span>, <span class="dt">thin =</span> <span class="dv">10</span>, <span class="dt">progress.bar =</span> <span class="st">'none'</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" title="1">mod3 &lt;-<span class="st"> </span><span class="kw">lm_imp</span>(SBP <span class="op">~</span><span class="st"> </span>alc, <span class="dt">data =</span> NHANES, <span class="dt">n.iter =</span> <span class="dv">500</span>, <span class="dt">thin =</span> <span class="dv">10</span>, <span class="dt">progress.bar =</span> <span class="st">&#39;none&#39;</span>)</a></code></pre></div>
 <p>Here, iterations 110 until 600 are used in the output, but due to thinning interval of ten, the resulting MCMC chains contain only 50 samples instead of 500, that is, the samples from iteration 110, 120, 130, …</p>
 <pre><code>#&gt; [...]
 #&gt; MCMC settings:
@@ -436,7 +439,7 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <p>JAGS only saves the values of MCMC chains for those nodes for which the user has specified that they should be monitored. This is also the case in <strong>JointAI</strong>.</p>
 <div id="what-are-nodes" class="section level3">
 <h3>What are nodes?</h3>
-<p>Nodes are variables in the Bayesian framework, i.e., everything that is observed or unobserved. This includes the data and parameters that are estimated, but also missing values in the data or parts of the data that are generally unobserved, such as random effects or latent class indicators.</p>
+<p>Nodes are variables in the Bayesian framework, i.e., everything observed or unobserved. This includes the data and parameters that are estimated, but also missing values in the data or parts of the data that are generally unobserved, such as random effects or latent class indicators.</p>
 </div>
 <div id="specifying-which-nodes-should-be-monitored" class="section level3">
 <h3>Specifying which nodes should be monitored</h3>
@@ -449,118 +452,153 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <p>Initial values are the starting point for the MCMC sampler. Setting good initial values, i.e., initial values that are likely under the posterior distribution, can speed up convergence. By default, the argument <code>inits = NULL</code>, which means that initial values for the nodes are generated by JAGS. <strong>JointAI</strong> only sets the initial values for the random number generators to allow reproducibility of the results.</p>
 <p>The argument <code>seed</code> allows the specification of a seed value with which the starting values of the random number generator can be reproduced.</p>
 <div id="user-specified-initial-values" class="section level3">
-<h3>User specified initial values</h3>
+<h3>User-specified initial values</h3>
 <p>It is possible to supply initial values directly as</p>
 <ul>
 <li>a list or</li>
 <li>a function.</li>
 </ul>
 <p>Initial values can be specified for every unobserved node, that is, parameters and missing values, but it is possible to only specify initial values for a subset of nodes.</p>
-<p>Unless the user specified initial values contain initial values for the random number generator (named <code>.RNG.name</code> and <code>.RNG.seed</code>), <strong>JointAI</strong> will add these to the initial values. This is necessary for reproducibility of the results but also when the MCMC chains are sampled in parallel (i.e, when the argument <code>parallel = TRUE</code>).</p>
+<p>Unless the user-specified initial values contain initial values for the random number generator (named <code>.RNG.name</code> and <code>.RNG.seed</code>), <strong>JointAI</strong> will add these to the initial values. This is necessary for reproducibility of the results but also when the MCMC chains are sampled in parallel (i.e, when the argument <code>parallel = TRUE</code>).</p>
 <div id="initial-values-in-a-list-of-lists" class="section level4">
 <h4>Initial values in a list of lists</h4>
 <p>A list containing initial values should have the same length as the number of chains, where each element is a named list of initial values. Initial values should differ between the chains.</p>
 <p>For example, to create initial values for the parameter vector <code>beta</code> and the precision parameter <code>tau_SBP</code> for three chains:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" data-line-number="1">init_list &lt;-<span class="st"> </span><span class="kw">lapply</span>(<span class="dv">1</span><span class="op">:</span><span class="dv">3</span>, <span class="cf">function</span>(i) {</a>
-<a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="kw">list</span>(<span class="dt">beta =</span> <span class="kw">rnorm</span>(<span class="dv">4</span>), </a>
-<a class="sourceLine" id="cb7-3" data-line-number="3">       <span class="dt">tau_SBP =</span> <span class="kw">rgamma</span>(<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>))</a>
-<a class="sourceLine" id="cb7-4" data-line-number="4">})</a>
-<a class="sourceLine" id="cb7-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb7-6" data-line-number="6">init_list</a>
-<a class="sourceLine" id="cb7-7" data-line-number="7"><span class="co">#&gt; [[1]]</span></a>
-<a class="sourceLine" id="cb7-8" data-line-number="8"><span class="co">#&gt; [[1]]$beta</span></a>
-<a class="sourceLine" id="cb7-9" data-line-number="9"><span class="co">#&gt; [1] -1.8272617  0.0154919 -1.6843613  0.2044675</span></a>
-<a class="sourceLine" id="cb7-10" data-line-number="10"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb7-11" data-line-number="11"><span class="co">#&gt; [[1]]$tau_SBP</span></a>
-<a class="sourceLine" id="cb7-12" data-line-number="12"><span class="co">#&gt; [1] 1.793024</span></a>
-<a class="sourceLine" id="cb7-13" data-line-number="13"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb7-14" data-line-number="14"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb7-15" data-line-number="15"><span class="co">#&gt; [[2]]</span></a>
-<a class="sourceLine" id="cb7-16" data-line-number="16"><span class="co">#&gt; [[2]]$beta</span></a>
-<a class="sourceLine" id="cb7-17" data-line-number="17"><span class="co">#&gt; [1]  0.2501979  0.2581954  1.7855342 -1.2197058</span></a>
-<a class="sourceLine" id="cb7-18" data-line-number="18"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb7-19" data-line-number="19"><span class="co">#&gt; [[2]]$tau_SBP</span></a>
-<a class="sourceLine" id="cb7-20" data-line-number="20"><span class="co">#&gt; [1] 0.3446226</span></a>
-<a class="sourceLine" id="cb7-21" data-line-number="21"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb7-22" data-line-number="22"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb7-23" data-line-number="23"><span class="co">#&gt; [[3]]</span></a>
-<a class="sourceLine" id="cb7-24" data-line-number="24"><span class="co">#&gt; [[3]]$beta</span></a>
-<a class="sourceLine" id="cb7-25" data-line-number="25"><span class="co">#&gt; [1]  0.71757767  1.83231867  0.26461663 -0.02640229</span></a>
-<a class="sourceLine" id="cb7-26" data-line-number="26"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb7-27" data-line-number="27"><span class="co">#&gt; [[3]]$tau_SBP</span></a>
-<a class="sourceLine" id="cb7-28" data-line-number="28"><span class="co">#&gt; [1] 0.2654191</span></a></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" title="1">init_list &lt;-<span class="st"> </span><span class="kw">lapply</span>(<span class="dv">1</span><span class="op">:</span><span class="dv">3</span>, <span class="cf">function</span>(i) {</a>
+<a class="sourceLine" id="cb7-2" title="2">  <span class="kw">list</span>(<span class="dt">beta =</span> <span class="kw">rnorm</span>(<span class="dv">4</span>), </a>
+<a class="sourceLine" id="cb7-3" title="3">       <span class="dt">tau_SBP =</span> <span class="kw">rgamma</span>(<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>))</a>
+<a class="sourceLine" id="cb7-4" title="4">})</a>
+<a class="sourceLine" id="cb7-5" title="5"></a>
+<a class="sourceLine" id="cb7-6" title="6">init_list</a>
+<a class="sourceLine" id="cb7-7" title="7"><span class="co">#&gt; [[1]]</span></a>
+<a class="sourceLine" id="cb7-8" title="8"><span class="co">#&gt; [[1]]$beta</span></a>
+<a class="sourceLine" id="cb7-9" title="9"><span class="co">#&gt; [1]  0.4194091 -0.2709566 -0.6318248 -0.2284119</span></a>
+<a class="sourceLine" id="cb7-10" title="10"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb7-11" title="11"><span class="co">#&gt; [[1]]$tau_SBP</span></a>
+<a class="sourceLine" id="cb7-12" title="12"><span class="co">#&gt; [1] 1.680774</span></a>
+<a class="sourceLine" id="cb7-13" title="13"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb7-14" title="14"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb7-15" title="15"><span class="co">#&gt; [[2]]</span></a>
+<a class="sourceLine" id="cb7-16" title="16"><span class="co">#&gt; [[2]]$beta</span></a>
+<a class="sourceLine" id="cb7-17" title="17"><span class="co">#&gt; [1] -0.2662727  0.5281408 -1.7686592 -0.4897908</span></a>
+<a class="sourceLine" id="cb7-18" title="18"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb7-19" title="19"><span class="co">#&gt; [[2]]$tau_SBP</span></a>
+<a class="sourceLine" id="cb7-20" title="20"><span class="co">#&gt; [1] 1.994782</span></a>
+<a class="sourceLine" id="cb7-21" title="21"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb7-22" title="22"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb7-23" title="23"><span class="co">#&gt; [[3]]</span></a>
+<a class="sourceLine" id="cb7-24" title="24"><span class="co">#&gt; [[3]]$beta</span></a>
+<a class="sourceLine" id="cb7-25" title="25"><span class="co">#&gt; [1] -1.0752636  0.2923947 -0.2066645 -0.3594423</span></a>
+<a class="sourceLine" id="cb7-26" title="26"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb7-27" title="27"><span class="co">#&gt; [[3]]$tau_SBP</span></a>
+<a class="sourceLine" id="cb7-28" title="28"><span class="co">#&gt; [1] 1.677375</span></a></code></pre></div>
 <p>The list is then passed to the argument <code>inits</code>. The amended version of the user provided lists of initial values are stored in the JointAI object:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" data-line-number="1">mod4a &lt;-<span class="st"> </span><span class="kw">lm_imp</span>(SBP <span class="op">~</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>WC, <span class="dt">data =</span> NHANES, <span class="dt">progress.bar =</span> <span class="st">'none'</span>,</a>
-<a class="sourceLine" id="cb8-2" data-line-number="2">                <span class="dt">inits =</span> init_list)</a>
-<a class="sourceLine" id="cb8-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb8-4" data-line-number="4">mod4a<span class="op">$</span>mcmc_settings<span class="op">$</span>inits</a>
-<a class="sourceLine" id="cb8-5" data-line-number="5"><span class="co">#&gt; [[1]]</span></a>
-<a class="sourceLine" id="cb8-6" data-line-number="6"><span class="co">#&gt; [[1]]$beta</span></a>
-<a class="sourceLine" id="cb8-7" data-line-number="7"><span class="co">#&gt; [1] -1.8272617  0.0154919 -1.6843613  0.2044675</span></a>
-<a class="sourceLine" id="cb8-8" data-line-number="8"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb8-9" data-line-number="9"><span class="co">#&gt; [[1]]$tau_SBP</span></a>
-<a class="sourceLine" id="cb8-10" data-line-number="10"><span class="co">#&gt; [1] 1.793024</span></a>
-<a class="sourceLine" id="cb8-11" data-line-number="11"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb8-12" data-line-number="12"><span class="co">#&gt; [[1]]$.RNG.name</span></a>
-<a class="sourceLine" id="cb8-13" data-line-number="13"><span class="co">#&gt; [1] &quot;base::Mersenne-Twister&quot;</span></a>
-<a class="sourceLine" id="cb8-14" data-line-number="14"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb8-15" data-line-number="15"><span class="co">#&gt; [[1]]$.RNG.seed</span></a>
-<a class="sourceLine" id="cb8-16" data-line-number="16"><span class="co">#&gt; [1] 882</span></a>
-<a class="sourceLine" id="cb8-17" data-line-number="17"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb8-18" data-line-number="18"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb8-19" data-line-number="19"><span class="co">#&gt; [[2]]</span></a>
-<a class="sourceLine" id="cb8-20" data-line-number="20"><span class="co">#&gt; [[2]]$beta</span></a>
-<a class="sourceLine" id="cb8-21" data-line-number="21"><span class="co">#&gt; [1]  0.2501979  0.2581954  1.7855342 -1.2197058</span></a>
-<a class="sourceLine" id="cb8-22" data-line-number="22"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb8-23" data-line-number="23"><span class="co">#&gt; [[2]]$tau_SBP</span></a>
-<a class="sourceLine" id="cb8-24" data-line-number="24"><span class="co">#&gt; [1] 0.3446226</span></a>
-<a class="sourceLine" id="cb8-25" data-line-number="25"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb8-26" data-line-number="26"><span class="co">#&gt; [[2]]$.RNG.name</span></a>
-<a class="sourceLine" id="cb8-27" data-line-number="27"><span class="co">#&gt; [1] &quot;base::Wichmann-Hill&quot;</span></a>
-<a class="sourceLine" id="cb8-28" data-line-number="28"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb8-29" data-line-number="29"><span class="co">#&gt; [[2]]$.RNG.seed</span></a>
-<a class="sourceLine" id="cb8-30" data-line-number="30"><span class="co">#&gt; [1] 70130</span></a>
-<a class="sourceLine" id="cb8-31" data-line-number="31"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb8-32" data-line-number="32"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb8-33" data-line-number="33"><span class="co">#&gt; [[3]]</span></a>
-<a class="sourceLine" id="cb8-34" data-line-number="34"><span class="co">#&gt; [[3]]$beta</span></a>
-<a class="sourceLine" id="cb8-35" data-line-number="35"><span class="co">#&gt; [1]  0.71757767  1.83231867  0.26461663 -0.02640229</span></a>
-<a class="sourceLine" id="cb8-36" data-line-number="36"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb8-37" data-line-number="37"><span class="co">#&gt; [[3]]$tau_SBP</span></a>
-<a class="sourceLine" id="cb8-38" data-line-number="38"><span class="co">#&gt; [1] 0.2654191</span></a>
-<a class="sourceLine" id="cb8-39" data-line-number="39"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb8-40" data-line-number="40"><span class="co">#&gt; [[3]]$.RNG.name</span></a>
-<a class="sourceLine" id="cb8-41" data-line-number="41"><span class="co">#&gt; [1] &quot;base::Super-Duper&quot;</span></a>
-<a class="sourceLine" id="cb8-42" data-line-number="42"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb8-43" data-line-number="43"><span class="co">#&gt; [[3]]$.RNG.seed</span></a>
-<a class="sourceLine" id="cb8-44" data-line-number="44"><span class="co">#&gt; [1] 64579</span></a></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" title="1">mod4a &lt;-<span class="st"> </span><span class="kw">lm_imp</span>(SBP <span class="op">~</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>WC, <span class="dt">data =</span> NHANES, <span class="dt">progress.bar =</span> <span class="st">&#39;none&#39;</span>,</a>
+<a class="sourceLine" id="cb8-2" title="2">                <span class="dt">inits =</span> init_list)</a>
+<a class="sourceLine" id="cb8-3" title="3"></a>
+<a class="sourceLine" id="cb8-4" title="4">mod4a<span class="op">$</span>mcmc_settings<span class="op">$</span>inits</a>
+<a class="sourceLine" id="cb8-5" title="5"><span class="co">#&gt; [[1]]</span></a>
+<a class="sourceLine" id="cb8-6" title="6"><span class="co">#&gt; [[1]]$beta</span></a>
+<a class="sourceLine" id="cb8-7" title="7"><span class="co">#&gt; [1]  0.4194091 -0.2709566 -0.6318248 -0.2284119</span></a>
+<a class="sourceLine" id="cb8-8" title="8"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb8-9" title="9"><span class="co">#&gt; [[1]]$tau_SBP</span></a>
+<a class="sourceLine" id="cb8-10" title="10"><span class="co">#&gt; [1] 1.680774</span></a>
+<a class="sourceLine" id="cb8-11" title="11"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb8-12" title="12"><span class="co">#&gt; [[1]]$.RNG.name</span></a>
+<a class="sourceLine" id="cb8-13" title="13"><span class="co">#&gt; [1] &quot;base::Mersenne-Twister&quot;</span></a>
+<a class="sourceLine" id="cb8-14" title="14"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb8-15" title="15"><span class="co">#&gt; [[1]]$.RNG.seed</span></a>
+<a class="sourceLine" id="cb8-16" title="16"><span class="co">#&gt; [1] 15419</span></a>
+<a class="sourceLine" id="cb8-17" title="17"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb8-18" title="18"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb8-19" title="19"><span class="co">#&gt; [[2]]</span></a>
+<a class="sourceLine" id="cb8-20" title="20"><span class="co">#&gt; [[2]]$beta</span></a>
+<a class="sourceLine" id="cb8-21" title="21"><span class="co">#&gt; [1] -0.2662727  0.5281408 -1.7686592 -0.4897908</span></a>
+<a class="sourceLine" id="cb8-22" title="22"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb8-23" title="23"><span class="co">#&gt; [[2]]$tau_SBP</span></a>
+<a class="sourceLine" id="cb8-24" title="24"><span class="co">#&gt; [1] 1.994782</span></a>
+<a class="sourceLine" id="cb8-25" title="25"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb8-26" title="26"><span class="co">#&gt; [[2]]$.RNG.name</span></a>
+<a class="sourceLine" id="cb8-27" title="27"><span class="co">#&gt; [1] &quot;base::Wichmann-Hill&quot;</span></a>
+<a class="sourceLine" id="cb8-28" title="28"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb8-29" title="29"><span class="co">#&gt; [[2]]$.RNG.seed</span></a>
+<a class="sourceLine" id="cb8-30" title="30"><span class="co">#&gt; [1] 79827</span></a>
+<a class="sourceLine" id="cb8-31" title="31"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb8-32" title="32"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb8-33" title="33"><span class="co">#&gt; [[3]]</span></a>
+<a class="sourceLine" id="cb8-34" title="34"><span class="co">#&gt; [[3]]$beta</span></a>
+<a class="sourceLine" id="cb8-35" title="35"><span class="co">#&gt; [1] -1.0752636  0.2923947 -0.2066645 -0.3594423</span></a>
+<a class="sourceLine" id="cb8-36" title="36"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb8-37" title="37"><span class="co">#&gt; [[3]]$tau_SBP</span></a>
+<a class="sourceLine" id="cb8-38" title="38"><span class="co">#&gt; [1] 1.677375</span></a>
+<a class="sourceLine" id="cb8-39" title="39"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb8-40" title="40"><span class="co">#&gt; [[3]]$.RNG.name</span></a>
+<a class="sourceLine" id="cb8-41" title="41"><span class="co">#&gt; [1] &quot;base::Wichmann-Hill&quot;</span></a>
+<a class="sourceLine" id="cb8-42" title="42"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb8-43" title="43"><span class="co">#&gt; [[3]]$.RNG.seed</span></a>
+<a class="sourceLine" id="cb8-44" title="44"><span class="co">#&gt; [1] 83115</span></a></code></pre></div>
 </div>
 <div id="initial-values-as-a-function" class="section level4">
 <h4>Initial values as a function</h4>
 <p>Initial values can be specified by a function. The function should either take no arguments or a single argument called <code>chain</code>, and return a named list that supplies values for one chain.</p>
 <p>For example, to create initial values for the parameter vectors <code>beta</code> and <code>alpha</code>:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" data-line-number="1">inits_fun &lt;-<span class="st"> </span><span class="cf">function</span>() {</a>
-<a class="sourceLine" id="cb9-2" data-line-number="2">  <span class="kw">list</span>(<span class="dt">beta =</span> <span class="kw">rnorm</span>(<span class="dv">4</span>),</a>
-<a class="sourceLine" id="cb9-3" data-line-number="3">       <span class="dt">alpha =</span> <span class="kw">rnorm</span>(<span class="dv">3</span>))</a>
-<a class="sourceLine" id="cb9-4" data-line-number="4">}</a>
-<a class="sourceLine" id="cb9-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb9-6" data-line-number="6"><span class="kw">inits_fun</span>()</a>
-<a class="sourceLine" id="cb9-7" data-line-number="7"><span class="co">#&gt; $beta</span></a>
-<a class="sourceLine" id="cb9-8" data-line-number="8"><span class="co">#&gt; [1] -0.74526325 -1.51616063 -0.03676971 -0.59481287</span></a>
-<a class="sourceLine" id="cb9-9" data-line-number="9"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb9-10" data-line-number="10"><span class="co">#&gt; $alpha</span></a>
-<a class="sourceLine" id="cb9-11" data-line-number="11"><span class="co">#&gt; [1] -1.3165653  0.6404659 -0.2568153</span></a>
-<a class="sourceLine" id="cb9-12" data-line-number="12"></a>
-<a class="sourceLine" id="cb9-13" data-line-number="13"></a>
-<a class="sourceLine" id="cb9-14" data-line-number="14">mod4b &lt;-<span class="st"> </span><span class="kw">lm_imp</span>(SBP <span class="op">~</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>WC, <span class="dt">data =</span> NHANES, <span class="dt">progress.bar =</span> <span class="st">'none'</span>,</a>
-<a class="sourceLine" id="cb9-15" data-line-number="15">                <span class="dt">inits =</span> inits_fun)</a>
-<a class="sourceLine" id="cb9-16" data-line-number="16"></a>
-<a class="sourceLine" id="cb9-17" data-line-number="17">mod4b<span class="op">$</span>mcmc_settings<span class="op">$</span>inits</a>
-<a class="sourceLine" id="cb9-18" data-line-number="18"><span class="co">#&gt; function() {</span></a>
-<a class="sourceLine" id="cb9-19" data-line-number="19"><span class="co">#&gt;   list(beta = rnorm(4),</span></a>
-<a class="sourceLine" id="cb9-20" data-line-number="20"><span class="co">#&gt;        alpha = rnorm(3))</span></a>
-<a class="sourceLine" id="cb9-21" data-line-number="21"><span class="co">#&gt; }</span></a>
-<a class="sourceLine" id="cb9-22" data-line-number="22"><span class="co">#&gt; &lt;bytecode: 0x0000000008a1fdc8&gt;</span></a></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" title="1">inits_fun &lt;-<span class="st"> </span><span class="cf">function</span>() {</a>
+<a class="sourceLine" id="cb9-2" title="2">  <span class="kw">list</span>(<span class="dt">beta =</span> <span class="kw">rnorm</span>(<span class="dv">4</span>),</a>
+<a class="sourceLine" id="cb9-3" title="3">       <span class="dt">alpha =</span> <span class="kw">rnorm</span>(<span class="dv">3</span>))</a>
+<a class="sourceLine" id="cb9-4" title="4">}</a>
+<a class="sourceLine" id="cb9-5" title="5"></a>
+<a class="sourceLine" id="cb9-6" title="6"><span class="kw">inits_fun</span>()</a>
+<a class="sourceLine" id="cb9-7" title="7"><span class="co">#&gt; $beta</span></a>
+<a class="sourceLine" id="cb9-8" title="8"><span class="co">#&gt; [1] -0.5874427 -0.5274437  0.5960212 -1.2713124</span></a>
+<a class="sourceLine" id="cb9-9" title="9"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb9-10" title="10"><span class="co">#&gt; $alpha</span></a>
+<a class="sourceLine" id="cb9-11" title="11"><span class="co">#&gt; [1] -0.2012545  0.4556339 -0.9348269</span></a>
+<a class="sourceLine" id="cb9-12" title="12"></a>
+<a class="sourceLine" id="cb9-13" title="13"></a>
+<a class="sourceLine" id="cb9-14" title="14">mod4b &lt;-<span class="st"> </span><span class="kw">lm_imp</span>(SBP <span class="op">~</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>WC, <span class="dt">data =</span> NHANES, <span class="dt">progress.bar =</span> <span class="st">&#39;none&#39;</span>,</a>
+<a class="sourceLine" id="cb9-15" title="15">                <span class="dt">inits =</span> inits_fun)</a>
+<a class="sourceLine" id="cb9-16" title="16"></a>
+<a class="sourceLine" id="cb9-17" title="17">mod4b<span class="op">$</span>mcmc_settings<span class="op">$</span>inits</a>
+<a class="sourceLine" id="cb9-18" title="18"><span class="co">#&gt; [[1]]</span></a>
+<a class="sourceLine" id="cb9-19" title="19"><span class="co">#&gt; [[1]]$beta</span></a>
+<a class="sourceLine" id="cb9-20" title="20"><span class="co">#&gt; [1] -0.6377097  0.8351830  0.5890226  0.1700938</span></a>
+<a class="sourceLine" id="cb9-21" title="21"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb9-22" title="22"><span class="co">#&gt; [[1]]$alpha</span></a>
+<a class="sourceLine" id="cb9-23" title="23"><span class="co">#&gt; [1] -0.43717159 -0.08020806 -0.92754276</span></a>
+<a class="sourceLine" id="cb9-24" title="24"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb9-25" title="25"><span class="co">#&gt; [[1]]$.RNG.name</span></a>
+<a class="sourceLine" id="cb9-26" title="26"><span class="co">#&gt; [1] &quot;base::Wichmann-Hill&quot;</span></a>
+<a class="sourceLine" id="cb9-27" title="27"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb9-28" title="28"><span class="co">#&gt; [[1]]$.RNG.seed</span></a>
+<a class="sourceLine" id="cb9-29" title="29"><span class="co">#&gt; [1] 31227</span></a>
+<a class="sourceLine" id="cb9-30" title="30"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb9-31" title="31"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb9-32" title="32"><span class="co">#&gt; [[2]]</span></a>
+<a class="sourceLine" id="cb9-33" title="33"><span class="co">#&gt; [[2]]$beta</span></a>
+<a class="sourceLine" id="cb9-34" title="34"><span class="co">#&gt; [1]  1.51886715  0.08573045  2.15279476 -1.36593150</span></a>
+<a class="sourceLine" id="cb9-35" title="35"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb9-36" title="36"><span class="co">#&gt; [[2]]$alpha</span></a>
+<a class="sourceLine" id="cb9-37" title="37"><span class="co">#&gt; [1]  0.345906225  0.565180699 -0.006097837</span></a>
+<a class="sourceLine" id="cb9-38" title="38"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb9-39" title="39"><span class="co">#&gt; [[2]]$.RNG.name</span></a>
+<a class="sourceLine" id="cb9-40" title="40"><span class="co">#&gt; [1] &quot;base::Mersenne-Twister&quot;</span></a>
+<a class="sourceLine" id="cb9-41" title="41"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb9-42" title="42"><span class="co">#&gt; [[2]]$.RNG.seed</span></a>
+<a class="sourceLine" id="cb9-43" title="43"><span class="co">#&gt; [1] 29634</span></a>
+<a class="sourceLine" id="cb9-44" title="44"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb9-45" title="45"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb9-46" title="46"><span class="co">#&gt; [[3]]</span></a>
+<a class="sourceLine" id="cb9-47" title="47"><span class="co">#&gt; [[3]]$beta</span></a>
+<a class="sourceLine" id="cb9-48" title="48"><span class="co">#&gt; [1] -0.4387811  0.6888911 -0.4994192 -1.8686146</span></a>
+<a class="sourceLine" id="cb9-49" title="49"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb9-50" title="50"><span class="co">#&gt; [[3]]$alpha</span></a>
+<a class="sourceLine" id="cb9-51" title="51"><span class="co">#&gt; [1]  0.74342539 -0.08917493  1.08116368</span></a>
+<a class="sourceLine" id="cb9-52" title="52"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb9-53" title="53"><span class="co">#&gt; [[3]]$.RNG.name</span></a>
+<a class="sourceLine" id="cb9-54" title="54"><span class="co">#&gt; [1] &quot;base::Mersenne-Twister&quot;</span></a>
+<a class="sourceLine" id="cb9-55" title="55"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb9-56" title="56"><span class="co">#&gt; [[3]]$.RNG.seed</span></a>
+<a class="sourceLine" id="cb9-57" title="57"><span class="co">#&gt; [1] 53420</span></a></code></pre></div>
 <p>When a function is supplied, the function will be evaluated once per chain and the resulting list is stored.</p>
 </div>
 </div>
@@ -570,36 +608,35 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <p>Initial values have to be supplied in the format the parameter or unobserved value is used in the JAGS model.</p>
 <p>To find out which nodes there are in a model, the function <code>coef()</code> from package <strong>rjags</strong> can be used. It returns a list with the current values of the MCMC chains, by default the first chain. Elements of the initial values should have the same structure as the elements in this list.</p>
 <p><strong>Example:<br></strong> We are using a longitudinal model and the <code>simLong</code> data in this example. The output is abbreviated to show the relevant characteristics.</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" data-line-number="1">mod4c &lt;-<span class="st"> </span><span class="kw">lme_imp</span>(bmi <span class="op">~</span><span class="st"> </span>time <span class="op">+</span><span class="st"> </span>HEIGHT_M <span class="op">+</span><span class="st"> </span>hc <span class="op">+</span><span class="st"> </span>SMOKE, <span class="dt">random =</span> <span class="op">~</span><span class="st"> </span>time <span class="op">|</span><span class="st"> </span>ID,</a>
-<a class="sourceLine" id="cb10-2" data-line-number="2">                 <span class="dt">data =</span> simLong, <span class="dt">no_model =</span> <span class="st">'time'</span>, <span class="dt">progress.bar =</span> <span class="st">'none'</span>)</a>
-<a class="sourceLine" id="cb10-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb10-4" data-line-number="4"><span class="kw">coef</span>(mod4c<span class="op">$</span>model)</a></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" title="1">mod4c &lt;-<span class="st"> </span><span class="kw">lme_imp</span>(bmi <span class="op">~</span><span class="st"> </span>time <span class="op">+</span><span class="st"> </span>HEIGHT_M <span class="op">+</span><span class="st"> </span>hc <span class="op">+</span><span class="st"> </span>SMOKE, <span class="dt">random =</span> <span class="op">~</span><span class="st"> </span>time <span class="op">|</span><span class="st"> </span>ID,</a>
+<a class="sourceLine" id="cb10-2" title="2">                 <span class="dt">data =</span> simLong, <span class="dt">no_model =</span> <span class="st">&#39;time&#39;</span>, <span class="dt">progress.bar =</span> <span class="st">&#39;none&#39;</span>)</a>
+<a class="sourceLine" id="cb10-3" title="3"></a>
+<a class="sourceLine" id="cb10-4" title="4"><span class="kw">coef</span>(mod4c<span class="op">$</span>model)</a></code></pre></div>
 <pre><code>#&gt; $RinvD
-#&gt;           [,1]      [,2]
-#&gt; [1,] 0.1528363        NA
-#&gt; [2,]        NA 0.4165165
+#&gt;         [,1]      [,2]
+#&gt; [1,] 1.05243        NA
+#&gt; [2,]      NA 0.1320146
 #&gt; 
 #&gt; $RinvD_hc
-#&gt;           [,1]         [,2]
-#&gt; [1,] 0.1706302           NA
-#&gt; [2,]        NA 0.0005278564
+#&gt;            [,1]        [,2]
+#&gt; [1,] 0.03502861          NA
+#&gt; [2,]         NA 0.000212694
 #&gt; 
 #&gt; $Xc
-#&gt;        [,1]        [,2] [,3] [,4]
-#&gt;   [1,]   NA          NA   NA   NA
-#&gt;   [2,]   NA          NA   NA   NA
+#&gt;        [,1]       [,2] [,3] [,4]
+#&gt;   [1,]   NA         NA   NA   NA
+#&gt;   [2,]   NA         NA   NA   NA
 #&gt; 
 #&gt; [...]
 #&gt; 
-#&gt;   [9,]   NA          NA   NA   NA
-#&gt;  [10,]   NA          NA   NA   NA
-#&gt;  [11,]   NA -0.02944923   NA   NA
-#&gt;  [12,]   NA          NA   NA   NA
+#&gt;  [82,]   NA         NA   NA   NA
+#&gt;  [83,]   NA -0.4691309   NA   NA
+#&gt;  [84,]   NA         NA   NA   NA
 #&gt; 
 #&gt; [...]
 #&gt; 
-#&gt; [498,]   NA          NA   NA   NA
-#&gt; [499,]   NA          NA   NA   NA
+#&gt; [199,]   NA         NA   NA   NA
+#&gt; [200,]   NA         NA   NA   NA
 #&gt; 
 #&gt; $Xcat
 #&gt;        [,1]
@@ -608,100 +645,113 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 #&gt; 
 #&gt; [...]
 #&gt; 
-#&gt;  [36,]   NA
-#&gt;  [37,]    1
-#&gt;  [38,]   NA
-#&gt;  [39,]    3
-#&gt;  [40,]   NA
-#&gt;  [41,]   NA
+#&gt; [139,]   NA
+#&gt; [140,]    1
+#&gt; [141,]   NA
+#&gt; [142,]    1
+#&gt; [143,]   NA
 #&gt; 
 #&gt; [...]
 #&gt; 
-#&gt; [498,]   NA
-#&gt; [499,]   NA
+#&gt; [199,]   NA
+#&gt; [200,]   NA
+#&gt; 
+#&gt; $Xl
+#&gt;                 [,1]
+#&gt;    [1,]           NA
+#&gt;    [2,]           NA
+#&gt;    [3,]  0.000000000
+#&gt;    [4,]           NA
+#&gt;    [5,]           NA
+#&gt;    [6,]           NA
+#&gt;    [7,] -0.122052234
+#&gt; 
+#&gt; [...]
+#&gt; 
+#&gt; [2399,]           NA
+#&gt; [2400,]           NA
 #&gt; 
 #&gt; $alpha
-#&gt; [1] -0.053585170  0.053474735 -0.006560756 -0.015720207  0.066372490 -0.049549753  0.824046036
+#&gt; [1]  0.036826490 -0.022146504 -0.002473397  0.018435239 -0.026469911  0.004385135  0.813936665
 #&gt; 
 #&gt; $b
-#&gt;            [,1]        [,2]
-#&gt;   [1,] 16.08523 -1.48029054
-#&gt;   [2,] 18.83335 -1.43933759
-#&gt;   [3,] 16.56993 -1.23899006
+#&gt;            [,1]       [,2]
+#&gt;   [1,] 15.82205 -1.0319359
+#&gt;   [2,] 17.10125 -1.5892137
 #&gt; 
 #&gt; [...]
 #&gt; 
-#&gt; [496,] 14.72883 -1.28358449
-#&gt; [497,] 15.31755 -0.42962072
-#&gt; [498,] 14.51396 -1.31872168
-#&gt; [499,] 14.36718 -0.67602423
+#&gt; [200,] 16.96782 -1.1392749
 #&gt; 
 #&gt; $b_hc
-#&gt;                [,1]      [,2]
-#&gt;   [1,] -0.200644579 0.8120313
-#&gt;   [2,] -0.002694802 0.8440326
-#&gt;   [3,]  0.360284156 0.7985906
+#&gt;                 [,1]      [,2]
+#&gt;   [1,] -0.2658857454 0.7845035
+#&gt;   [2,] -0.1872576920 0.8241140
 #&gt; 
 #&gt; [...]
 #&gt; 
-#&gt; [497,] -0.251238916 0.8551610
-#&gt; [498,]  0.019609354 0.7855221
-#&gt; [499,]  0.034273081 0.7804166
+#&gt; [199,] -0.0161208511 0.7939417
+#&gt; [200,] -0.2531109582 0.7962239
 #&gt; 
 #&gt; $beta
-#&gt; [1] 16.575294780  0.002960043  0.212038658  0.208628320 -1.150617549  1.198417053
+#&gt; [1] 16.49553560 -0.07577803 -0.75975535 -0.18286803 -1.36366843  1.39220854
+#&gt; 
+#&gt; $bmi
+#&gt;    [1] NA NA  0  0 NA NA NA NA NA NA NA NA  0  0 NA  0 NA  0 NA NA NA NA NA NA NA NA NA NA NA NA NA
+#&gt; 
+#&gt; [...]
+#&gt; 
+#&gt; [2388] NA NA  0 NA  0 NA NA NA NA NA NA NA NA
 #&gt; 
 #&gt; $delta_SMOKE
-#&gt; [1] -0.8436608
+#&gt; [1] -1.01999
 #&gt; 
 #&gt; $gamma_SMOKE
-#&gt; [1] 1.059403       NA
+#&gt; [1] 1.153038       NA
 #&gt; 
 #&gt; $invD
-#&gt;            [,1]       [,2]
-#&gt; [1,]  0.7009049 -0.3110012
-#&gt; [2,] -0.3110012  5.8701555
+#&gt;           [,1]      [,2]
+#&gt; [1,]  1.588973 -1.743883
+#&gt; [2,] -1.743883 10.076898
 #&gt; 
 #&gt; $invD_hc
-#&gt;           [,1]      [,2]
-#&gt; [1,]  13.63498 -18.25351
-#&gt; [2,] -18.25351 374.23610
+#&gt;            [,1]      [,2]
+#&gt; [1,]   78.59571 -462.9663
+#&gt; [2,] -462.96633 3236.5272
 #&gt; 
 #&gt; $mu_b
 #&gt;        [,1]      [,2]
-#&gt;   [1,]   NA -1.150618
-#&gt;   [2,]   NA -1.150618
-#&gt;   [3,]   NA -1.150618
+#&gt;   [1,]   NA -1.363668
+#&gt;   [2,]   NA -1.363668
 #&gt; 
 #&gt; [...]
 #&gt; 
-#&gt; [498,]   NA -1.150618
-#&gt; [499,]   NA -1.150618
+#&gt; [199,]   NA -1.363668
+#&gt; [200,]   NA -1.363668
 #&gt; 
 #&gt; $mu_b_hc
-#&gt;        [,1]     [,2]
-#&gt;   [1,]   NA 0.824046
-#&gt;   [2,]   NA 0.824046
+#&gt;        [,1]      [,2]
+#&gt;   [1,]   NA 0.8139367
+#&gt;   [2,]   NA 0.8139367
 #&gt; 
 #&gt; [...]
 #&gt; 
-#&gt; [498,]   NA 0.824046
-#&gt; [499,]   NA 0.824046
+#&gt; [200,]   NA 0.8139367
 #&gt; 
 #&gt; $tau_HEIGHT_M
-#&gt; [1] 1.017121
+#&gt; [1] 1.206081
 #&gt; 
 #&gt; $tau_bmi
-#&gt; [1] 1.374321
+#&gt; [1] 4.596372
 #&gt; 
 #&gt; $tau_hc
-#&gt; [1] 4.33141</code></pre>
+#&gt; [1] 5.285389</code></pre>
 <p><code>RinvD</code> is the scale matrix in the Wishart prior for the inverse of the random effects design matrix <code>D</code>. In the data that is passed JAGS (which is stored in the element <code>data_list</code> in a JointAI object), this matrix is specified as diagonal matrix, with unknown diagonal elements:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" data-line-number="1">mod4c<span class="op">$</span>data_list[<span class="st">'RinvD'</span>]</a>
-<a class="sourceLine" id="cb12-2" data-line-number="2"><span class="co">#&gt; $RinvD</span></a>
-<a class="sourceLine" id="cb12-3" data-line-number="3"><span class="co">#&gt;      [,1] [,2]</span></a>
-<a class="sourceLine" id="cb12-4" data-line-number="4"><span class="co">#&gt; [1,]   NA    0</span></a>
-<a class="sourceLine" id="cb12-5" data-line-number="5"><span class="co">#&gt; [2,]    0   NA</span></a></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" title="1">mod4c<span class="op">$</span>data_list[<span class="st">&#39;RinvD&#39;</span>]</a>
+<a class="sourceLine" id="cb12-2" title="2"><span class="co">#&gt; $RinvD</span></a>
+<a class="sourceLine" id="cb12-3" title="3"><span class="co">#&gt;      [,1] [,2]</span></a>
+<a class="sourceLine" id="cb12-4" title="4"><span class="co">#&gt; [1,]   NA    0</span></a>
+<a class="sourceLine" id="cb12-5" title="5"><span class="co">#&gt; [2,]    0   NA</span></a></code></pre></div>
 <p>These diagonal elements are estimated in the model and have a Gamma prior. The corresponding part of the JAGS model is:</p>
 <pre><code>#&gt; [...]
 #&gt;   # Priors for the covariance of the random effects
@@ -713,48 +763,22 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 #&gt; [...]</code></pre>
 <p>The element <code>RinvD</code> in the initial values has to be a 2 <span class="math inline">\(\times\)</span> 2 matrix, with positive values on the diagonal and <code>NA</code> as off-diagonal elements, since these are fixed in the data.</p>
 <p>The following element in the output of <code>coef(mod4c$model)</code> is <code>Xc</code>, the fixed effects design matrix containing baseline covariates. The corresponding matrix in the data is</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="kw">head</span>(mod4c<span class="op">$</span>data_list<span class="op">$</span>Xc, <span class="dv">15</span>)</a>
-<a class="sourceLine" id="cb14-2" data-line-number="2"><span class="co">#&gt;        (Intercept)   HEIGHT_M SMOKEsmoked until pregnancy was known</span></a>
-<a class="sourceLine" id="cb14-3" data-line-number="3"><span class="co">#&gt; 1.1              1  1.4568523                                    NA</span></a>
-<a class="sourceLine" id="cb14-4" data-line-number="4"><span class="co">#&gt; 10.1             1 -1.2863098                                    NA</span></a>
-<a class="sourceLine" id="cb14-5" data-line-number="5"><span class="co">#&gt; 100.11           1 -1.1350146                                    NA</span></a>
-<a class="sourceLine" id="cb14-6" data-line-number="6"><span class="co">#&gt; 101.1            1  0.2962555                                    NA</span></a>
-<a class="sourceLine" id="cb14-7" data-line-number="7"><span class="co">#&gt; 102.4            1  0.7211347                                    NA</span></a>
-<a class="sourceLine" id="cb14-8" data-line-number="8"><span class="co">#&gt; 103.15           1 -1.8893248                                    NA</span></a>
-<a class="sourceLine" id="cb14-9" data-line-number="9"><span class="co">#&gt; 104.4            1 -0.8216534                                    NA</span></a>
-<a class="sourceLine" id="cb14-10" data-line-number="10"><span class="co">#&gt; 105.2            1  0.5784470                                    NA</span></a>
-<a class="sourceLine" id="cb14-11" data-line-number="11"><span class="co">#&gt; 106.1            1  0.3689238                                    NA</span></a>
-<a class="sourceLine" id="cb14-12" data-line-number="12"><span class="co">#&gt; 107.1            1 -0.6264986                                    NA</span></a>
-<a class="sourceLine" id="cb14-13" data-line-number="13"><span class="co">#&gt; 108.7            1         NA                                    NA</span></a>
-<a class="sourceLine" id="cb14-14" data-line-number="14"><span class="co">#&gt; 109.1            1  0.5398961                                    NA</span></a>
-<a class="sourceLine" id="cb14-15" data-line-number="15"><span class="co">#&gt; 11.1             1  0.2053576                                    NA</span></a>
-<a class="sourceLine" id="cb14-16" data-line-number="16"><span class="co">#&gt; 110.26           1  0.6703233                                    NA</span></a>
-<a class="sourceLine" id="cb14-17" data-line-number="17"><span class="co">#&gt; 111.1            1  1.6552801                                    NA</span></a>
-<a class="sourceLine" id="cb14-18" data-line-number="18"><span class="co">#&gt;        SMOKEcontinued smoking in pregnancy</span></a>
-<a class="sourceLine" id="cb14-19" data-line-number="19"><span class="co">#&gt; 1.1                                     NA</span></a>
-<a class="sourceLine" id="cb14-20" data-line-number="20"><span class="co">#&gt; 10.1                                    NA</span></a>
-<a class="sourceLine" id="cb14-21" data-line-number="21"><span class="co">#&gt; 100.11                                  NA</span></a>
-<a class="sourceLine" id="cb14-22" data-line-number="22"><span class="co">#&gt; 101.1                                   NA</span></a>
-<a class="sourceLine" id="cb14-23" data-line-number="23"><span class="co">#&gt; 102.4                                   NA</span></a>
-<a class="sourceLine" id="cb14-24" data-line-number="24"><span class="co">#&gt; 103.15                                  NA</span></a>
-<a class="sourceLine" id="cb14-25" data-line-number="25"><span class="co">#&gt; 104.4                                   NA</span></a>
-<a class="sourceLine" id="cb14-26" data-line-number="26"><span class="co">#&gt; 105.2                                   NA</span></a>
-<a class="sourceLine" id="cb14-27" data-line-number="27"><span class="co">#&gt; 106.1                                   NA</span></a>
-<a class="sourceLine" id="cb14-28" data-line-number="28"><span class="co">#&gt; 107.1                                   NA</span></a>
-<a class="sourceLine" id="cb14-29" data-line-number="29"><span class="co">#&gt; 108.7                                   NA</span></a>
-<a class="sourceLine" id="cb14-30" data-line-number="30"><span class="co">#&gt; 109.1                                   NA</span></a>
-<a class="sourceLine" id="cb14-31" data-line-number="31"><span class="co">#&gt; 11.1                                    NA</span></a>
-<a class="sourceLine" id="cb14-32" data-line-number="32"><span class="co">#&gt; 110.26                                  NA</span></a>
-<a class="sourceLine" id="cb14-33" data-line-number="33"><span class="co">#&gt; 111.1                                   NA</span></a></code></pre></div>
-<p>Again, the matrix <code>Xc</code> in the initial values has the same dimension as <code>Xc</code> in the data, and values where there are missing values in <code>Xc</code>, e.g., <code>Xc[11, 2]</code> and <code>NA</code> elsewhere. There are no initial values specified for the third and fourth column, since these columns contain the dummy variables corresponding to the categorical variable <code>SMOKE</code> and are calculated from a column in the matrix <code>Xcat</code>, which contains the original version of <code>SMOKE</code>:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="kw">head</span>(mod4c<span class="op">$</span>data_list<span class="op">$</span>Xcat)</a>
-<a class="sourceLine" id="cb15-2" data-line-number="2"><span class="co">#&gt;        SMOKE</span></a>
-<a class="sourceLine" id="cb15-3" data-line-number="3"><span class="co">#&gt; 1.1        3</span></a>
-<a class="sourceLine" id="cb15-4" data-line-number="4"><span class="co">#&gt; 10.1       1</span></a>
-<a class="sourceLine" id="cb15-5" data-line-number="5"><span class="co">#&gt; 100.11     1</span></a>
-<a class="sourceLine" id="cb15-6" data-line-number="6"><span class="co">#&gt; 101.1      3</span></a>
-<a class="sourceLine" id="cb15-7" data-line-number="7"><span class="co">#&gt; 102.4      3</span></a>
-<a class="sourceLine" id="cb15-8" data-line-number="8"><span class="co">#&gt; 103.15     1</span></a></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb14-1" title="1">mod4c<span class="op">$</span>data_list<span class="op">$</span>Xc[<span class="dv">81</span><span class="op">:</span><span class="dv">85</span>, ]</a></code></pre></div>
+<pre><code>#&gt;       (Intercept)  HEIGHT_M SMOKEsmoked until[...] SMOKEcontin[...]
+#&gt; 171.1           1 0.2736946                     NA               NA
+#&gt; 172.1           1 0.1148171                     NA               NA
+#&gt; 173.1           1        NA                     NA               NA
+#&gt; 174.1           1 0.5045126                     NA               NA
+#&gt; 175.1           1 1.8822249                     NA               NA</code></pre>
+<p>Again, the matrix <code>Xc</code> in the initial values has the same dimension as <code>Xc</code> in the data, and values where there are missing values in <code>Xc</code>, e.g., <code>Xc[83, 2]</code> and <code>NA</code> elsewhere. There are no initial values specified for the third and fourth column, since these columns contain the dummy variables corresponding to the categorical variable <code>SMOKE</code> and are calculated from a column in the matrix <code>Xcat</code>, which contains the original version of <code>SMOKE</code>:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb16-1" title="1"><span class="kw">head</span>(mod4c<span class="op">$</span>data_list<span class="op">$</span>Xcat)</a>
+<a class="sourceLine" id="cb16-2" title="2"><span class="co">#&gt;       SMOKE</span></a>
+<a class="sourceLine" id="cb16-3" title="3"><span class="co">#&gt; 1.1       1</span></a>
+<a class="sourceLine" id="cb16-4" title="4"><span class="co">#&gt; 10.1      1</span></a>
+<a class="sourceLine" id="cb16-5" title="5"><span class="co">#&gt; 100.1     3</span></a>
+<a class="sourceLine" id="cb16-6" title="6"><span class="co">#&gt; 101.1     1</span></a>
+<a class="sourceLine" id="cb16-7" title="7"><span class="co">#&gt; 102.1     1</span></a>
+<a class="sourceLine" id="cb16-8" title="8"><span class="co">#&gt; 103.1    NA</span></a></code></pre></div>
 <p>The relevant part of the JAGS model is:</p>
 <pre><code>#&gt; [...]
 #&gt;     # ordinal model for SMOKE

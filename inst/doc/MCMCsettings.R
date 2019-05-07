@@ -70,25 +70,30 @@ mod4b$mcmc_settings$inits
 mod4c <- lme_imp(bmi ~ time + HEIGHT_M + hc + SMOKE, random = ~ time | ID,
                  data = simLong, no_model = 'time', progress.bar = 'none')
 
+options(max.print = 1e5)
 a4 <- capture.output(coef(mod4c$model))
 cat(
-  paste0(paste(a4[1:14], collapse = "\n"), # start
+  paste0(paste(a4[1:14], collapse = "\n"), # start & begin Xc
          '\n\n[...]\n\n',
-         paste(a4[21:24], collapse = "\n"), # values in Xc
+         paste(a4[94:96], collapse = "\n"), # values in Xc
          '\n\n[...]\n\n',
-         paste(a4[510:516], collapse = "\n"), # end Xc
+         paste(a4[211:217], collapse = "\n"), # end Xc
          '\n\n[...]\n\n',
-         paste(a4[550:555], collapse = "\n"), # values Xcat
+         paste(a4[354:358], collapse = "\n"), # values Xcat
          '\n\n[...]\n\n',
-         paste(a4[1012:1022], collapse = "\n"), # end Xcat; alpha; begin b
+         paste(a4[414:425], collapse = "\n"), # end Xcat; begin Xl
          '\n\n[...]\n\n',
-         paste(a4[1515:1524], collapse = "\n"), # end b; start b_hc
+         paste(a4[2817:2826], collapse = "\n"), # end Xl; alpha; begin b
          '\n\n[...]\n\n',
-         paste(a4[2018:2045], collapse = "\n"), # end b_hc; betas, delta, gamma, invD, begin mu_b
+         paste(a4[3024:3029], collapse = "\n"), # end b; start b_hc
          '\n\n[...]\n\n',
-         paste(a4[2540:2546], collapse = "\n"), # end mu_b; begin mu_b_hc
+         paste(a4[3226:3233], collapse = "\n"), # end b_hc; betas, begin bmi
          '\n\n[...]\n\n',
-         paste(a4[3042:3053], collapse = "\n")
+         paste(a4[3310:3331], collapse = "\n"), # end bmi, delta, gamma, invD, invD_hc, begin mu_b
+         '\n\n[...]\n\n',
+         paste(a4[3528:3534], collapse = "\n"), # end mu_b; begin mu_b_hc
+         '\n\n[...]\n\n',
+         paste(a4[3732:3742], collapse = "\n")
   )
 )
 
@@ -100,8 +105,16 @@ mod4c$data_list['RinvD']
 ## ---- echo = FALSE--------------------------------------------------------------------------------
 cat(paste0('[...]\n', paste(a4mod[28:33], collapse = '\n'), '\n[...]\n'))
 
-## -------------------------------------------------------------------------------------------------
-head(mod4c$data_list$Xc, 15)
+## ---- eval = FALSE--------------------------------------------------------------------------------
+#  mod4c$data_list$Xc[81:85, ]
+
+## ---- echo = FALSE--------------------------------------------------------------------------------
+mat <- mod4c$data_list$Xc[81:85, ]
+colnames(mat) <- gsub("SMOKEsmoked until pregnancy was known",
+                      "SMOKEsmoked until[...]",
+                      gsub("SMOKEcontinued smoking in pregnancy",
+                           "SMOKEcontin[...]", colnames(mat)))
+mat
 
 ## -------------------------------------------------------------------------------------------------
 head(mod4c$data_list$Xcat)

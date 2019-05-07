@@ -372,7 +372,7 @@ model_imp <- function(fixed, data, random = NULL, link, family,
 
   # * convert continuous variable with 2 different values to factor ------------
   for (k in allvars) {
-    if (all(class(data[, k]) != 'factor') & length(unique(data[, k])) == 2) {
+    if (all(class(data[, k]) != 'factor') & length(unique(na.omit(data[, k]))) == 2) {
       data[, k] <- factor(data[, k])
       if (mess)
         message(gettextf('The variable %s was converted to a factor.',
@@ -406,7 +406,6 @@ model_imp <- function(fixed, data, random = NULL, link, family,
     if (!setequal(names(models_user), names(models_default))) {
       models <- models_default
       models[names(models_user)] <- models_user
-      models
     }
   }
 
@@ -530,10 +529,10 @@ model_imp <- function(fixed, data, random = NULL, link, family,
 
 if (!is.null(inits)) {
   if (inherits(inits, 'function')) {
-    if (!is.null(seed) | parallel) {
+    # if (!is.null(seed) | parallel) {
       if (!is.null(seed)) set.seed(seed)
       inits <- replicate(n.chains, inits(), simplify = FALSE)
-    }
+    # }
   }
   if (inherits(inits, "list")) {
     if (!any(c('.RNG.name', '.RNG.seed') %in% unlist(lapply(inits, names))))
@@ -561,7 +560,7 @@ if (!is.null(inits)) {
   var.names <- do.call(get_params, c(list(models = models, analysis_type = analysis_type,
                                           family = family, Mlist,
                                           imp_par_list = imp_par_list,
-                                          ppc = ppc),
+                                          ppc = ppc, mess = mess),
                                      monitor_params))
 
 
@@ -584,7 +583,7 @@ if (!is.null(inits)) {
 
       res <- foreach(i = seq_along(inits)) %dopar% {run_jags(inits[[i]], data_list = data_list,
                           modelfile = modelfile,
-                          n.adapt = n.adapt, n.iter = n.iter,
+                          n.adapt = n.adapt, n.iter = n.iter, thin = thin,
                           var.names = var.names)}
       doParallel::stopImplicitCluster()
       mcmc <- as.mcmc.list(lapply(res, function(x) x$mcmc[[1]]))
