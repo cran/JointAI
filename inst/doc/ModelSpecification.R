@@ -262,7 +262,7 @@ set_refcat <- function(data, formula, covars, auxvars) {
 refs_mod10 <- set_refcat(NHANES, formula = formula(mod10b))
 
 ## -------------------------------------------------------------------------------------------------
-#> The reference category for “race” should be 
+#> The reference category for â€œraceâ€ should be 
 #> 
 #> 1: Mexican American
 #> 2: Other Hispanic
