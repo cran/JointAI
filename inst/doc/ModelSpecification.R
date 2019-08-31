@@ -11,7 +11,7 @@ options(width = 100)
 ## ---- echo = FALSE--------------------------------------------------------------------------------
 tab <- rbind(gaussian = "with links: `identity`, `log`",
              binomial = "with links: `logit`, `probit`, `log`, `cloglog`",
-             Gamma	= "with links: `identity`, `log`",
+             Gamma	= "with links: `inverse`, `identity`, `log`",
              poisson	= "with links: `log`, `identity`"
 )
 
@@ -85,19 +85,19 @@ mod3d <- lm_imp(SBP ~ bili + sin(creat) + cos(albu), data = NHANES)
 list_models(mod3b, priors = FALSE, regcoef = FALSE, otherpars = FALSE)
 
 ## ---- message = FALSE-----------------------------------------------------------------------------
-mod3e <- lm_imp(SBP ~ age + gender + bili, auxvars = "I(WC^2)", data = NHANES)
+mod3e <- lm_imp(SBP ~ age + gender + bili, auxvars = ~ I(WC^2), data = NHANES)
 
-list_impmodels(mod3e, priors = F, regcoef = F, otherpars = F)
-
-## ---- message = FALSE-----------------------------------------------------------------------------
-mod3f <- lm_imp(SBP ~ age + gender + bili + WC, auxvars = "I(WC^2)", data = NHANES)
-
-list_impmodels(mod3f, priors = F, regcoef = F, otherpars = F)
+list_models(mod3e, priors = F, regcoef = F, otherpars = F)
 
 ## ---- message = FALSE-----------------------------------------------------------------------------
-mod3g <- lm_imp(SBP ~ age + gender + bili + I(WC^2), auxvars = "I(WC^2)", data = NHANES)
+mod3f <- lm_imp(SBP ~ age + gender + bili + WC, auxvars = ~ I(WC^2), data = NHANES)
 
-list_impmodels(mod3g, priors = F, regcoef = F, otherpars = F)
+list_models(mod3f, priors = F, regcoef = F, otherpars = F)
+
+## ---- message = FALSE-----------------------------------------------------------------------------
+mod3g <- lm_imp(SBP ~ age + gender + bili + I(WC^2), auxvars = ~ I(WC^2), data = NHANES)
+
+list_models(mod3g, priors = F, regcoef = F, otherpars = F)
 
 ## ---- message = FALSE-----------------------------------------------------------------------------
 # truncation of the distribution of  bili
@@ -118,7 +118,7 @@ mod4c <- lm_imp(SBP ~ age + gender + log(bili) + exp(creat),
 ilogit <- plogis
 
 # Use ilogit in the model formula
-mod5a = lm_imp(SBP ~ age + gender + ilogit(creat), data = NHANES)
+mod5a <- lm_imp(SBP ~ age + gender + ilogit(creat), data = NHANES)
 
 ## ---- message = FALSE-----------------------------------------------------------------------------
 # define the complementary log log transformation
@@ -128,7 +128,7 @@ cloglog <- function(x) log(-log(1 - x))
 ilogit <- plogis
 
 # nest ilogit inside cloglog
-mod6a = lm_imp(SBP ~ age + gender + cloglog(ilogit(creat)), data = NHANES)
+mod6a <- lm_imp(SBP ~ age + gender + cloglog(ilogit(creat)), data = NHANES)
 
 ## ---- message = FALSE-----------------------------------------------------------------------------
 mod7a <- lme_imp(bmi ~ GESTBIR + ETHN + HEIGHT_M + ns(age, df = 2),
@@ -172,7 +172,9 @@ knitr::kable(tab, row.names = FALSE)
 
 
 ## ---- echo = FALSE--------------------------------------------------------------------------------
-tab <- rbind(glmm_gamma = c("gamma mixed model (with log-link)",
+tab <- rbind(glmm_lognorm = c("normal mixed model for the log-transformed variable",
+                            "longitudinal right-skewed variables >0"),
+             glmm_gamma = c("gamma mixed model (with log-link)",
                             "longitudinal right-skewed variables >0"),
              glmm_poisson = c("poisson mixed model (with log-link)",
                               "longitudinal count variables")
@@ -203,27 +205,28 @@ mod8c_models
 ## -------------------------------------------------------------------------------------------------
 # number of missing values in the covariates in mod8a
 colSums(is.na(NHANES[, names(mod8a$models)]))
-
+# => The sequence of models is ordered according to the number of missing values.
+# 
 # print information on the imputation models (and omit everything but the predictor variables)
-list_impmodels(mod8a, priors = F, regcoef = F, otherpars = F, refcat = F)
+list_models(mod8a, priors = F, regcoef = F, otherpars = F, refcat = F)
 
 ## ---- message = FALSE-----------------------------------------------------------------------------
-mod9a <- lm_imp(SBP ~ gender + age + occup, auxvars = c('educ', 'smoke'),
+mod9a <- lm_imp(SBP ~ gender + age + occup, auxvars = ~ educ + smoke,
                 data = NHANES, n.iter = 100, progress.bar = 'none')
 
 ## -------------------------------------------------------------------------------------------------
 summary(mod9a)
 
 ## -------------------------------------------------------------------------------------------------
-list_impmodels(mod9a, priors = FALSE, regcoef = FALSE, otherpars = FALSE, refcat = FALSE)
+list_models(mod9a, priors = FALSE, regcoef = FALSE, otherpars = FALSE, refcat = FALSE)
 
 ## ---- message = FALSE-----------------------------------------------------------------------------
 mod9b <- lm_imp(SBP ~ gender + age + occup, data = NHANES,
-                auxvars = c('educ', 'smoke', 'log(WC)'),
+                auxvars = ~ educ + smoke + log(WC),
                 trunc = list(WC = c(1e-10, 1e10)), n.adapt = 0)
 
 ## -------------------------------------------------------------------------------------------------
-list_impmodels(mod9b, priors = FALSE, regcoef = FALSE, otherpars = FALSE,
+list_models(mod9b, priors = FALSE, regcoef = FALSE, otherpars = FALSE,
                refcat = FALSE)
 
 ## ---- message = FALSE-----------------------------------------------------------------------------
@@ -243,7 +246,7 @@ set_refcat <- function(data, formula, covars, auxvars) {
     covars <- all.vars(formula)[all.vars(formula) != JointAI:::extract_outcome(formula)]
   }
   if (!missing(auxvars))
-    covars <- unique(c(covars, auxvars))
+    covars <- unique(c(covars, attr(terms(auxvars), 'term.labels')))
 
   factors <- covars[sapply(data[, covars, drop = FALSE], is.factor)]
 

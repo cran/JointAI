@@ -51,7 +51,7 @@ lm3 <- lm_imp(SBP ~ age + WC + alc + smoke + occup, data = NHANES, n.adapt = 0,
 parameters(lm3)
 
 ## ----list_lm2------------------------------------------------------------
-list_impmodels(lm2)
+list_models(lm2)
 
 ## ---- echo = FALSE-------------------------------------------------------
 tab <- rbind(object = "'an object of class 'JointAI'",
@@ -86,7 +86,7 @@ parameters(lme2)
 
 ## ---- message = FALSE----------------------------------------------------
 lme3a <- lme_imp(bmi ~ age + EDUC, random = ~age | ID, data = simLong, n.adapt = 0,
-                monitor_params = c(analysis_main = TRUE, RinvD = TRUE))
+                 monitor_params = c(analysis_main = TRUE, RinvD = TRUE))
 
 parameters(lme3a)
 

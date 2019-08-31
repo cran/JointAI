@@ -1,5 +1,5 @@
 Package: JointAI
-Version: 0.5.2
+Version: 0.6.0
 Title: Joint Analysis and Imputation of Incomplete Data
 Authors@R: c(person("Nicole S.", "Erler", email = "n.erler@erasmusmc.nl",
                   role = c("aut", "cre"),
@@ -14,23 +14,24 @@ Description: Provides joint analysis and imputation of (generalized)
     <http://mcmc-jags.sourceforge.net> with the help of 
     the package 'rjags'.
     It also provides summary and plotting functions for the output and allows 
-    to export imputed values.
+    the user to export imputed values.
 URL: https://nerler.github.io/JointAI
 License: GPL (>= 2)
-Date: 2019-06-06
+Date: 2019-08-28
 BugReports: https://github.com/nerler/JointAI/issues
 LazyData: TRUE
 RoxygenNote: 6.1.1
 Depends: rjags (>= 4-6)
 Imports: MASS, mcmcse, coda, rlang, foreach, doParallel
 SystemRequirements: JAGS (http://mcmc-jags.sourceforge.net)
-Suggests: knitr, rmarkdown, foreign, ggplot2, ggpubr, testthat
+Suggests: knitr, rmarkdown, bookdown, foreign, ggplot2, ggpubr,
+        testthat
 VignetteBuilder: knitr
 Encoding: UTF-8
 Language: en-US
 NeedsCompilation: no
-Packaged: 2019-06-06 14:54:57 UTC; 228015
+Packaged: 2019-08-31 17:13:02 UTC; erler
 Author: Nicole S. Erler [aut, cre] (<https://orcid.org/0000-0002-9370-6832>)
 Maintainer: Nicole S. Erler <n.erler@erasmusmc.nl>
 Repository: CRAN
-Date/Publication: 2019-06-06 16:52:15 UTC
+Date/Publication: 2019-08-31 17:40:02 UTC

@@ -90,13 +90,13 @@ summary(mod13a)
 library(splines)
 mod13b <- lme_imp(bmi ~ GESTBIR + ETHN + HEIGHT_M + ns(age, df = 3),
                   random = ~ ns(age, df = 1) | ID,
-                  subset(simLong, !is.na(bmi)),
+                  data = subset(simLong, !is.na(bmi)),
                   n.iter = 500, no_model = 'age', seed = 2019)
 
 summary(mod13b)
 
 ## ----tailprob, echo = F, fig.width = 7, fig.height = 1.5, out.width = '100%'----------------------
-par(mfrow = c(1, 3), mgp = c(1, 0.6, 0), mar = c(2.5, 1, 2, 1))
+op <- par(mfrow = c(1, 3), mgp = c(1, 0.6, 0), mar = c(2.5, 1, 2, 1))
 mus <- c(1, -1.5, -2.5)
 
 for (i in seq_along(mus)) {
@@ -109,15 +109,16 @@ for (i in seq_along(mus)) {
   
   if (mus[i] > 0) {
     polygon(x = c(x[x < 0], max(x[x < 0])),
-            y = c(y[x < 0], min(y)), col = "#18bc9c", border = NA)
+            y = c(y[x < 0], min(y)), col = "#e30f41", border = NA)
   } else {
     polygon(x = c(x[x > 0], min(x[x > 0])),
-            y = c(y[x > 0], min(y)), col = "#18bc9c", border = NA)
+            y = c(y[x > 0], min(y)), col = "#e30f41", border = NA)
   }
   lines(x,y)
   axis(side = 1, at = 0)
   abline(v = 0, lty = 2)
 }
+par(op)
 
 ## -------------------------------------------------------------------------------------------------
 GR_crit(mod13a)
@@ -148,17 +149,29 @@ sub3
 # pass "sub3" to "subset" via "other", for example in a traceplot:
 # traceplot(mod13d, subset = list(other = sub3), ncol = 2)
 
-## ---- eval = FALSE--------------------------------------------------------------------------------
-#  # re-fit the model monitoring the random effects
-#  mod13e <- update(mod13b, monitor_params = c(ranef = TRUE))
-#  
-#  # extract random intercepts and random slopes
-#  ri <- grep('^b\\[[[:digit:]]+,1\\]$', colnames(mod13e$MCMC[[1]]), value = T)
-#  rs <- grep('^b\\[[[:digit:]]+,2\\]$', colnames(mod13e$MCMC[[1]]), value = T)
-#  
-#  # to plot the chains of 12 randomly selected random intercepts and slopes:
-#  traceplot(mod13e, subset = list(other = sample(ri, size = 12)), ncol = 4)
-#  traceplot(mod13e, subset = list(other = sample(rs, size = 12)), ncol = 4)
+## -------------------------------------------------------------------------------------------------
+# re-fit the model monitoring the random effects
+mod13e <- update(mod13b, monitor_params = c(ranef = TRUE))
+
+# extract random intercepts and random slopes
+ri <- grep('^b\\[[[:digit:]]+,1\\]$', colnames(mod13e$MCMC[[1]]), value = T)
+rs <- grep('^b\\[[[:digit:]]+,2\\]$', colnames(mod13e$MCMC[[1]]), value = T)
+
+# to plot the chains of 12 randomly selected random intercepts and slopes:
+traceplot(mod13e, subset = list(other = sample(ri, size = 12)), ncol = 4)
+traceplot(mod13e, subset = list(other = sample(rs, size = 12)), ncol = 4)
+
+## -------------------------------------------------------------------------------------------------
+mod14 <- lm_imp(SBP ~ gender + WC + alc + creat, data = NHANES, n.iter = 100,
+              progress.bar = 'none', n.chains = 5)
+
+densplot(mod14, ncol = 3)
+densplot(mod14, exclude_chains = c(2,4), ncol = 3)
+
+## -------------------------------------------------------------------------------------------------
+traceplot(mod14, thin = 5, ncol = 3)
+traceplot(mod14, start = 150, ncol = 3)
+traceplot(mod14, end = 120, ncol = 3)
 
 ## ---- echo = FALSE--------------------------------------------------
 options(width = 70)
@@ -173,7 +186,7 @@ newDF <- predDF(mod13b, var = "age")
 # obtain predicted values
 pred <- predict(mod13b, newdata = newDF)
 
-# plot predicted values and prediction interval
+# plot predicted values and credible interval
 matplot(pred$dat$age, pred$dat[, c('fit', '2.5%', '97.5%')],
         lty = c(1,2,2), type = 'l', col = 1,
         xlab = 'age in months', ylab = 'predicted value')
