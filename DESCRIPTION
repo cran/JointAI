@@ -1,5 +1,5 @@
 Package: JointAI
-Version: 0.6.0
+Version: 0.6.1
 Title: Joint Analysis and Imputation of Incomplete Data
 Authors@R: c(person("Nicole S.", "Erler", email = "n.erler@erasmusmc.nl",
                   role = c("aut", "cre"),
@@ -17,21 +17,21 @@ Description: Provides joint analysis and imputation of (generalized)
     the user to export imputed values.
 URL: https://nerler.github.io/JointAI
 License: GPL (>= 2)
-Date: 2019-08-28
+Date: 2020-02-12
 BugReports: https://github.com/nerler/JointAI/issues
 LazyData: TRUE
-RoxygenNote: 6.1.1
+RoxygenNote: 7.0.2
 Depends: rjags (>= 4-6)
 Imports: MASS, mcmcse, coda, rlang, foreach, doParallel
 SystemRequirements: JAGS (http://mcmc-jags.sourceforge.net)
 Suggests: knitr, rmarkdown, bookdown, foreign, ggplot2, ggpubr,
-        testthat
+        survival, testthat
 VignetteBuilder: knitr
 Encoding: UTF-8
 Language: en-US
 NeedsCompilation: no
-Packaged: 2019-08-31 17:13:02 UTC; erler
+Packaged: 2020-02-12 09:03:44 UTC; erler
 Author: Nicole S. Erler [aut, cre] (<https://orcid.org/0000-0002-9370-6832>)
 Maintainer: Nicole S. Erler <n.erler@erasmusmc.nl>
 Repository: CRAN
-Date/Publication: 2019-08-31 17:40:02 UTC
+Date/Publication: 2020-02-12 09:30:02 UTC

@@ -1,3 +1,13 @@
+# JointAI 0.6.1
+
+## Bug fixes
+* Fixed bug that messed up coefficients in `clmm` covariate model when there are
+  no baseline covariates in the model
+* enable `newdata` for `predict()` that does not contain the outcome variable
+* `add_samples()`: calculation of `end()` of mcmc samples fixed
+
+--------------------------------------------------------------------------------
+
 # JointAI 0.6.0
 
 ## Bug fixes

@@ -1,15 +1,14 @@
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
 
 <head>
 
 <meta charset="utf-8" />
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 
 
 <meta name="date" content="2019-08-29" />
@@ -119,9 +118,6 @@ padding-right: 2em;
 font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
 font-size: 14px;
 line-height: 1.35;
-}
-#header {
-text-align: center;
 }
 #TOC {
 clear: both;
@@ -290,7 +286,8 @@ code > span.st { color: #d14; }
 code > span.co { color: #888888; font-style: italic; } 
 code > span.ot { color: #007020; } 
 code > span.al { color: #ff0000; font-weight: bold; } 
-code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61717; background-color: #e3d2d2; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
 </style>
 
 
@@ -414,8 +411,7 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a>lm1 &lt;-<span class="st"> </span><span class="kw">lm_imp</span>(SBP <span class="op">~</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>WC <span class="op">+</span><span class="st"> </span>alc <span class="op">+</span><span class="st"> </span>creat, <span class="dt">data =</span> NHANES,  <span class="dt">n.adpat =</span> <span class="dv">0</span>)</span>
 <span id="cb1-2"><a href="#cb1-2"></a></span>
 <span id="cb1-3"><a href="#cb1-3"></a><span class="kw">parameters</span>(lm1)</span>
-<span id="cb1-4"><a href="#cb1-4"></a><span class="co">#&gt; [1] &quot;(Intercept)&quot;  &quot;genderfemale&quot; &quot;WC&quot;           &quot;alc&gt;=1&quot;      </span></span>
-<span id="cb1-5"><a href="#cb1-5"></a><span class="co">#&gt; [5] &quot;creat&quot;        &quot;sigma_SBP&quot;</span></span></code></pre></div>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="co">#&gt; [1] &quot;(Intercept)&quot;  &quot;genderfemale&quot; &quot;WC&quot;           &quot;alc&gt;=1&quot;       &quot;creat&quot;        &quot;sigma_SBP&quot;</span></span></code></pre></div>
 <p>Note that instead of <code>&quot;beta&quot;</code> the names of the covariates are returned that are associated with the different elements of <code>beta</code>.</p>
 </div>
 <div id="imputed-values-parameters-of-the-imputation-models" class="section level3">
@@ -427,21 +423,18 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <span id="cb2-4"><a href="#cb2-4"></a>)</span>
 <span id="cb2-5"><a href="#cb2-5"></a></span>
 <span id="cb2-6"><a href="#cb2-6"></a><span class="kw">parameters</span>(lm2)</span>
-<span id="cb2-7"><a href="#cb2-7"></a><span class="co">#&gt;  [1] &quot;Xc[33,3]&quot;    &quot;Xc[150,3]&quot;   &quot;Xc[1,8]&quot;     &quot;Xc[7,8]&quot;     &quot;Xc[8,8]&quot;    </span></span>
-<span id="cb2-8"><a href="#cb2-8"></a><span class="co">#&gt;  [6] &quot;Xc[12,8]&quot;    &quot;Xc[13,8]&quot;    &quot;Xc[21,8]&quot;    &quot;Xc[22,8]&quot;    &quot;Xc[31,8]&quot;   </span></span>
-<span id="cb2-9"><a href="#cb2-9"></a><span class="co">#&gt; [11] &quot;Xc[33,8]&quot;    &quot;Xc[34,8]&quot;    &quot;Xc[39,8]&quot;    &quot;Xc[49,8]&quot;    &quot;Xc[66,8]&quot;   </span></span>
-<span id="cb2-10"><a href="#cb2-10"></a><span class="co">#&gt; [16] &quot;Xc[67,8]&quot;    &quot;Xc[80,8]&quot;    &quot;Xc[86,8]&quot;    &quot;Xc[91,8]&quot;    &quot;Xc[92,8]&quot;   </span></span>
-<span id="cb2-11"><a href="#cb2-11"></a><span class="co">#&gt; [21] &quot;Xc[105,8]&quot;   &quot;Xc[111,8]&quot;   &quot;Xc[115,8]&quot;   &quot;Xc[118,8]&quot;   &quot;Xc[120,8]&quot;  </span></span>
-<span id="cb2-12"><a href="#cb2-12"></a><span class="co">#&gt; [26] &quot;Xc[127,8]&quot;   &quot;Xc[132,8]&quot;   &quot;Xc[139,8]&quot;   &quot;Xc[146,8]&quot;   &quot;Xc[149,8]&quot;  </span></span>
-<span id="cb2-13"><a href="#cb2-13"></a><span class="co">#&gt; [31] &quot;Xc[152,8]&quot;   &quot;Xc[163,8]&quot;   &quot;Xc[165,8]&quot;   &quot;Xc[169,8]&quot;   &quot;Xc[180,8]&quot;  </span></span>
-<span id="cb2-14"><a href="#cb2-14"></a><span class="co">#&gt; [36] &quot;Xc[185,8]&quot;   &quot;Xcat[6,1]&quot;   &quot;Xcat[16,1]&quot;  &quot;Xcat[24,1]&quot;  &quot;Xcat[27,1]&quot; </span></span>
-<span id="cb2-15"><a href="#cb2-15"></a><span class="co">#&gt; [41] &quot;Xcat[45,1]&quot;  &quot;Xcat[57,1]&quot;  &quot;Xcat[58,1]&quot;  &quot;Xcat[60,1]&quot;  &quot;Xcat[61,1]&quot; </span></span>
-<span id="cb2-16"><a href="#cb2-16"></a><span class="co">#&gt; [46] &quot;Xcat[65,1]&quot;  &quot;Xcat[66,1]&quot;  &quot;Xcat[70,1]&quot;  &quot;Xcat[80,1]&quot;  &quot;Xcat[81,1]&quot; </span></span>
-<span id="cb2-17"><a href="#cb2-17"></a><span class="co">#&gt; [51] &quot;Xcat[85,1]&quot;  &quot;Xcat[88,1]&quot;  &quot;Xcat[89,1]&quot;  &quot;Xcat[90,1]&quot;  &quot;Xcat[101,1]&quot;</span></span>
-<span id="cb2-18"><a href="#cb2-18"></a><span class="co">#&gt; [56] &quot;Xcat[104,1]&quot; &quot;Xcat[116,1]&quot; &quot;Xcat[133,1]&quot; &quot;Xcat[137,1]&quot; &quot;Xcat[143,1]&quot;</span></span>
-<span id="cb2-19"><a href="#cb2-19"></a><span class="co">#&gt; [61] &quot;Xcat[168,1]&quot; &quot;Xcat[170,1]&quot; &quot;Xcat[180,1]&quot; &quot;Xcat[186,1]&quot; &quot;Xcat[16,2]&quot; </span></span>
-<span id="cb2-20"><a href="#cb2-20"></a><span class="co">#&gt; [66] &quot;Xcat[99,2]&quot;  &quot;Xcat[123,2]&quot; &quot;Xcat[156,2]&quot; &quot;Xcat[158,2]&quot; &quot;Xcat[166,2]&quot;</span></span>
-<span id="cb2-21"><a href="#cb2-21"></a><span class="co">#&gt; [71] &quot;Xcat[172,2]&quot;</span></span></code></pre></div>
+<span id="cb2-7"><a href="#cb2-7"></a><span class="co">#&gt;  [1] &quot;Xc[33,3]&quot;    &quot;Xc[150,3]&quot;   &quot;Xc[1,8]&quot;     &quot;Xc[7,8]&quot;     &quot;Xc[8,8]&quot;     &quot;Xc[12,8]&quot;   </span></span>
+<span id="cb2-8"><a href="#cb2-8"></a><span class="co">#&gt;  [7] &quot;Xc[13,8]&quot;    &quot;Xc[21,8]&quot;    &quot;Xc[22,8]&quot;    &quot;Xc[31,8]&quot;    &quot;Xc[33,8]&quot;    &quot;Xc[34,8]&quot;   </span></span>
+<span id="cb2-9"><a href="#cb2-9"></a><span class="co">#&gt; [13] &quot;Xc[39,8]&quot;    &quot;Xc[49,8]&quot;    &quot;Xc[66,8]&quot;    &quot;Xc[67,8]&quot;    &quot;Xc[80,8]&quot;    &quot;Xc[86,8]&quot;   </span></span>
+<span id="cb2-10"><a href="#cb2-10"></a><span class="co">#&gt; [19] &quot;Xc[91,8]&quot;    &quot;Xc[92,8]&quot;    &quot;Xc[105,8]&quot;   &quot;Xc[111,8]&quot;   &quot;Xc[115,8]&quot;   &quot;Xc[118,8]&quot;  </span></span>
+<span id="cb2-11"><a href="#cb2-11"></a><span class="co">#&gt; [25] &quot;Xc[120,8]&quot;   &quot;Xc[127,8]&quot;   &quot;Xc[132,8]&quot;   &quot;Xc[139,8]&quot;   &quot;Xc[146,8]&quot;   &quot;Xc[149,8]&quot;  </span></span>
+<span id="cb2-12"><a href="#cb2-12"></a><span class="co">#&gt; [31] &quot;Xc[152,8]&quot;   &quot;Xc[163,8]&quot;   &quot;Xc[165,8]&quot;   &quot;Xc[169,8]&quot;   &quot;Xc[180,8]&quot;   &quot;Xc[185,8]&quot;  </span></span>
+<span id="cb2-13"><a href="#cb2-13"></a><span class="co">#&gt; [37] &quot;Xcat[6,1]&quot;   &quot;Xcat[16,1]&quot;  &quot;Xcat[24,1]&quot;  &quot;Xcat[27,1]&quot;  &quot;Xcat[45,1]&quot;  &quot;Xcat[57,1]&quot; </span></span>
+<span id="cb2-14"><a href="#cb2-14"></a><span class="co">#&gt; [43] &quot;Xcat[58,1]&quot;  &quot;Xcat[60,1]&quot;  &quot;Xcat[61,1]&quot;  &quot;Xcat[65,1]&quot;  &quot;Xcat[66,1]&quot;  &quot;Xcat[70,1]&quot; </span></span>
+<span id="cb2-15"><a href="#cb2-15"></a><span class="co">#&gt; [49] &quot;Xcat[80,1]&quot;  &quot;Xcat[81,1]&quot;  &quot;Xcat[85,1]&quot;  &quot;Xcat[88,1]&quot;  &quot;Xcat[89,1]&quot;  &quot;Xcat[90,1]&quot; </span></span>
+<span id="cb2-16"><a href="#cb2-16"></a><span class="co">#&gt; [55] &quot;Xcat[101,1]&quot; &quot;Xcat[104,1]&quot; &quot;Xcat[116,1]&quot; &quot;Xcat[133,1]&quot; &quot;Xcat[137,1]&quot; &quot;Xcat[143,1]&quot;</span></span>
+<span id="cb2-17"><a href="#cb2-17"></a><span class="co">#&gt; [61] &quot;Xcat[168,1]&quot; &quot;Xcat[170,1]&quot; &quot;Xcat[180,1]&quot; &quot;Xcat[186,1]&quot; &quot;Xcat[16,2]&quot;  &quot;Xcat[99,2]&quot; </span></span>
+<span id="cb2-18"><a href="#cb2-18"></a><span class="co">#&gt; [67] &quot;Xcat[123,2]&quot; &quot;Xcat[156,2]&quot; &quot;Xcat[158,2]&quot; &quot;Xcat[166,2]&quot; &quot;Xcat[172,2]&quot;</span></span></code></pre></div>
 <p><strong>JointAI</strong> uses a number of different design matrices to store different types of variables. The matrix <code>Xc</code> is the design matrix of cross-sectional covariates. For categorical incomplete variables (with more than 2 categories) the original variable is stored in the matrix <code>Xcat</code> and <code>Xc</code> contains the corresponding dummy coded variables. Hence, the imputed values of continuous and binary variables are elements of <code>Xc</code> and imputed values of categorical variables are elements of <code>Xcat</code>.</p>
 <p>The parameters of the models for the incomplete variables can be selected with <code>monitor_params = c(imp_pars = TRUE)</code>. This will set monitors for the regression coefficients (<code>alpha</code>) and other parameters, such as precision (<code>tau_*</code>) and intercepts &amp; increments (<code>gamma_*</code> and <code>delta_*</code>) in cumulative logit models.</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1"></a>lm3 &lt;-<span class="st"> </span><span class="kw">lm_imp</span>(SBP <span class="op">~</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>WC <span class="op">+</span><span class="st"> </span>alc <span class="op">+</span><span class="st"> </span>smoke <span class="op">+</span><span class="st"> </span>occup, <span class="dt">data =</span> NHANES, <span class="dt">n.adapt =</span> <span class="dv">0</span>,</span>
@@ -548,23 +541,23 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a>lme1 &lt;-<span class="st"> </span><span class="kw">lme_imp</span>(bmi <span class="op">~</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>EDUC, <span class="dt">random =</span> <span class="op">~</span>age <span class="op">|</span><span class="st"> </span>ID, <span class="dt">data =</span> simLong, <span class="dt">n.adapt =</span> <span class="dv">0</span>)</span>
 <span id="cb5-2"><a href="#cb5-2"></a></span>
 <span id="cb5-3"><a href="#cb5-3"></a><span class="kw">parameters</span>(lme1)</span>
-<span id="cb5-4"><a href="#cb5-4"></a><span class="co">#&gt; [1] &quot;(Intercept)&quot; &quot;EDUCmid&quot;     &quot;EDUClow&quot;     &quot;age&quot;         &quot;sigma_bmi&quot;  </span></span>
-<span id="cb5-5"><a href="#cb5-5"></a><span class="co">#&gt; [6] &quot;D[1,1]&quot;      &quot;D[1,2]&quot;      &quot;D[2,2]&quot;</span></span></code></pre></div>
+<span id="cb5-4"><a href="#cb5-4"></a><span class="co">#&gt; [1] &quot;(Intercept)&quot; &quot;EDUCmid&quot;     &quot;EDUClow&quot;     &quot;age&quot;         &quot;sigma_bmi&quot;   &quot;D[1,1]&quot;     </span></span>
+<span id="cb5-5"><a href="#cb5-5"></a><span class="co">#&gt; [7] &quot;D[1,2]&quot;      &quot;D[2,2]&quot;</span></span></code></pre></div>
 <p>Setting <code>analysis_random = TRUE</code> will switch on monitoring for the random effects (<code>ranef</code>), random effects covariance matrix (<code>D</code>), inverse of the random effects covariance matrix (<code>invD</code>) and the diagonal of the scale matrix of the Wishart-prior of <code>invD</code> (<code>RinvD</code>).</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1"></a>lme2 &lt;-<span class="st"> </span><span class="kw">lme_imp</span>(bmi <span class="op">~</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>EDUC, <span class="dt">random =</span> <span class="op">~</span>age <span class="op">|</span><span class="st"> </span>ID, <span class="dt">data =</span> simLong, <span class="dt">n.adapt =</span> <span class="dv">0</span>,</span>
 <span id="cb6-2"><a href="#cb6-2"></a>                <span class="dt">monitor_params =</span> <span class="kw">c</span>(<span class="dt">analysis_random =</span> <span class="ot">TRUE</span>))</span>
 <span id="cb6-3"><a href="#cb6-3"></a></span>
 <span id="cb6-4"><a href="#cb6-4"></a><span class="kw">parameters</span>(lme2)</span>
-<span id="cb6-5"><a href="#cb6-5"></a><span class="co">#&gt;  [1] &quot;(Intercept)&quot; &quot;EDUCmid&quot;     &quot;EDUClow&quot;     &quot;age&quot;         &quot;sigma_bmi&quot;  </span></span>
-<span id="cb6-6"><a href="#cb6-6"></a><span class="co">#&gt;  [6] &quot;b&quot;           &quot;invD[1,1]&quot;   &quot;invD[1,2]&quot;   &quot;invD[2,2]&quot;   &quot;D[1,1]&quot;     </span></span>
-<span id="cb6-7"><a href="#cb6-7"></a><span class="co">#&gt; [11] &quot;D[1,2]&quot;      &quot;D[2,2]&quot;      &quot;RinvD[1,1]&quot;  &quot;RinvD[2,2]&quot;</span></span></code></pre></div>
+<span id="cb6-5"><a href="#cb6-5"></a><span class="co">#&gt;  [1] &quot;(Intercept)&quot; &quot;EDUCmid&quot;     &quot;EDUClow&quot;     &quot;age&quot;         &quot;sigma_bmi&quot;   &quot;b&quot;          </span></span>
+<span id="cb6-6"><a href="#cb6-6"></a><span class="co">#&gt;  [7] &quot;invD[1,1]&quot;   &quot;invD[1,2]&quot;   &quot;invD[2,2]&quot;   &quot;D[1,1]&quot;      &quot;D[1,2]&quot;      &quot;D[2,2]&quot;     </span></span>
+<span id="cb6-7"><a href="#cb6-7"></a><span class="co">#&gt; [13] &quot;RinvD[1,1]&quot;  &quot;RinvD[2,2]&quot;</span></span></code></pre></div>
 <p>It is possible to select only a subset of the random effects parameters by specifying them directly, e.g.</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1"></a>lme3a &lt;-<span class="st"> </span><span class="kw">lme_imp</span>(bmi <span class="op">~</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>EDUC, <span class="dt">random =</span> <span class="op">~</span>age <span class="op">|</span><span class="st"> </span>ID, <span class="dt">data =</span> simLong, <span class="dt">n.adapt =</span> <span class="dv">0</span>,</span>
 <span id="cb7-2"><a href="#cb7-2"></a>                 <span class="dt">monitor_params =</span> <span class="kw">c</span>(<span class="dt">analysis_main =</span> <span class="ot">TRUE</span>, <span class="dt">RinvD =</span> <span class="ot">TRUE</span>))</span>
 <span id="cb7-3"><a href="#cb7-3"></a></span>
 <span id="cb7-4"><a href="#cb7-4"></a><span class="kw">parameters</span>(lme3a)</span>
-<span id="cb7-5"><a href="#cb7-5"></a><span class="co">#&gt;  [1] &quot;(Intercept)&quot; &quot;EDUCmid&quot;     &quot;EDUClow&quot;     &quot;age&quot;         &quot;sigma_bmi&quot;  </span></span>
-<span id="cb7-6"><a href="#cb7-6"></a><span class="co">#&gt;  [6] &quot;D[1,1]&quot;      &quot;D[1,2]&quot;      &quot;D[2,2]&quot;      &quot;RinvD[1,1]&quot;  &quot;RinvD[2,2]&quot;</span></span></code></pre></div>
+<span id="cb7-5"><a href="#cb7-5"></a><span class="co">#&gt;  [1] &quot;(Intercept)&quot; &quot;EDUCmid&quot;     &quot;EDUClow&quot;     &quot;age&quot;         &quot;sigma_bmi&quot;   &quot;D[1,1]&quot;     </span></span>
+<span id="cb7-6"><a href="#cb7-6"></a><span class="co">#&gt;  [7] &quot;D[1,2]&quot;      &quot;D[2,2]&quot;      &quot;RinvD[1,1]&quot;  &quot;RinvD[2,2]&quot;</span></span></code></pre></div>
 <p>or by switching unwanted parts of <code>analysis_random</code> off, e.g.</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1"></a>lme3b &lt;-<span class="st"> </span><span class="kw">lme_imp</span>(bmi <span class="op">~</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>EDUC, <span class="dt">random =</span> <span class="op">~</span>age <span class="op">|</span><span class="st"> </span>ID, <span class="dt">data =</span> simLong, <span class="dt">n.adapt =</span> <span class="dv">0</span>,</span>
 <span id="cb8-2"><a href="#cb8-2"></a>                <span class="dt">monitor_params =</span> <span class="kw">c</span>(<span class="dt">analysis_main =</span> <span class="ot">TRUE</span>,</span>
@@ -573,9 +566,8 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <span id="cb8-5"><a href="#cb8-5"></a>                                   <span class="dt">ranef =</span> <span class="ot">FALSE</span>))</span>
 <span id="cb8-6"><a href="#cb8-6"></a></span>
 <span id="cb8-7"><a href="#cb8-7"></a><span class="kw">parameters</span>(lme3b)</span>
-<span id="cb8-8"><a href="#cb8-8"></a><span class="co">#&gt;  [1] &quot;(Intercept)&quot; &quot;EDUCmid&quot;     &quot;EDUClow&quot;     &quot;age&quot;         &quot;sigma_bmi&quot;  </span></span>
-<span id="cb8-9"><a href="#cb8-9"></a><span class="co">#&gt;  [6] &quot;invD[1,1]&quot;   &quot;invD[1,2]&quot;   &quot;invD[2,2]&quot;   &quot;D[1,1]&quot;      &quot;D[1,2]&quot;     </span></span>
-<span id="cb8-10"><a href="#cb8-10"></a><span class="co">#&gt; [11] &quot;D[2,2]&quot;</span></span></code></pre></div>
+<span id="cb8-8"><a href="#cb8-8"></a><span class="co">#&gt;  [1] &quot;(Intercept)&quot; &quot;EDUCmid&quot;     &quot;EDUClow&quot;     &quot;age&quot;         &quot;sigma_bmi&quot;   &quot;invD[1,1]&quot;  </span></span>
+<span id="cb8-9"><a href="#cb8-9"></a><span class="co">#&gt;  [7] &quot;invD[1,2]&quot;   &quot;invD[2,2]&quot;   &quot;D[1,1]&quot;      &quot;D[1,2]&quot;      &quot;D[2,2]&quot;</span></span></code></pre></div>
 </div>
 <div id="other-parameters" class="section level3">
 <h3>Other parameters</h3>
@@ -655,12 +647,12 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <span id="cb12-18"><a href="#cb12-18"></a><span class="co"># Monte Carlo Error of the MCMC sample</span></span>
 <span id="cb12-19"><a href="#cb12-19"></a><span class="kw">MC_error</span>(lm5)</span>
 <span id="cb12-20"><a href="#cb12-20"></a><span class="co">#&gt;                 est   MCSE    SD MCSE/SD</span></span>
-<span id="cb12-21"><a href="#cb12-21"></a><span class="co">#&gt; (Intercept)  81.651 0.5514 9.662   0.057</span></span>
-<span id="cb12-22"><a href="#cb12-22"></a><span class="co">#&gt; genderfemale  0.085 0.1394 2.608   0.053</span></span>
-<span id="cb12-23"><a href="#cb12-23"></a><span class="co">#&gt; WC            0.310 0.0043 0.077   0.056</span></span>
-<span id="cb12-24"><a href="#cb12-24"></a><span class="co">#&gt; alc&gt;=1        6.229 0.1650 2.577   0.064</span></span>
-<span id="cb12-25"><a href="#cb12-25"></a><span class="co">#&gt; creat         6.831 0.4495 7.933   0.057</span></span>
-<span id="cb12-26"><a href="#cb12-26"></a><span class="co">#&gt; sigma_SBP    14.431 0.0408 0.734   0.056</span></span></code></pre></div>
+<span id="cb12-21"><a href="#cb12-21"></a><span class="co">#&gt; (Intercept)  81.651 0.5578 9.662   0.058</span></span>
+<span id="cb12-22"><a href="#cb12-22"></a><span class="co">#&gt; genderfemale  0.085 0.1506 2.608   0.058</span></span>
+<span id="cb12-23"><a href="#cb12-23"></a><span class="co">#&gt; WC            0.310 0.0047 0.077   0.062</span></span>
+<span id="cb12-24"><a href="#cb12-24"></a><span class="co">#&gt; alc&gt;=1        6.229 0.1787 2.577   0.069</span></span>
+<span id="cb12-25"><a href="#cb12-25"></a><span class="co">#&gt; creat         6.831 0.4580 7.933   0.058</span></span>
+<span id="cb12-26"><a href="#cb12-26"></a><span class="co">#&gt; sigma_SBP    14.431 0.0458 0.734   0.062</span></span></code></pre></div>
 <p>When <code>analysis_main</code> was not switched on the default behavior is that all parameters are displayed:</p>
 <div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1"></a><span class="co"># Re-run the model from above, now creating MCMC samples</span></span>
 <span id="cb13-2"><a href="#cb13-2"></a>lm4 &lt;-<span class="st"> </span><span class="kw">lm_imp</span>(SBP <span class="op">~</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>WC <span class="op">+</span><span class="st"> </span>alc <span class="op">+</span><span class="st"> </span>creat,</span>

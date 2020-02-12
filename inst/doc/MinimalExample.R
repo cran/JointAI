@@ -1,4 +1,4 @@
-## ----setup, include = FALSE----------------------------------------------
+## ----setup, include = FALSE-----------------------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
@@ -9,11 +9,11 @@ knitr::opts_chunk$set(
 knitr::opts_knit$set(progress = FALSE)
 library(JointAI)
 
-## ----fit_lm1, message = F------------------------------------------------
+## ----fit_lm1, message = F-------------------------------------------------------------------------
 lm1 <- lm_imp(SBP ~ gender + age + race + WC + alc + educ + albu + bili,
               data = NHANES, n.iter = 500, progress.bar = 'none')
 
-## ----results_lm1, fig.width = 8, fig.height = 5, out.width = '100%'------
+## ----results_lm1, fig.width = 8, fig.height = 5, out.width = '100%'-------------------------------
 traceplot(lm1)
 
 ## ---- echo = FALSE------------------------------------------------------------

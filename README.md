@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# JointAI: Joint Analysis and Imputation of Incomplete Data
+# JointAI: Joint Analysis and Imputation of Incomplete Data <img src="man/figures/logo.png" align="right" alt="" width="160" />
 
 [![Travis-CI Build
 Status](https://travis-ci.org/NErler/JointAI.svg?branch=master)](https://travis-ci.org/NErler/JointAI)
@@ -10,6 +10,7 @@ Status](https://travis-ci.org/NErler/JointAI.svg?branch=master)](https://travis-
 [![Download
 counter](http://cranlogs.r-pkg.org/badges/JointAI)](https://cran.r-project.org/package=JointAI)
 [![Rdoc](http://www.rdocumentation.org/badges/version/JointAI)](http://www.rdocumentation.org/packages/JointAI)
+<!-- [![](https://codecov.io/gh/NErler/JointAI/branch/master/graph/badge.svg)](https://codecov.io/gh/NErler/JointAI) -->
 
 The package **JointAI** provides joint analysis and imputation of
 (generalized) linear regression models, (generalized) linear mixed
@@ -78,14 +79,18 @@ of the data and missing values, export of imputed values and prediction.
 ``` r
 library(JointAI)
 
-par(mar = c(2.5, 3, 2.5, 1), mgp = c(2, 0.8, 0))
-plot_all(NHANES[c(1, 5:6, 8:12)], fill = '#18bc9c', border = '#2C3E50', ncol = 4, nclass = 30)
+op <- par(mar = c(2.5, 3, 2.5, 1), mgp = c(2, 0.8, 0))
+plot_all(NHANES[c(1, 5:6, 8:12)], fill = '#e30f41', border = '#34111b', ncol = 4, nclass = 30)
 ```
 
 <img src="man/figures/README-unnamed-chunk-2-1.png" style="display: block; margin: auto;" />
 
 ``` r
-md_pattern(NHANES, color = c('#2C3E50', '#18bc9c'))
+par(op)
+```
+
+``` r
+md_pattern(NHANES, color = c('#34111b', '#e30f41'))
 ```
 
 <img src="man/figures/README-unnamed-chunk-3-1.png" style="display: block; margin: auto;" />
@@ -100,13 +105,13 @@ lm1 <- lm_imp(SBP ~ gender + age + WC + alc + educ + bili,
 ### Visualize the MCMC sample
 
 ``` r
-traceplot(lm1, col = c('#E74C3C', '#2C3E50', '#18bc9c'), ncol = 4)
+traceplot(lm1, col = c('#d4af37', '#34111b', '#e30f41'), ncol = 4)
 ```
 
 <img src="man/figures/README-unnamed-chunk-4-1.png" width="100%" style="display: block; margin: auto;" />
 
 ``` r
-densplot(lm1, col = c('#E74C3C', '#2C3E50', '#18bc9c'), ncol = 4, lwd = 2)
+densplot(lm1, col = c('#d4af37', '#34111b', '#e30f41'), ncol = 4, lwd = 2)
 ```
 
 <img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" style="display: block; margin: auto;" />
@@ -123,18 +128,18 @@ summary(lm1)
 #>     data = NHANES, n.iter = 500, progress.bar = "none")
 #> 
 #> Posterior summary:
-#>                Mean     SD    2.5%   97.5% tail-prob. GR-crit
-#> (Intercept)  88.089 8.8597  69.619 105.178    0.00000    1.01
-#> genderfemale -3.566 2.2571  -7.950   0.803    0.11333    1.04
-#> age           0.335 0.0700   0.193   0.469    0.00000    1.01
-#> WC            0.226 0.0725   0.080   0.368    0.00267    1.00
-#> alc>=1        6.350 2.3114   1.783  10.889    0.01200    1.00
-#> educhigh     -2.828 2.0465  -6.797   1.157    0.17333    1.03
-#> bili         -5.356 4.9196 -14.911   4.290    0.27867    1.04
+#>                Mean     SD     2.5%   97.5% tail-prob. GR-crit
+#> (Intercept)  88.330 8.7956  70.8815 105.510      0.000    1.02
+#> genderfemale -3.439 2.2033  -7.8477   0.948      0.123    1.00
+#> age           0.330 0.0682   0.2004   0.463      0.000    1.00
+#> WC            0.225 0.0717   0.0865   0.364      0.000    1.01
+#> alc>=1        6.388 2.3306   1.9035  10.788      0.008    1.00
+#> educhigh     -2.908 2.1390  -7.3109   1.166      0.177    1.00
+#> bili         -5.192 4.8641 -14.7564   3.913      0.289    1.01
 #> 
 #> Posterior summary of residual std. deviation:
 #>           Mean    SD 2.5% 97.5% GR-crit
-#> sigma_SBP 13.5 0.738 12.2  15.2       1
+#> sigma_SBP 13.6 0.722 12.2    15       1
 #> 
 #> 
 #> MCMC settings:
@@ -148,19 +153,19 @@ summary(lm1)
 
 ``` r
 coef(lm1)
-#>  (Intercept) genderfemale          age           WC       alc>=1 
-#>   88.0889587   -3.5660647    0.3350489    0.2262964    6.3497173 
-#>     educhigh         bili 
-#>   -2.8283599   -5.3562879
+#>  (Intercept) genderfemale          age           WC       alc>=1     educhigh 
+#>   88.3300380   -3.4387701    0.3298298    0.2253663    6.3883253   -2.9079009 
+#>         bili 
+#>   -5.1915762
 
 confint(lm1)
-#>                      2.5%       97.5%
-#> (Intercept)   69.61859898 105.1784708
-#> genderfemale  -7.95045888   0.8034015
-#> age            0.19331277   0.4685157
-#> WC             0.07998274   0.3681013
-#> alc>=1         1.78289844  10.8888495
-#> educhigh      -6.79742752   1.1568467
-#> bili         -14.91144335   4.2900062
-#> sigma_SBP     12.17745503  15.1533245
+#>                     2.5%       97.5%
+#> (Intercept)   70.8814968 105.5095036
+#> genderfemale  -7.8476897   0.9479861
+#> age            0.2003926   0.4626324
+#> WC             0.0865418   0.3641664
+#> alc>=1         1.9034962  10.7884149
+#> educhigh      -7.3109043   1.1658549
+#> bili         -14.7563735   3.9129268
+#> sigma_SBP     12.2366034  15.0167016
 ```

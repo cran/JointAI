@@ -9,7 +9,7 @@ library(JointAI)
 options(width = 100)
 
 ## ---- message = FALSE, fig.width = 7, fig.height = 4, out.width = '100%'--------------------------
-mod13a <- lm_imp(SBP ~ gender + WC + alc + creat, data = NHANES, n.iter = 500)
+mod13a <- lm_imp(SBP ~ gender + WC + alc + creat, data = NHANES, n.iter = 500, seed = 2020)
 
 traceplot(mod13a)
 

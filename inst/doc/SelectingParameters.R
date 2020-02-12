@@ -1,4 +1,4 @@
-## ----setup, include = FALSE----------------------------------------------
+## ----setup, include = FALSE-----------------------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
@@ -7,7 +7,7 @@ knitr::opts_chunk$set(
 )
 library("JointAI")
 
-## ---- echo = F-----------------------------------------------------------
+## ---- echo = F------------------------------------------------------------------------------------
 tab <- rbind(
 c("`analysis_main`", "`betas` and `sigma_y` (and `D` in mixed models)"),
 c("`analysis_random`", "`ranef`, `D`, `invD`, `RinvD`"),
@@ -30,12 +30,12 @@ colnames(tab) = c('name/key word', 'what is monitored')
 
 knitr::kable(tab)
 
-## ----lm1_1, message = FALSE----------------------------------------------
+## ----lm1_1, message = FALSE-----------------------------------------------------------------------
 lm1 <- lm_imp(SBP ~ gender + WC + alc + creat, data = NHANES,  n.adpat = 0)
 
 parameters(lm1)
 
-## ----lm2_1, message = FALSE----------------------------------------------
+## ----lm2_1, message = FALSE-----------------------------------------------------------------------
 lm2 <- lm_imp(SBP ~ age + WC + alc + smoke + occup,
               data = NHANES, n.adapt = 0,
               monitor_params = c(imps = TRUE, analysis_main = FALSE)
@@ -43,17 +43,17 @@ lm2 <- lm_imp(SBP ~ age + WC + alc + smoke + occup,
 
 parameters(lm2)
 
-## ----lm3_1, message = FALSE----------------------------------------------
+## ----lm3_1, message = FALSE-----------------------------------------------------------------------
 lm3 <- lm_imp(SBP ~ age + WC + alc + smoke + occup, data = NHANES, n.adapt = 0,
               monitor_params = c(imp_pars = TRUE, analysis_main = FALSE)
 )
 
 parameters(lm3)
 
-## ----list_lm2------------------------------------------------------------
+## ----list_lm2-------------------------------------------------------------------------------------
 list_models(lm2)
 
-## ---- echo = FALSE-------------------------------------------------------
+## ---- echo = FALSE--------------------------------------------------------------------------------
 tab <- rbind(object = "'an object of class 'JointAI'",
              m = "number of datasets to be created",
              include = "logical; should the original data be included?",
@@ -73,24 +73,24 @@ colnames(tab) <- c('argument', 'explanation')
 
 knitr::kable(tab, row.names = FALSE)
 
-## ---- message = FALSE----------------------------------------------------
+## ---- message = FALSE-----------------------------------------------------------------------------
 lme1 <- lme_imp(bmi ~ age + EDUC, random = ~age | ID, data = simLong, n.adapt = 0)
 
 parameters(lme1)
 
-## ---- message = FALSE----------------------------------------------------
+## ---- message = FALSE-----------------------------------------------------------------------------
 lme2 <- lme_imp(bmi ~ age + EDUC, random = ~age | ID, data = simLong, n.adapt = 0,
                 monitor_params = c(analysis_random = TRUE))
 
 parameters(lme2)
 
-## ---- message = FALSE----------------------------------------------------
+## ---- message = FALSE-----------------------------------------------------------------------------
 lme3a <- lme_imp(bmi ~ age + EDUC, random = ~age | ID, data = simLong, n.adapt = 0,
                  monitor_params = c(analysis_main = TRUE, RinvD = TRUE))
 
 parameters(lme3a)
 
-## ---- message = FALSE----------------------------------------------------
+## ---- message = FALSE-----------------------------------------------------------------------------
 lme3b <- lme_imp(bmi ~ age + EDUC, random = ~age | ID, data = simLong, n.adapt = 0,
                 monitor_params = c(analysis_main = TRUE,
                                    analysis_random = TRUE,
@@ -99,14 +99,14 @@ lme3b <- lme_imp(bmi ~ age + EDUC, random = ~age | ID, data = simLong, n.adapt =
 
 parameters(lme3b)
 
-## ---- message = FALSE----------------------------------------------------
+## ---- message = FALSE-----------------------------------------------------------------------------
 lm4 <- lm_imp(SBP ~ gender + WC + alc + creat, data = NHANES,
               monitor_params = list(analysis_main = FALSE,
                                     other = c('p_alc[1:3]', "mu_creat[1]")))
 
 parameters(lm4)
 
-## ---- fig.width = 7, fig.height = 6, warning = FALSE---------------------
+## ---- fig.width = 7, fig.height = 6, warning = FALSE----------------------------------------------
 # Run a model monitoring analysis parameters and imputation parameters
 lm5 <- lm_imp(SBP ~ gender + WC + alc + creat, data = NHANES, n.iter = 100,
               progress.bar = 'none', monitor_params = c(imp_pars = TRUE))
@@ -126,7 +126,7 @@ GR_crit(lm5)
 # Monte Carlo Error of the MCMC sample
 MC_error(lm5)
 
-## ---- fig.height = 1.5, message = FALSE----------------------------------
+## ---- fig.height = 1.5, message = FALSE-----------------------------------------------------------
 # Re-run the model from above, now creating MCMC samples
 lm4 <- lm_imp(SBP ~ gender + WC + alc + creat,
               data = NHANES, n.iter = 100, progress.bar = 'none',
@@ -135,14 +135,14 @@ lm4 <- lm_imp(SBP ~ gender + WC + alc + creat,
 
 traceplot(lm4, ncol = 4)
 
-## ----GRcrit_lm5----------------------------------------------------------
+## ----GRcrit_lm5-----------------------------------------------------------------------------------
 # we use lm5 from above
 GR_crit(lm5, subset = c(analysis_main = FALSE, imp_pars = TRUE))
 
-## ----trace_lm5, fig.width = 5, fig.height = 2, out.width = "60%"---------
+## ----trace_lm5, fig.width = 5, fig.height = 2, out.width = "60%"----------------------------------
 summary(lm5, subset = list(other = c('creat', 'alc>=1')))
 
-## ----lm2_2, fig.height = 2, fig.width = 5, out.width = "60%", message = FALSE----
+## ----lm2_2, fig.height = 2, fig.width = 5, out.width = "60%", message = FALSE---------------------
 # Re-run the model from above, now creating MCMC samples
 lm2 <- lm_imp(SBP ~ age + WC + alc + smoke + occup,
               data = NHANES, n.iter = 100, progress.bar = 'none',
@@ -155,7 +155,7 @@ sub3
 
 traceplot(lm2, subset = list(other = sub3), ncol = 2)
 
-## ---- fig.height = 4, message = FALSE------------------------------------
+## ---- fig.height = 4, message = FALSE-------------------------------------------------------------
 lme4 <- lme_imp(bmi ~ age + EDUC, random = ~age | ID,
                 data = simLong, n.iter = 100, progress.bar = 'none',
                 monitor_params = c(analysis_main = FALSE, ranef = TRUE))
