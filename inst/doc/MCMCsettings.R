@@ -14,7 +14,7 @@ mod1 <- lm_imp(SBP ~ alc, data = NHANES, n.iter = 100, progress.bar = 'none')
 ## ---- echo = FALSE--------------------------------------------------------------------------------
 a1 <- capture.output(print(summary(mod1)))
 cat(paste0('[...]', '\n',
-    paste(a1[17:21], collapse = "\n")))
+    paste(a1[18:22], collapse = "\n")))
 
 ## ---- message = FALSE-----------------------------------------------------------------------------
 mod2 <- lm_imp(SBP ~ alc, data = NHANES, n.adapt = 10, n.iter = 100, progress.bar = 'none')
@@ -22,7 +22,7 @@ mod2 <- lm_imp(SBP ~ alc, data = NHANES, n.adapt = 10, n.iter = 100, progress.ba
 ## ---- echo = FALSE--------------------------------------------------------------------------------
 a2 <- capture.output(print(summary(mod2)))
 cat(paste0('[...]', '\n',
-    paste(a2[18:22], collapse = "\n")))
+    paste(a2[19:23], collapse = "\n")))
 
 ## ---- message = FALSE-----------------------------------------------------------------------------
 mod3 <- lm_imp(SBP ~ alc, data = NHANES, n.iter = 500, thin = 10, progress.bar = 'none')
@@ -30,7 +30,7 @@ mod3 <- lm_imp(SBP ~ alc, data = NHANES, n.iter = 500, thin = 10, progress.bar =
 ## ---- echo = FALSE--------------------------------------------------------------------------------
 a3 <- capture.output(print(summary(mod3)))
 cat(paste0('[...]', '\n',
-    paste(a3[18:22], collapse = "\n")))
+    paste(a3[19:23], collapse = "\n")))
 
 ## ---- message = FALSE-----------------------------------------------------------------------------
 init_list <- lapply(1:3, function(i) {
@@ -60,56 +60,25 @@ mod4b <- lm_imp(SBP ~ gender + age + WC, data = NHANES, progress.bar = 'none',
 
 mod4b$mcmc_settings$inits
 
-## ---- eval = FALSE--------------------------------------------------------------------------------
-#  mod4c <- lme_imp(bmi ~ time + HEIGHT_M + hc + SMOKE, random = ~ time | ID,
-#                   data = simLong, no_model = 'time', progress.bar = 'none')
-#  
-#  coef(mod4c$model)
+## ---- message = FALSE, warning = FALSE------------------------------------------------------------
+mod4c <- lme_imp(bmi ~ time + HEIGHT_M + hc + SMOKE, random = ~ time | ID,
+                 data = simLong, no_model = 'time', progress.bar = 'none')
 
-## ----echo = FALSE, message = FALSE----------------------------------------------------------------
+str(coef(mod4c$model))
+
+## ----echo = FALSE, message = FALSE, warning = FALSE-----------------------------------------------
 mod4c <- lme_imp(bmi ~ time + HEIGHT_M + hc + SMOKE, random = ~ time | ID,
                  data = simLong, no_model = 'time', progress.bar = 'none')
 
 options(max.print = 1e5)
 a4 <- capture.output(coef(mod4c$model))
-cat(
-  paste0(paste(a4[1:14], collapse = "\n"), # start & begin Xc
-         '\n\n[...]\n\n',
-         paste(a4[94:96], collapse = "\n"), # values in Xc
-         '\n\n[...]\n\n',
-         paste(a4[211:217], collapse = "\n"), # end Xc
-         '\n\n[...]\n\n',
-         paste(a4[354:358], collapse = "\n"), # values Xcat
-         '\n\n[...]\n\n',
-         paste(a4[414:425], collapse = "\n"), # end Xcat; begin Xl
-         '\n\n[...]\n\n',
-         paste(a4[2817:2826], collapse = "\n"), # end Xl; alpha; begin b
-         '\n\n[...]\n\n',
-         paste(a4[3024:3029], collapse = "\n"), # end b; start b_hc
-         '\n\n[...]\n\n',
-         paste(a4[3226:3233], collapse = "\n"), # end b_hc; betas, begin bmi
-         '\n\n[...]\n\n',
-         paste(a4[3310:3331], collapse = "\n"), # end bmi, delta, gamma, invD, invD_hc, begin mu_b
-         '\n\n[...]\n\n',
-         paste(a4[3528:3534], collapse = "\n"), # end mu_b; begin mu_b_hc
-         '\n\n[...]\n\n',
-         paste(a4[3732:3742], collapse = "\n")
-  )
-)
-
-a4mod <- capture.output(mod4c$model)
-
-## -------------------------------------------------------------------------------------------------
-mod4c$data_list['RinvD']
-
-## ---- echo = FALSE--------------------------------------------------------------------------------
-cat(paste0('[...]\n', paste(a4mod[28:33], collapse = '\n'), '\n[...]\n'))
+a4mod <- capture.output(mod4c$jagsmodel)
 
 ## ---- eval = FALSE--------------------------------------------------------------------------------
-#  mod4c$data_list$Xc[81:85, ]
+#  head(mod4c$data_list$M_ID, 8)
 
 ## ---- echo = FALSE--------------------------------------------------------------------------------
-mat <- mod4c$data_list$Xc[81:85, ]
+mat <- mod4c$data_list$M_ID[1:8, ]
 colnames(mat) <- gsub("SMOKEsmoked until pregnancy was known",
                       "SMOKEsmoked until[...]",
                       gsub("SMOKEcontinued smoking in pregnancy",
@@ -117,12 +86,30 @@ colnames(mat) <- gsub("SMOKEsmoked until pregnancy was known",
 mat
 
 ## -------------------------------------------------------------------------------------------------
-head(mod4c$data_list$Xcat)
+head(coef(mod4c$model)$M_ID, 8)
 
 ## ---- echo = FALSE--------------------------------------------------------------------------------
-cat(paste0('[...]\n',
-           paste(a4mod[54:55], collapse = '\n'),
-           '\n\n[...]\n\n',
-           paste(a4mod[65:66], collapse = '\n'),
-           '\n[...]\n'))
+cat(paste0('[...]\n', 
+           paste0(a4mod[58:60], collapse = "\n"),
+           '\n\n[...]\n',
+           paste0(a4mod[69:72], collapse = "\n"),
+           '\n\n[...]'))
+
+## -------------------------------------------------------------------------------------------------
+mod4c$data_list['RinvD_bmi_ID']
+
+## ---- echo = FALSE--------------------------------------------------------------------------------
+cat(paste0('[...]\n', paste(a4mod[25:31], collapse = '\n'), '\n[...]\n'))
+
+## -------------------------------------------------------------------------------------------------
+coef(mod4c$model)$RinvD_bmi_ID
+
+## ---- eval = FALSE--------------------------------------------------------------------------------
+#  doFuture::registerDoFuture()
+
+## ---- eval = FALSE--------------------------------------------------------------------------------
+#  future::plan(future::multisession, workers = 4)
+
+## ---- eval = FALSE--------------------------------------------------------------------------------
+#  future::plan(future::sequential())
 

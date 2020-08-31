@@ -22,13 +22,13 @@ knitr::kable(tab, row.names = FALSE)
 
 ## ---- message = FALSE-----------------------------------------------------------------------------
 mod1a <- glm_imp(educ ~ age + gender + creat, data = NHANES,
-               family = "binomial", n.adapt = 0)
+                 family = "binomial", n.adapt = 0)
 
 mod1b <- glm_imp(educ ~ age + gender + creat, data = NHANES,
-               family = binomial(), n.adapt = 0)
+                 family = binomial(), n.adapt = 0)
 
 mod1c <- glm_imp(educ ~ age + gender + creat, data = NHANES,
-               family = binomial(link = 'logit'), n.adapt = 0)
+                 family = binomial(link = 'logit'), n.adapt = 0)
 
 mod1a$analysis_type
 
@@ -44,13 +44,14 @@ mod1d$analysis_type
 ## ---- eval = FALSE--------------------------------------------------------------------------------
 #  SBP ~ age + gender + smoke + creat + smoke:creat
 
-## ---- message = FALSE-----------------------------------------------------------------------------
+## ---- message = FALSE, warning = FALSE------------------------------------------------------------
 mod2a <- glm_imp(educ ~ gender * (age + smoke + creat),
                  data = NHANES, family = binomial(), n.adapt = 0)
 
+## -------------------------------------------------------------------------------------------------
 parameters(mod2a)
 
-## ----multi-way interactions, message = FALSE------------------------------------------------------
+## ----multi-way interactions, message = FALSE, warning = FALSE-------------------------------------
 # all two-way interactions:
 mod2b <- glm_imp(educ ~ gender + (age + smoke + creat)^2,
                  data = NHANES, family = binomial(), n.adapt = 0)
@@ -78,7 +79,7 @@ mod3c <- lm_imp(SBP ~ age + gender + I(creat/albu^2), data = NHANES,
 # This function may make more sense to calculate BMI as weight/height^2, but
 # we currently do not have those variables in the NHANES dataset.
 
-# Using the sinus and cosinus
+# Using the sine and cosine
 mod3d <- lm_imp(SBP ~ bili + sin(creat) + cos(albu), data = NHANES)
 
 ## -------------------------------------------------------------------------------------------------
@@ -87,30 +88,30 @@ list_models(mod3b, priors = FALSE, regcoef = FALSE, otherpars = FALSE)
 ## ---- message = FALSE-----------------------------------------------------------------------------
 mod3e <- lm_imp(SBP ~ age + gender + bili, auxvars = ~ I(WC^2), data = NHANES)
 
-list_models(mod3e, priors = F, regcoef = F, otherpars = F)
+list_models(mod3e, priors = FALSE, regcoef = FALSE, otherpars = FALSE)
 
 ## ---- message = FALSE-----------------------------------------------------------------------------
 mod3f <- lm_imp(SBP ~ age + gender + bili + WC, auxvars = ~ I(WC^2), data = NHANES)
 
-list_models(mod3f, priors = F, regcoef = F, otherpars = F)
+list_models(mod3f, priors = FALSE, regcoef = FALSE, otherpars = FALSE)
 
 ## ---- message = FALSE-----------------------------------------------------------------------------
 mod3g <- lm_imp(SBP ~ age + gender + bili + I(WC^2), auxvars = ~ I(WC^2), data = NHANES)
 
-list_models(mod3g, priors = F, regcoef = F, otherpars = F)
+list_models(mod3g, priors = FALSE, regcoef = FALSE, otherpars = FALSE)
 
 ## ---- message = FALSE-----------------------------------------------------------------------------
 # truncation of the distribution of  bili
 mod4a <- lm_imp(SBP ~ age + gender + log(bili) + exp(creat),
-                trunc = list(bili = c(1e-5, 1e10)), data = NHANES)
+                trunc = list(bili = c(1e-5, NA)), data = NHANES)
 
 # log-normal model for bili
 mod4b <- lm_imp(SBP ~ age + gender + log(bili) + exp(creat),
-                models = c(bili = 'lognorm', creat = 'norm'), data = NHANES)
+                models = c(bili = 'lognorm', creat = 'lm'), data = NHANES)
 
-# gamma model for bili
+# gamma model with log-link for bili
 mod4c <- lm_imp(SBP ~ age + gender + log(bili) + exp(creat),
-                models = c(bili = 'gamma', creat = 'norm'), data = NHANES)
+                models = c(bili = 'glm_gamma_log', creat = 'lm'), data = NHANES)
 
 
 ## ---- message = FALSE-----------------------------------------------------------------------------
@@ -134,11 +135,14 @@ mod6a <- lm_imp(SBP ~ age + gender + cloglog(ilogit(creat)), data = NHANES)
 mod7a <- lme_imp(bmi ~ GESTBIR + ETHN + HEIGHT_M + ns(age, df = 2),
                  random = ~ns(age, df = 2) | ID, data = simLong)
 
+## ---- eval = FALSE--------------------------------------------------------------------------------
+#  <fixed effects> + (1 | id) + (1 | center)
+
 ## ---- echo = FALSE--------------------------------------------------------------------------------
-tab <- rbind(norm = c("linear regression", "continuous variables"),
+tab <- rbind(lm = c("linear regression", "continuous variables"),
              logit = c("logistic regression", "factors with two levels"),
-             multilogit = c("multinomial logit model", "unordered factors with >2 levels"),
-             cumlogit = c("cumulative logit model", "ordered factors with >2 levels")
+             mlogit = c("multinomial logit model", "unordered factors with >2 levels"),
+             clm = c("cumulative logit model", "ordered factors with >2 levels")
 )
 
 tab <- cbind(paste0("`", rownames(tab), "`"), tab)
@@ -149,7 +153,10 @@ knitr::kable(tab, row.names = FALSE)
 ## ---- echo = FALSE--------------------------------------------------------------------------------
 tab <- rbind(lmm = c("linear mixed model", "continuous longitudinal variables"),
              glmm_logit = c("logistic mixed model", "longitudinal factors with two levels"),
-             clmm = c("cumulative logit mixed model", "longitudinal ordered factors with >2 levels")
+             mlogitmm = c("multinomial logit mixed model", 
+                          "longitudinal unordered factors with >2 levels"),
+             clmm = c("cumulative logit mixed model", 
+                      "longitudinal ordered factors with >2 levels")
 )
 
 tab <- cbind(paste0("`", rownames(tab), "`"), tab)
@@ -160,10 +167,10 @@ knitr::kable(tab, row.names = FALSE)
 ## ---- echo = FALSE--------------------------------------------------------------------------------
 tab = rbind(lognorm = c("normal regression of the log-transformed variable",
                         "right-skewed variables >0"),
-            gamma = c("Gamma regression (with log-link)",
-                        "right-skewed variables >0"),
             beta = c("beta regression (with logit-link)",
-                     "continuous variables with values in [0, 1]")
+                     "continuous variables with values in [0, 1]"),
+            'glm_<family>_<link>' = c("e.g. `glm_gamma_inverse` for Gamma regression with an inverse-link", "")
+
 )
 tab <- cbind(paste0("`", rownames(tab), "`"), tab)
 colnames(tab) <- c('name', 'model', 'variable type')
@@ -174,10 +181,9 @@ knitr::kable(tab, row.names = FALSE)
 ## ---- echo = FALSE--------------------------------------------------------------------------------
 tab <- rbind(glmm_lognorm = c("normal mixed model for the log-transformed variable",
                             "longitudinal right-skewed variables >0"),
-             glmm_gamma = c("gamma mixed model (with log-link)",
-                            "longitudinal right-skewed variables >0"),
-             glmm_poisson = c("poisson mixed model (with log-link)",
-                              "longitudinal count variables")
+             glmm_beta = c("beta regression (with logit-link)",
+                           "continuous variables with values in [0, 1]"),
+             "glmm_<family>_<link>" = c("e.g. `glmm_poisson_log` for a poisson mixed model with log-link", "longitudinal count variables")
 )
 
 tab <- cbind(paste0("`", rownames(tab), "`"), tab)
@@ -185,49 +191,43 @@ colnames(tab) <- c('name', 'model', 'variable type')
 
 knitr::kable(tab, row.names = FALSE)
 
-## ---- message = FALSE-----------------------------------------------------------------------------
+## ---- message = FALSE, warning = FALSE------------------------------------------------------------
 mod8a <- lm_imp(SBP ~ age + gender + WC + alc + bili + occup + smoke,
-                models = c(bili = 'gamma', WC = 'lognorm'),
-                data = NHANES, n.iter = 100, progress.bar = 'none')
+                models = c(bili = 'glm_gamma_log', WC = 'lognorm'),
+                data = NHANES, n.adapt = 0, progress.bar = 'none')
 
 mod8a$models
 
-## -------------------------------------------------------------------------------------------------
-mod8b_models <- get_models(bmi ~ GESTBIR + ETHN + HEIGHT_M + SMOKE + hc + MARITAL + ns(age, df = 2),
-                           random = ~ns(age, df = 2) | ID, data = simLong)
-mod8b_models
+## ---- message = FALSE, warning = FALSE------------------------------------------------------------
+mod8b <- lme_imp(bmi ~ GESTBIR + ETHN + HEIGHT_M + SMOKE + hc + MARITAL + 
+                   ns(age, df = 2),
+                 random = ~ns(age, df = 2) | ID, data = simLong,
+                 no_model = "age", n.adapt = 0)
+mod8b$models
 
 ## -------------------------------------------------------------------------------------------------
-mod8c_models <- get_models(bmi ~ GESTBIR + ETHN + HEIGHT_M + SMOKE + hc + MARITAL + ns(age, df = 2),
-                           random = ~ns(age, df = 2) | ID, data = simLong, no_model = "age")
-mod8c_models
+get_missinfo(mod8a)
 
-## -------------------------------------------------------------------------------------------------
-# number of missing values in the covariates in mod8a
-colSums(is.na(NHANES[, names(mod8a$models)]))
-# => The sequence of models is ordered according to the number of missing values.
-# 
 # print information on the imputation models (and omit everything but the predictor variables)
-list_models(mod8a, priors = F, regcoef = F, otherpars = F, refcat = F)
+list_models(mod8a, priors = FALSE, regcoef = FALSE, otherpars = FALSE, refcat = FALSE)
 
-## ---- message = FALSE-----------------------------------------------------------------------------
+## ---- message = FALSE, warning = FALSE------------------------------------------------------------
 mod9a <- lm_imp(SBP ~ gender + age + occup, auxvars = ~ educ + smoke,
-                data = NHANES, n.iter = 100, progress.bar = 'none')
-
-## -------------------------------------------------------------------------------------------------
-summary(mod9a)
+                data = NHANES, n.adapt = 0)
 
 ## -------------------------------------------------------------------------------------------------
 list_models(mod9a, priors = FALSE, regcoef = FALSE, otherpars = FALSE, refcat = FALSE)
 
-## ---- message = FALSE-----------------------------------------------------------------------------
+## ---- message = FALSE, warning = FALSE------------------------------------------------------------
 mod9b <- lm_imp(SBP ~ gender + age + occup, data = NHANES,
                 auxvars = ~ educ + smoke + log(WC),
                 trunc = list(WC = c(1e-10, 1e10)), n.adapt = 0)
 
 ## -------------------------------------------------------------------------------------------------
-list_models(mod9b, priors = FALSE, regcoef = FALSE, otherpars = FALSE,
-               refcat = FALSE)
+list_models(mod9b, priors = FALSE, regcoef = FALSE, otherpars = FALSE, refcat = FALSE)
+
+## -------------------------------------------------------------------------------------------------
+options('contrasts')
 
 ## ---- message = FALSE-----------------------------------------------------------------------------
 mod10a <- lm_imp(SBP ~ gender + age + race + educ + occup + smoke,
@@ -289,4 +289,14 @@ mod10c <- lm_imp(SBP ~ gender + age + race + educ + occup + smoke,
 
 ## -------------------------------------------------------------------------------------------------
 default_hyperpars()
+
+## ---- warning = FALSE-----------------------------------------------------------------------------
+mod11a <- lm_imp(SBP ~ gender + age + race + educ + occup + smoke,
+                data = NHANES, shrinkage = 'ridge',
+                n.adapt = 0)
+
+mod11b <- lm_imp(SBP ~ gender + age + race + educ + occup + smoke,
+                data = NHANES, shrinkage = c(SBP = 'ridge', educ = 'ridge'),
+                n.adapt = 0)
+
 

@@ -3,44 +3,46 @@
 \name{predDF}
 \alias{predDF}
 \alias{predDF.JointAI}
-\alias{predDF.formula}
-\title{Create a new dataframe for prediction}
+\title{Create a new data frame for prediction}
 \usage{
 predDF(object, ...)
 
-\method{predDF}{JointAI}(object, var, length = 100, ...)
-
-\method{predDF}{formula}(formula, dat, var, length = 100, ...)
+\method{predDF}{JointAI}(object, vars, length = 100L, ...)
 }
 \arguments{
 \item{object}{object inheriting from class 'JointAI'}
 
-\item{...}{optional, additional arguments (currently not used)}
+\item{...}{optional specification of the values used for some (or all) of the
+variables given in \code{vars}}
 
-\item{var}{name of variable that should be varying}
+\item{vars}{name of variable that should be varying}
 
-\item{length}{number of values used in the sequence when \code{var} is continuous}
-
-\item{formula}{a two sided model formula (see \code{\link[stats]{formula}})}
-
-\item{dat}{original data}
+\item{length}{number of values used in the sequence when \code{vars} is
+continuous}
 }
 \description{
-Build a \code{data.frame} for prediction, where one variable
-varies and all other variables are set to the reference value (median for
-continuous variables).
+Build a \code{data.frame} for prediction, where one variable varies and all
+other variables are set to the reference value (median for continuous
+variables).
 }
 \examples{
 # fit a JointAI model
 mod <- lm_imp(y ~ C1 + C2 + M2, data = wideDF, n.iter = 100)
 
-# generate a dataframe with varying "C2" and reference values for all other variables in the model
-newDF <- predDF(mod, var = "C2")
+# generate a data frame with varying "C2" and reference values for all other
+# variables in the model
+newDF <- predDF(mod, vars = ~ C2)
 
 head(newDF)
 
+
+newDF2 <- predDF(mod, vars = ~ C2 + M2,
+                 C2 = seq(-0.5, 0.5, 0.25),
+                 M2 = levels(wideDF$M2)[2:3])
+newDF2
+
 }
 \seealso{
-\code{\link{predict.JointAI}}, \code{\link{lme_imp}}, \code{\link{glm_imp}},
-          \code{\link{lm_imp}}
+\code{\link{predict.JointAI}}, \code{\link{lme_imp}},
+\code{\link{glm_imp}}, \code{\link{lm_imp}}
 }
