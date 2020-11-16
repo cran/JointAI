@@ -103,11 +103,7 @@ get_model1_info <- function(k, Mlist, par_index_main, par_index_other,
 
 
   # index name -----------------------------------------------------------------
-  index <- setNames(vapply(seq_along(sort(Mlist$group_lvls)),
-                           function(k) paste0(rep("i", k), collapse = ""),
-                           FUN.VALUE = character(1L)),
-                    names(sort(Mlist$group_lvls)))
-
+  index <- get_indices(Mlist)
 
 
   # transformations ------------------------------------------------------------
@@ -150,6 +146,7 @@ get_model1_info <- function(k, Mlist, par_index_main, par_index_other,
 
     # get the variables needed to re-fit the models for "covars" in the
     # Gauss-Kronrod quadrature
+    tvars <- unique(unlist(lapply(tvars, replace_interaction, Mlist$interactions)))
     tvars <- unlist(lapply(tvars, replace_trafo, Mlist$fcts_all))
 
     tvars <- unique(vapply(tvars[!tvars %in% Mlist$timevar],
@@ -193,6 +190,15 @@ get_model1_info <- function(k, Mlist, par_index_main, par_index_other,
   }
 
 
+  assoc_type <- if (modeltype %in% "JM") {
+    covrs <- unique(unlist(lapply(names(unlist(unname(lp))),
+                                  replace_dummy, Mlist$refs)))
+    get_assoc_type(intersect(tvars, covrs),
+                             Mlist$models, assoc_type, Mlist$refs)
+  } else if (modeltype %in% "coxph") {
+    "obs.value"
+  }
+
   # collect all info ---------------------------------------------------------
   list(
     varname = if (modeltype %in% c("survreg", "coxph", "JM")) {
@@ -224,11 +230,7 @@ get_model1_info <- function(k, Mlist, par_index_main, par_index_other,
     shrinkage = shrinkage,
     refs = Mlist$refs[[k]],
     covnames = covnames,
-    assoc_type  = if (modeltype %in% "JM") {
-      get_assoc_type(tvars, Mlist$models, assoc_type, Mlist$refs)
-    } else if (modeltype %in% "coxph") {
-      "obs.value"
-    },
+    assoc_type  = assoc_type,
     tv_vars = tv_vars,
     N = Mlist$N,
     df_basehaz = Mlist$df_basehaz
@@ -511,4 +513,13 @@ get_parelmts <- function(k, Mlist, par_index_main, par_index_other, lp) {
       setNames(parnums, names(lp[[lvl]]))
     }
   })
+}
+
+
+
+get_indices <- function(Mlist) {
+  setNames(vapply(seq_along(sort(Mlist$group_lvls)),
+                  function(q) paste0(rep("i", q), collapse = ""),
+                  FUN.VALUE = character(1L)),
+           names(sort(Mlist$group_lvls)))
 }

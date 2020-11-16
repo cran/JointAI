@@ -65,8 +65,8 @@ missing values be included in the summary?}
 
 \item{x}{an object of class \code{summary.JointAI} or \code{JointAI}}
 
-\item{digits}{minimal number of \emph{significant} digits, see
-    \code{\link[base]{print.default}}.}
+\item{digits}{the minimum number of significant digits to be printed in
+values.}
 
 \item{parm}{same as \code{subset} (for consistency with \code{confint}
 method for other types of objects)}

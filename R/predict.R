@@ -44,30 +44,30 @@ predDF.JointAI <- function(object, vars, length = 100L, ...) {
   if (!inherits(object, "JointAI"))
     stop("Use only with 'JointAI' objects.\n")
 
-  predDF.list(formulas = c(object$fixed,
-                           object$random,
-                           object$auxvars,
-                           if (!is.null(object$Mlist$timevar))
-                             as.formula(paste0("~", object$Mlist$timevar))
+  predDF.list(object = c(object$fixed,
+                         object$random,
+                         object$auxvars,
+                         if (!is.null(object$Mlist$timevar))
+                           as.formula(paste0("~", object$Mlist$timevar))
   ),
-  dat = object$data, vars = vars,
+  data = object$data, vars = vars,
   length = length, idvar = object$Mlist$idvar, ...)
 }
 
 
-# @rdname predDF
-# @export
-predDF.formula <- function(formula, dat, vars, length = 100L, ...) {
-  if (!inherits(formula, "formula"))
+#' @rdname predDF
+#' @export
+predDF.formula <- function(object, data, vars, length = 100L, ...) {
+  if (!inherits(object, "formula"))
     stop("Use only with 'formula' objects.\n")
 
-  predDF(formulas = check_formula_list(formula), dat = dat, vars = vars,
+  predDF(object = check_formula_list(object), data = data, vars = vars,
          length = length, ...)
 }
 
 # @rdname predDF
 # @export
-predDF.list <- function(formulas, dat, vars, length = 100L, idvar = NULL, ...) {
+predDF.list <- function(object, data, vars, length = 100L, idvar = NULL, ...) {
 
   id_vars <- extract_id(vars, warn = FALSE)
   varying <- all_vars(vars)
@@ -75,7 +75,7 @@ predDF.list <- function(formulas, dat, vars, length = 100L, idvar = NULL, ...) {
   if (is.null(idvar))
     idvar <- "id"
 
-  allvars <- all_vars(formulas)
+  allvars <- all_vars(object)
 
   if (any(!varying %in% allvars)) {
     errormsg("%s was not used in the model formula.", varying)
@@ -83,28 +83,28 @@ predDF.list <- function(formulas, dat, vars, length = 100L, idvar = NULL, ...) {
 
   vals <- nlapply(allvars, function(k) {
     if (k %in% varying) {
-      if (is.factor(dat[, k])) {
+      if (is.factor(data[, k])) {
         if (k %in% names(list(...))) {
           list(...)[[k]]
         } else {
-          unique(na.omit(dat[, k]))
+          unique(na.omit(data[, k]))
         }
       } else {
         if (k %in% names(list(...))) {
           list(...)[[k]]
         } else {
-          seq(min(dat[, k], na.rm = TRUE),
-              max(dat[, k], na.rm = TRUE), length = length)
+          seq(min(data[, k], na.rm = TRUE),
+              max(data[, k], na.rm = TRUE), length = length)
         }
       }
     } else {
-      if (is.factor(dat[, k])) {
-        factor(levels(dat[, k])[1L], levels = levels(dat[, k]))
-      } else if (is.logical(dat[, k]) | is.character(dat[, k])) {
-        factor(levels(as.factor(dat[, k]))[1L],
-               levels = levels(as.factor(dat[, k])))
-      } else if (is.numeric(dat[, k])) {
-        median(dat[, k], na.rm = TRUE)
+      if (is.factor(data[, k])) {
+        factor(levels(data[, k])[1L], levels = levels(data[, k]))
+      } else if (is.logical(data[, k]) | is.character(data[, k])) {
+        factor(levels(as.factor(data[, k]))[1L],
+               levels = levels(as.factor(data[, k])))
+      } else if (is.numeric(data[, k])) {
+        median(data[, k], na.rm = TRUE)
       }
     }
   })
@@ -146,7 +146,8 @@ predDF.list <- function(formulas, dat, vars, length = 100L, idvar = NULL, ...) {
 #'   \code{-log(survival)}).
 #' @param outcome vector of variable names or integers identifying for which
 #'   outcome(s) the prediction should be performed.
-#'
+#' @param return_sample logical; should the full sample on which the summary
+#'                      (mean and quantiles) is calculated be returned?#'
 #' @details A \code{model.matrix} \eqn{X} is created from the model formula
 #'   (currently fixed effects only) and \code{newdata}. \eqn{X\beta} is then
 #'   calculated for each iteration of the MCMC sample in \code{object}, i.e.,
@@ -195,7 +196,7 @@ predict.JointAI <- function(object, outcome = 1L, newdata,
                             type = "lp",
                             start = NULL, end = NULL, thin = NULL,
                             exclude_chains = NULL, mess = TRUE,
-                            warn = TRUE, ...) {
+                            warn = TRUE, return_sample = FALSE, ...) {
 
 
   if (!inherits(object, "JointAI")) errormsg("Use only with 'JointAI' objects.")
@@ -259,7 +260,8 @@ predict.JointAI <- function(object, outcome = 1L, newdata,
                   Mlist = get_Mlist(object), srow = object$data_list$srow,
                   coef_list = object$coef_list, info_list = object$info_list,
                   quantiles = quantiles, mess = mess, warn = warn,
-                  contr_list = lapply(object$Mlist$refs, attr, "contr_matrix"))
+                  contr_list = lapply(object$Mlist$refs, attr, "contr_matrix"),
+                  return_sample = return_sample)
     } else {
       errormsg("Prediction is not yet implemented for a model of type %s.",
                dQuote(object$info_list[[varname]]$modeltype))
@@ -267,19 +269,35 @@ predict.JointAI <- function(object, outcome = 1L, newdata,
   })
   names(preds) <- names(object$fixed)[outcome]
 
+  pred_df <- nlapply(preds, "[[", "res_df")
+  sample <- nlapply(preds, "[[", "sample")
 
-  list(
-    newdata = if (length(preds) == 1L) cbind(newdata, preds[[1L]])
-    else cbind(newdata, unlist(preds, recursive = FALSE)),
-    fitted = if (length(preds) == 1L) preds[[1L]] else preds
+  outlist <- list(
+    newdata = if (length(preds) == 1L) {
+      cbind(newdata, pred_df[[1L]])
+
+    } else {
+      cbind(newdata, unlist(pred_df, recursive = FALSE))
+    },
+    fitted = if (length(preds) == 1L)  {
+      pred_df[[1L]]
+    } else {
+      pred_df
+    },
+    sample = if (length(preds) == 1L)  {
+      sample[[1L]]
+    } else {
+      sample
+    }
   )
+  Filter(Negate(is.null), outlist)
 }
 
 
 predict_glm <- function(formula, newdata, type = c("link", "response", "lp"),
                         data, MCMC, varname, coef_list, info_list,
                         quantiles = c(0.025, 0.975), mess = TRUE,
-                        contr_list, Mlist, ...) {
+                        contr_list, Mlist, return_sample = FALSE, ...) {
 
   type <- match.arg(type)
 
@@ -313,11 +331,11 @@ predict_glm <- function(formula, newdata, type = c("link", "response", "lp"),
   op <- options(na.action = na.pass)
 
   desgn_mat <- model.matrix(mt, data = newdata,
-                    contrasts.arg = contr_list[intersect(
-                      names(contr_list),
-                      cvapply(attr(mt, "variables")[-1L], deparse,
-                             width.cutoff = 500L)
-                    )]
+                            contrasts.arg = contr_list[intersect(
+                              names(contr_list),
+                              cvapply(attr(mt, "variables")[-1L], deparse,
+                                      width.cutoff = 500L)
+                            )]
   )
 
 
@@ -346,7 +364,7 @@ predict_glm <- function(formula, newdata, type = c("link", "response", "lp"),
     colMeans(pred)
   }
 
-  # qunatiles
+  # quantiles
   quants <- if (!is.null(quantiles)) {
     if (type == "response") {
       t(apply(pred, 2L, function(q) {
@@ -355,6 +373,21 @@ predict_glm <- function(formula, newdata, type = c("link", "response", "lp"),
     } else {
       t(apply(pred, 2L, quantile, quantiles, na.rm  = TRUE))
     }
+  }
+
+  sample <- if (return_sample) {
+    s <- if (type == "response") {
+      if (info_list[[varname]]$family == "poisson") {
+        round(linkinv(pred))
+      } else {
+        linkinv(pred)
+      }
+    } else {
+      pred
+    }
+    s <- melt_data.frame(cbind(newdata, t(s)), id.vars = names(newdata))
+    names(s) <- gsub("^variable$", "iteration", names(s))
+    s
   }
 
   on.exit(options(op))
@@ -366,7 +399,7 @@ predict_glm <- function(formula, newdata, type = c("link", "response", "lp"),
     data.frame(fit = fit)
   }
 
-  res_df
+  list(res_df = res_df, sample = sample)
 }
 
 
@@ -376,7 +409,7 @@ predict_survreg <- function(formula, newdata, type = c("response", "link",
                                                        "linear"),
                             data, MCMC, varname, coef_list, info_list,
                             quantiles = c(0.025, 0.975), warn = TRUE,
-                            contr_list, ...) {
+                            contr_list, return_sample = FALSE, ...) {
 
   type <- match.arg(type)
 
@@ -394,11 +427,11 @@ predict_survreg <- function(formula, newdata, type = c("response", "link",
 
   op <- options(na.action = na.pass)
   desgn_mat <- model.matrix(mt, data = newdata,
-                    contr_list[intersect(
-                      names(contr_list),
-                      cvapply(attr(mt, "variables")[-1L], deparse,
-                             width.cutoff = 500L)
-                    )]
+                            contr_list[intersect(
+                              names(contr_list),
+                              cvapply(attr(mt, "variables")[-1L], deparse,
+                                      width.cutoff = 500L)
+                            )]
   )
 
 
@@ -430,6 +463,17 @@ predict_survreg <- function(formula, newdata, type = c("response", "link",
       t(apply(pred, 2L, quantile, quantiles, na.rm  = TRUE))
     }}
 
+  sample <- if (return_sample) {
+    s <- if (type == "response") {
+      exp(pred)
+    } else {
+      pred
+    }
+    s <- melt_data.frame(cbind(newdata, t(s)), id.vars = names(newdata))
+    names(s) <- gsub("^variable$", "iteration", names(s))
+    s
+  }
+
   on.exit(options(op))
 
   res_df <- if (!is.null(quantiles)) {
@@ -439,7 +483,7 @@ predict_survreg <- function(formula, newdata, type = c("response", "link",
     data.frame(fit = fit)
   }
 
-  res_df
+  list(res_df = res_df, sample = sample)
 }
 
 
@@ -447,7 +491,8 @@ predict_survreg <- function(formula, newdata, type = c("response", "link",
 predict_coxph <- function(Mlist, coef_list, MCMC, newdata, data, info_list,
                           type = c("lp", "risk", "expected", "survival"),
                           varname, quantiles = c(0.025, 0.975),
-                          srow = NULL, mess = TRUE, contr_list,  ...) {
+                          srow = NULL, mess = TRUE, contr_list,
+                          return_sample = FALSE, ...) {
   type <- match.arg(type)
 
   coefs <- coef_list[[varname]]
@@ -467,16 +512,16 @@ predict_coxph <- function(Mlist, coef_list, MCMC, newdata, data, info_list,
   op <- options(na.action = na.pass)
 
   desgn_mat_sub <- model.matrix(mt, data = newdata,
-                     contr_list[intersect(
-                       names(contr_list),
-                       cvapply(attr(mt, "variables")[-1L], deparse,
-                              width.cutoff = 500L)
-                     )]
+                                contr_list[intersect(
+                                  names(contr_list),
+                                  cvapply(attr(mt, "variables")[-1L], deparse,
+                                          width.cutoff = 500L)
+                                )]
   )[, -1L, drop = FALSE]
 
   desgn_mat <- setNames(lapply(names(Mlist$M), function(lvl) {
     desgn_mat_sub[, colnames(desgn_mat_sub) %in% colnames(Mlist$M[[lvl]]),
-                drop = FALSE]
+                  drop = FALSE]
   }), names(Mlist$M))
 
 
@@ -511,15 +556,16 @@ predict_coxph <- function(Mlist, coef_list, MCMC, newdata, data, info_list,
                       Mlist$group_lvls[gsub("M_", "", resp_mat)])) {
     apply(lps[, , names(which(Mlist$group_lvls >=
                                 Mlist$group_lvls[gsub("M_", "", resp_mat)]))],
-        c(1L, 2L), sum)
+          c(1L, 2L), sum)
   } else {
     0L
   }
 
   eta_surv_long <- if (any(Mlist$group_lvls <
-                           Mlist$group_lvls[gsub("M_", "", resp_mat)])) {
+                           Mlist$group_lvls[gsub("M_", "", resp_mat)]) &
+                       survinfo[[1L]]$haslong) {
     apply(lps[, , names(which(Mlist$group_lvls <
-                              Mlist$group_lvls[gsub("M_", "", resp_mat)]))],
+                                Mlist$group_lvls[gsub("M_", "", resp_mat)]))],
           c(1L, 2L), sum)
   } else {
     0L
@@ -560,14 +606,15 @@ predict_coxph <- function(Mlist, coef_list, MCMC, newdata, data, info_list,
 
 
     tvpred <- if (any(Mlist$group_lvls <
-                      Mlist$group_lvls[gsub("M_", "", resp_mat)])) {
+                      Mlist$group_lvls[gsub("M_", "", resp_mat)]) &
+                  survinfo[[1L]]$haslong) {
       mat_gk <- do.call(rbind,
-                      get_matgk(Mlist, gkx, surv_lvl = gsub("M_", "", resp_mat),
-                              survinfo = survinfo, data = newdata,
-                              rows = seq_len(nrow(newdata)),
-                              td_cox = unique(
-                                cvapply(survinfo, "[[", "modeltype")
-                              ) == "coxph"))
+                        get_matgk(Mlist, gkx, surv_lvl = gsub("M_", "", resp_mat),
+                                  survinfo = survinfo, data = newdata,
+                                  rows = seq_len(nrow(newdata)),
+                                  td_cox = unique(
+                                    cvapply(survinfo, "[[", "modeltype")
+                                  ) == "coxph"))
 
       vars <- coefs$varname[na.omit(match(dimnames(mat_gk)[[2L]], coefs$varname))]
 
@@ -635,6 +682,22 @@ predict_coxph <- function(Mlist, coef_list, MCMC, newdata, data, info_list,
     }
   }
 
+
+  sample <- if (return_sample) {
+    s <- if (type == "risk") {
+      exp(logh)
+    } else if (type == "lp") {
+      logh
+    } else if (type == "expected") {
+      -log_surv
+    } else if (type == "survival") {
+      exp(log_surv)
+    }
+    s <- melt_data.frame(cbind(newdata, t(s)), id.vars = names(newdata))
+    names(s) <- gsub("^variable$", "iteration", names(s))
+    s
+  }
+
   on.exit(options(op))
 
   res_df <- if (!is.null(quantiles)) {
@@ -643,7 +706,9 @@ predict_coxph <- function(Mlist, coef_list, MCMC, newdata, data, info_list,
   } else {
     data.frame(fit = fit)
   }
-  res_df
+
+
+  list(res_df = res_df, sample = sample)
 }
 
 
@@ -651,7 +716,7 @@ predict_clm <- function(formula, newdata,
                         type = c("prob", "lp", "class", "response"),
                         data, MCMC, varname, coef_list, info_list,
                         quantiles = c(0.025, 0.975), warn = TRUE,
-                        contr_list, Mlist, ...) {
+                        contr_list, Mlist, return_sample = FALSE, ...) {
 
   type <- match.arg(type)
 
@@ -672,12 +737,12 @@ predict_clm <- function(formula, newdata,
 
   op <- options(na.action = na.pass)
   desgn_mat <- model.matrix(mt,
-                    data = newdata,
-                    contrasts.arg = contr_list[intersect(
-                      names(contr_list),
-                      cvapply(attr(mt, "variables")[-1L], deparse,
-                             width.cutoff = 500L)
-                    )]
+                            data = newdata,
+                            contrasts.arg = contr_list[intersect(
+                              names(contr_list),
+                              cvapply(attr(mt, "variables")[-1L], deparse,
+                                      width.cutoff = 500L)
+                            )]
   )[, -1L, drop = FALSE]
 
   if (warn & any(is.na(desgn_mat)))
@@ -716,7 +781,7 @@ predict_clm <- function(formula, newdata,
 
   # add the category specific intercepts to the linear predictor
   lp <- lapply(seq_along(gammas), function(k) {
-                   gammas[[k]] + eta +
+    gammas[[k]] + eta +
       if (is.null(eta_nonprop)) 0L else eta_nonprop[[k]]
   })
 
@@ -765,6 +830,7 @@ predict_clm <- function(formula, newdata,
         t(apply(x, 2L, quantile, probs = quantiles, na.rm = TRUE))
       })
     }
+    s <- lp
   } else if (type == "prob") {
     fit <- lapply(probs, colMeans)
     quants <- if (!is.null(quantiles)) {
@@ -772,10 +838,12 @@ predict_clm <- function(formula, newdata,
         t(apply(x, 2L, quantile, probs = quantiles, na.rm = TRUE))
       })
     }
+    s <- probs
   } else if (type == "class") {
     fit <- apply(do.call(cbind, lapply(probs, colMeans)), 1L,
                  function(x) if (all(is.na(x))) NA else which.max(x))
     quants <- NULL
+    s <- NULL
   }
 
   res_df <- if (!is.null(quants)) {
@@ -790,8 +858,18 @@ predict_clm <- function(formula, newdata,
     data.frame(fit, check.names = FALSE)
   }
 
+  sample <- if (return_sample) {
+    errormsg("Returning the sample of predicted values is not yet possible for
+             a %s.", dQuote("clm(m)"))
+    # s <- melt_data.frame(cbind(newdata, t(s)), id.vars = names(newdata))
+    # names(s) <- gsub("^variable$", "iteration", names(s))
+    # s
+  }
+
+
   on.exit(options(op))
-  res_df
+
+  list(res_df = res_df, sample = sample)
 }
 
 
@@ -801,7 +879,7 @@ predict_mlogit <- function(formula, newdata,
                            type = c("prob", "lp", "class", "response"),
                            data, MCMC, varname, coef_list, info_list,
                            quantiles = c(0.025, 0.975), warn = TRUE,
-                           contr_list, Mlist, ...) {
+                           contr_list, Mlist, return_sample = FALSE, ...) {
 
   type <- match.arg(type)
 
@@ -822,12 +900,12 @@ predict_mlogit <- function(formula, newdata,
 
   op <- options(na.action = na.pass)
   desgn_mat <- model.matrix(mt,
-                    data = newdata,
-                    contrasts.arg = contr_list[intersect(
-                      names(contr_list),
-                      cvapply(attr(mt, "variables")[-1L], deparse,
-                             width.cutoff = 500L)
-                    )]
+                            data = newdata,
+                            contrasts.arg = contr_list[intersect(
+                              names(contr_list),
+                              cvapply(attr(mt, "variables")[-1L], deparse,
+                                      width.cutoff = 500L)
+                            )]
   )
 
   if (warn & any(is.na(desgn_mat)))
@@ -849,7 +927,7 @@ predict_mlogit <- function(formula, newdata,
 
   phis <- lapply(lp, exp)
   sum_phis <- apply(array(dim = c(dim(phis[[1L]]), length(phis)),
-                    unlist(phis)), c(1L, 2L), sum)
+                          unlist(phis)), c(1L, 2L), sum)
 
   probs <- lapply(seq_along(phis), function(k) {
     minmax_mat(phis[[k]] / sum_phis)
@@ -866,6 +944,7 @@ predict_mlogit <- function(formula, newdata,
         t(apply(x, 2L, quantile, probs = quantiles, na.rm = TRUE))
       })
     }
+    s <- lp
   } else if (type == "prob") {
     fit <- lapply(probs, colMeans)
     quants <- if (!is.null(quantiles)) {
@@ -873,6 +952,7 @@ predict_mlogit <- function(formula, newdata,
         t(apply(x, 2L, quantile, probs = quantiles, na.rm = TRUE))
       })
     }
+    s <- probs
   } else if (type == "class") {
     fit <- apply(do.call(cbind, lapply(probs, colMeans)), 1L,
                  function(x) if (all(is.na(x))) NA else which.max(x))
@@ -891,8 +971,18 @@ predict_mlogit <- function(formula, newdata,
     data.frame(fit, check.names = FALSE)
   }
 
+  sample <- if (return_sample) {
+    errormsg("Returning the sample of predicted values is not yet possible for
+             a %s or %s.", dQuote("mlogit"), dQuote("mlogitmm"))
+    # s <- melt_data.frame(cbind(newdata, t(s)), id.vars = names(newdata))
+    # names(s) <- gsub("^variable$", "iteration", names(s))
+    # s
+  }
+
+
   on.exit(options(op))
-  res_df
+  list(res_df = res_df, sample = sample)
+
 }
 
 
