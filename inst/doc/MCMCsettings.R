@@ -4,6 +4,7 @@ knitr::opts_chunk$set(
   comment = "#>",
   fig.width = 7,
   fig.align = 'center'
+  # fig.path = "figures_MCMCsettings/"
 )
 library(JointAI)
 options(width = 100)
@@ -34,7 +35,7 @@ cat(paste0('[...]', '\n',
 
 ## ---- message = FALSE-----------------------------------------------------------------------------
 init_list <- lapply(1:3, function(i) {
-  list(beta = rnorm(4), 
+  list(beta = rnorm(4),
        tau_SBP = rgamma(1, 1, 1))
 })
 
@@ -89,7 +90,7 @@ mat
 head(coef(mod4c$model)$M_ID, 8)
 
 ## ---- echo = FALSE--------------------------------------------------------------------------------
-cat(paste0('[...]\n', 
+cat(paste0('[...]\n',
            paste0(a4mod[58:60], collapse = "\n"),
            '\n\n[...]\n',
            paste0(a4mod[69:72], collapse = "\n"),

@@ -1,5 +1,5 @@
 Package: JointAI
-Version: 1.0.1
+Version: 1.0.2
 Title: Joint Analysis and Imputation of Incomplete Data
 Authors@R: c(person("Nicole S.", "Erler", email = "n.erler@erasmusmc.nl",
                   role = c("aut", "cre"),
@@ -25,10 +25,11 @@ Suggests: knitr, rmarkdown, bookdown, foreign, ggplot2, ggpubr,
 VignetteBuilder: knitr
 Encoding: UTF-8
 RdMacros: mathjaxr
+Config/testthat/edition: 3
 Language: en-GB
 NeedsCompilation: no
-Packaged: 2020-11-16 11:59:28 UTC; erler
+Packaged: 2021-01-13 20:04:37 UTC; erler
 Author: Nicole S. Erler [aut, cre] (<https://orcid.org/0000-0002-9370-6832>)
 Maintainer: Nicole S. Erler <n.erler@erasmusmc.nl>
 Repository: CRAN
-Date/Publication: 2020-11-16 12:50:06 UTC
+Date/Publication: 2021-01-13 21:00:02 UTC
