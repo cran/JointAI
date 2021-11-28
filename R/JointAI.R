@@ -4,7 +4,7 @@
 #' for incomplete or complete data under the Bayesian framework.
 #' Models for incomplete covariates, conditional on other covariates,
 #' are specified automatically and modelled jointly with the analysis model.
-#' MCMC sampling is performed in \href{http://mcmc-jags.sourceforge.net/}{'JAGS'}
+#' MCMC sampling is performed in \href{https://mcmc-jags.sourceforge.io/}{'JAGS'}
 #' via the R package
 #' \href{https://CRAN.R-project.org/package=rjags}{\strong{rjags}}.
 #'
@@ -132,10 +132,10 @@
 #'       Explanation of the statistical method implemented in \strong{JointAI}.
 #'}
 #' @references
-#' Nicole S. Erler, Dimitris Rizopoulos and Emmanuel M.E.H. Lesaffre (2019).
-#' JointAI: Joint Analysis and Imputation of Incomplete Data in R.
-#' \emph{arXiv e-prints}, arXiv:1907.10867.
-#' URL \href{https://arxiv.org/abs/1907.10867}{https://arxiv.org/abs/1907.10867}.
+#' Erler NS, Rizopoulos D, Lesaffre EMEH (2021).
+#' "JointAI: Joint Analysis and Imputation of Incomplete Data in R."
+#' _Journal of Statistical Software_, *100*(20), 1-56.
+#' \doi{10.18637/jss.v100.i20}.
 #'
 #' Erler, N.S., Rizopoulos, D., Rosmalen, J., Jaddoe, V.W.V.,
 #' Franco, O. H., & Lesaffre, E.M.E.H. (2016).
@@ -254,6 +254,11 @@ utils::globalVariables(c("i", "value", "chain", "iteration"))
 #'              \strong{rjags} during compilation as well as the progress bar
 #'              for the adaptive phase will be suppressed,
 #'              (see \code{\link[rjags]{jags.model}})
+#' @param progress.bar character string specifying the type of
+#'                 progress bar. Possible values are "text" (default), "gui",
+#'                 and "none" (see \code{\link[rjags]{update}}). Note: when
+#'                 sampling is performed in parallel it is not possible to
+#'                 display a progress bar.
 #' @param thin thinning interval (integer; see \code{\link[coda]{window.mcmc}}).
 #'             For example, \code{thin = 1} (default) will keep the MCMC samples
 #'             from all iterations; \code{thin = 5} would only keep every 5th
@@ -271,11 +276,21 @@ utils::globalVariables(c("i", "value", "chain", "iteration"))
 #' @param xlab,ylab labels for the x- and y-axis
 #' @param idvars name of the column that specifies the multi-level grouping
 #'               structure
-#' @param ridge logical; should the parameters of the main model be penalized
-#'              using ridge regression? Default is \code{FALSE}
 #' @param seed optional; seed value (for reproducibility)
 #' @param ppc logical: should monitors for posterior predictive checks be
 #'                     set? (not yet used)
+#' @param rd_vcov optional character string or list (of lists or character
+#'                strings) specifying the structure of the variance covariance
+#'                matrix/matrices of the random effects for multivariate
+#'                mixed models. Options are  `"full`, `"blockdiag"` (default)
+#'                and `"indep"`. Different structures can be specified per
+#'                grouping level (in multi-level models with more than two
+#'                levels) by specifying a list with elements per grouping
+#'                level. To specify different structures for different
+#'                outcomes, a list (maybe nested in the list per grouping
+#'                level) can be specified. This list should have the type
+#'                of structure as names and contain vectors of variable
+#'                names that belong to the respective structure.
 #' @name sharedParams
 NULL
 

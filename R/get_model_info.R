@@ -1,6 +1,6 @@
 # get model info for a list of models
 get_model_info <- function(Mlist, par_index_main, par_index_other, trunc = NULL,
-                           assoc_type = NULL) {
+                           assoc_type = NULL, custom = NULL) {
   args <- as.list(match.call())[-1L]
 
   setNames(lapply(names(Mlist$lp_cols), function(k) {
@@ -11,7 +11,8 @@ get_model_info <- function(Mlist, par_index_main, par_index_other, trunc = NULL,
 
 # get model info for a single model
 get_model1_info <- function(k, Mlist, par_index_main, par_index_other,
-                            trunc = NULL, assoc_type = NULL, isgk = FALSE) {
+                            trunc = NULL, assoc_type = NULL,
+                            custom = NULL, isgk = FALSE) {
 
   arglist <- as.list(match.call())[-1L]
 
@@ -28,25 +29,27 @@ get_model1_info <- function(k, Mlist, par_index_main, par_index_other,
   }
 
   # response matrix and column(s) --------------------------------------------
-  resp_mat <- if (k %in% names(Mlist$Mlvls)) {
-    # if the variable is a column of one of the design matrices, use the level
-    # of that matrix
-    Mlist$Mlvls[k]
-  } else if (attr(Mlist$fixed[[k]], "type") %in% c("survreg", "coxph", "JM")) {
-    # if the model is a survival model (variable name is the survival expression
-    # and not a single variable name) get the levels of the separate variables
-    # involved in the survival expression
-    if (all(names(Mlist$outcomes$outcomes[[k]]) %in% names(Mlist$Mlvls))) {
-      Mlist$Mlvls[names(Mlist$outcomes$outcomes[[k]])]
-    } else {
-      errormsg("I have identified %s as a survival outcome, but I cannot find
-               some of its elements in any of the matrices %s.",
-               dQuote(k), dQuote("M"))
-    }
-  } else {
-    errormsg("I cannot find the variable %s in any of the matrices %s.",
-             dQuote(k), dQuote("M"))
-  }
+  resp_mat <- get_resp_mat(resp = k, Mlvls = Mlist$Mlvls,
+                           outnames = names(Mlist$outcomes$outcomes[[k]]))
+  # resp_mat <- if (k %in% names(Mlist$Mlvls)) {
+  #   # if the variable is a column of one of the design matrices, use the level
+  #   # of that matrix
+  #   Mlist$Mlvls[k]
+  # } else if (attr(Mlist$fixed[[k]], "type") %in% c("survreg", "coxph", "JM")) {
+  #   # if the model is a survival model (variable name is the survival expression
+  #   # and not a single variable name) get the levels of the separate variables
+  #   # involved in the survival expression
+  #   if (all(names(Mlist$outcomes$outcomes[[k]]) %in% names(Mlist$Mlvls))) {
+  #     Mlist$Mlvls[names(Mlist$outcomes$outcomes[[k]])]
+  #   } else {
+  #     errormsg("I have identified %s as a survival outcome, but I cannot find
+  #              some of its elements in any of the matrices %s.",
+  #              dQuote(k), dQuote("M"))
+  #   }
+  # } else {
+  #   errormsg("I cannot find the variable %s in any of the matrices %s.",
+  #            dQuote(k), dQuote("M"))
+  # }
 
   resp_col <- if (k %in% names(Mlist$fixed) &&
                   attr(Mlist$fixed[[k]], "type") %in%
@@ -154,6 +157,8 @@ get_model1_info <- function(k, Mlist, par_index_main, par_index_other,
                            FUN.VALUE = character(1L))
     )
 
+    tvars <- tvars[Mlist$Mlvls[tvars] %in% paste0("M_", rep_lvls)]
+
     # get the model info for these variables
     setNames(lapply(tvars, function(i) {
       arglist_new <- arglist
@@ -174,13 +179,31 @@ get_model1_info <- function(k, Mlist, par_index_main, par_index_other,
 
   nranef <- vapply(hc_list$hcvars, function(x) {
     as.integer(attr(x, "rd_intercept")) +
-      if (any(!vapply(x$rd_slope_coefs, is.null, FUN.VALUE = logical(1L)))) {
-        nrow(do.call(rbind, x$rd_slope_coefs))
+      if (!is.null(x$rd_slope_coefs)) {
+        nrow(x$rd_slope_coefs)
+      # if (any(!vapply(x$rd_slope_coefs, is.null, FUN.VALUE = logical(1L)))) {
+      #   nrow(do.call(rbind, x$rd_slope_coefs))
       } else {
         0L
       }
   }, FUN.VALUE = integer(1L))
 
+
+  # random effects variance covariance matrix
+  rd_vcov <- nlapply(names(Mlist$rd_vcov), function(lvl) {
+    x <- Mlist$rd_vcov[[lvl]]
+
+    w <- which(lvapply(x, function(z) k %in% z))
+    if (length(w) > 0L) {
+      type <- names(w)
+
+      attr(type, "ranef_index") <- attr(x[[w]], "ranef_index")
+      attr(type, "name") <- attr(x[[w]], "name")
+      type
+    } else if (isTRUE(nranef[lvl] > 0L)) {
+      "blockdiag"
+    }
+  })
 
   # shrinkage ------------------------------------------------------------------
   shrinkage <- if (k %in% names(Mlist$shrinkage)) {
@@ -223,9 +246,11 @@ get_model1_info <- function(k, Mlist, par_index_main, par_index_other,
                      "FALSE" = "alpha"),
     hc_list = if (length(hc_list) > 0L) hc_list,
     nranef = nranef,
+    rd_vcov = rd_vcov,
     group_lvls = Mlist$group_lvls,
     trafos = trafos,
     trunc = trunc[[k]],
+    custom = custom[[k]],
     ppc = FALSE,
     shrinkage = shrinkage,
     refs = Mlist$refs[[k]],

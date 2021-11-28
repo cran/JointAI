@@ -147,12 +147,12 @@ get_rdvcov_scalemat <- function(scale_pars, info_list, data_list, groups) {
   lapply(info_list, function(hc) {
     if (!is.null(hc)) {
       lapply(hc$hc_list$hcvars, function(lvl) {
-        if (all(!attr(lvl, "incomplete")) & length(lvl$rd_slope_coefs) > 0) {
+        if (all(!attr(lvl, "incomplete")) & isTRUE(nrow(lvl$rd_slope_coefs) > 0L)) {
           rd_desgn_mat <- do.call(cbind,
-                                  lapply(lvl$rd_slope_coefs, function(rds_info) {
-                                    data_list[[rds_info$matrix]][
-                                      groups[[gsub("M_", "", rds_info$matrix)]],
-                                      rds_info$cols, drop = FALSE]
+                                  lapply(seq_len(nrow(lvl$rd_slope_coefs)), function(i) {
+                                    data_list[[lvl$rd_slope_coefs$matrix[i]]][
+                                      groups[[gsub("M_", "", lvl$rd_slope_coefs$matrix[i])]],
+                                      lvl$rd_slope_coefs$cols[i], drop = FALSE]
                                   }))
           if (attr(lvl, "rd_intercept")) {
             rd_desgn_mat <- cbind("(Intercept)" = 1, rd_desgn_mat)
@@ -177,47 +177,51 @@ get_rdvcov_scalemat <- function(scale_pars, info_list, data_list, groups) {
 rescale_rd_vcov <- function(MCMC, rdvcov_scale) {
   if (!is.null(unlist(rdvcov_scale))) {
     for (var in names(rdvcov_scale)) {
-      for(lvl in names(rdvcov_scale[[var]])) {
-        colnams <- grep(paste0("D_", var, "_", lvl, "\\["),
-                        colnames(MCMC), value = TRUE)
+      for (lvl in names(rdvcov_scale[[var]])) {
 
-        if (length(colnams) > 0) {
+        if (!is.null(rdvcov_scale[[var]][[lvl]])) {
 
-          pos <- do.call(rbind,
-                         strsplit(gsub("[[:print:]]+\\[|]", "", colnams),
-                                  split = ",")
-          )
+          colnams <- grep(paste0("D_", var, "_", lvl, "\\["),
+                          colnames(MCMC), value = TRUE)
 
-          pos <- data.frame(t(vapply(seq_len(nrow(pos)), function(j) {
-            as.numeric(pos[j, ])
-          }, FUN.VALUE = numeric(2))))
-          pos$name <- colnams
+          if (length(colnams) > 0) {
+
+            pos <- do.call(rbind,
+                           strsplit(gsub("[[:print:]]+\\[|]", "", colnams),
+                                    split = ",")
+            )
+
+            pos <- data.frame(t(vapply(seq_len(nrow(pos)), function(j) {
+              as.numeric(pos[j, ])
+            }, FUN.VALUE = numeric(2))))
+            pos$name <- colnams
 
 
-          scale_mat <- rdvcov_scale[[var]][[lvl]]$z_inv %*%
-            rdvcov_scale[[var]][[lvl]]$z_scaled
+            scale_mat <- rdvcov_scale[[var]][[lvl]]$z_inv %*%
+              rdvcov_scale[[var]][[lvl]]$z_scaled
 
-          vcov <- array(dim = c(nrow(MCMC), nrow(scale_mat), ncol(scale_mat)))
+            vcov <- array(dim = c(nrow(MCMC), nrow(scale_mat), ncol(scale_mat)))
 
-          for (k in seq_len(nrow(pos))) {
-            vcov[, pos[k, "X1"], pos[k, "X2"]] <- MCMC[, pos[k, "name"]]
-            if (pos[k, "X1"] != pos[k, "X2"]) {
-              vcov[, pos[k, "X2"], pos[k, "X1"]] <- MCMC[, pos[k, "name"]]
+            for (k in seq_len(nrow(pos))) {
+              vcov[, pos[k, "X1"], pos[k, "X2"]] <- MCMC[, pos[k, "name"]]
+              if (pos[k, "X1"] != pos[k, "X2"]) {
+                vcov[, pos[k, "X2"], pos[k, "X1"]] <- MCMC[, pos[k, "name"]]
+              }
             }
-          }
 
-          vcov_new <- vapply(seq_len(nrow(MCMC)), function(k) {
-            scale_mat %*% vcov[k, , ] %*% t(scale_mat)
-          }, FUN.VALUE = matrix(data = NA_real_,
-                                nrow = dim(vcov)[2],
-                                ncol = dim(vcov)[3]))
-          if (!inherits(vcov_new, "array")) {
-            vcov_new <- array(vcov_new, dim = dim(vcov))
-          }
+            vcov_new <- vapply(seq_len(nrow(MCMC)), function(k) {
+              scale_mat %*% vcov[k, , ] %*% t(scale_mat)
+            }, FUN.VALUE = matrix(data = NA_real_,
+                                  nrow = dim(vcov)[2],
+                                  ncol = dim(vcov)[3]))
+            if (!inherits(vcov_new, "array")) {
+              vcov_new <- array(vcov_new, dim = dim(vcov))
+            }
 
 
-          for (k in seq_len(nrow(pos))) {
-            MCMC[, pos[k, "name"]] <- vcov_new[pos[k, "X1"], pos[k, "X2"], ]
+            for (k in seq_len(nrow(pos))) {
+              MCMC[, pos[k, "name"]] <- vcov_new[pos[k, "X1"], pos[k, "X2"], ]
+            }
           }
         }
       }

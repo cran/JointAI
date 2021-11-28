@@ -1,10 +1,47 @@
+# JointAI Development Vesion
 
-# JointAI (1.0.2)
+
+## New features
+* `custom`: new argument in the main analysis functions that allows the user
+  to replace the JAGS syntax for sub-models with custom syntax. The argument
+  expects a named list where the names are the names of the variables 
+  for which the custom model will be used. This feature requires some knowledge
+  of JAGS syntax.
+* `append_data_list`: new argument in the main analysis functions that allows
+  the user to add elements to the list of data that is passed to JAGS. This 
+  may be necessary for custom sub-models.
+* `rd_vcov`: new argument in the main analysis functions that allows the 
+  specification of the structure of the random effects variance-covariance
+  matrices in (multivariate) mixed models (and joint models).
+
+
+
+## Minor improvements and bug fixes
+* Bug fix in re-scaling of random effects variance covariance matrix in
+  multi-level models with >2 levels where some levels have only random intercept.
+* Bug fix in generating the names of random effect nodes to monitor when there
+  are multiple analysis models and some do not have random effects.
+* Bug fix in `plot_all()` not displaying the variable name in the message shown
+  for character string variables.
+* Bug fix in `set_refcat()`: wasn't displaying the factor labels correctly
+* `print.JointAI`: bugfix for multivariate mixed models with full
+  variance-covariance matrix of the random effects that had the same number of
+  random effects for each outcome, for which the printing of this matrix
+  resulted in an error.
+* Bug fix: when using a function of a variable as auxiliary this is now (again)
+  correctly used as covariate in the linear predictor of covariate models (bug
+  was introduced in commit 15014dcd)
+
+
+
+--------------------------------------------------------------------------------
+
+# JointAI 1.0.2
 
 ## New features
 * `rd_vcov()`: new function added to extract the random effect variance-
   covariance matrices (posterior means)
-  
+
 ## Minor improvements and bug fixes
 * change in the way the model formula is contained in the model call, which 
   should make it possible to call `*_imp()` functions from within another
@@ -15,7 +52,8 @@
 
 --------------------------------------------------------------------------------
 
-# JointAI (1.0.1)
+
+# JointAI 1.0.1
 
 ## Minor improvements and bug fixes
 * `data_list`: omit data matrix `M_*` from `data_list` if `ncol == 0`
@@ -24,8 +62,8 @@
   before `pos_*` was excluded for only one of them
 * random effects: it is now possible to use different grouping levels in
   different sub-models (when providing a list of model formulas)
-* `predDF()` bug fix: the parameter for all methods is now called `object`
 * `add_samples()`: remove unnecessary call to `doFuture::registerDoFuture()`
+* `predDF()` bug fix: the parameter for all methods is now called `object`
 * `list_models()` now also works for errored JointAI objects
 * Bug fix for models with an interaction between a repeatedly measured variable
   and a random slope variable. (The term was wrongly written in the mean 
@@ -34,7 +72,7 @@
 --------------------------------------------------------------------------------
 
 
-# JointAI (1.0.0)
+# JointAI 1.0.0
 
 This version of **JointAI** contains some major changes. To extend the package
 it was necessary to change the internal structure and it was not possible to 

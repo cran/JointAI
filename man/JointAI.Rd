@@ -9,7 +9,7 @@ The \strong{JointAI} package performs simultaneous imputation and inference
 for incomplete or complete data under the Bayesian framework.
 Models for incomplete covariates, conditional on other covariates,
 are specified automatically and modelled jointly with the analysis model.
-MCMC sampling is performed in \href{http://mcmc-jags.sourceforge.net/}{'JAGS'}
+MCMC sampling is performed in \href{https://mcmc-jags.sourceforge.io/}{'JAGS'}
 via the R package
 \href{https://CRAN.R-project.org/package=rjags}{\strong{rjags}}.
 }
@@ -143,10 +143,10 @@ Explanation of the statistical method implemented in \strong{JointAI}.
 }
 
 \references{
-Nicole S. Erler, Dimitris Rizopoulos and Emmanuel M.E.H. Lesaffre (2019).
-JointAI: Joint Analysis and Imputation of Incomplete Data in R.
-\emph{arXiv e-prints}, arXiv:1907.10867.
-URL \href{https://arxiv.org/abs/1907.10867}{https://arxiv.org/abs/1907.10867}.
+Erler NS, Rizopoulos D, Lesaffre EMEH (2021).
+"JointAI: Joint Analysis and Imputation of Incomplete Data in R."
+\emph{Journal of Statistical Software}, \emph{100}(20), 1-56.
+\doi{10.18637/jss.v100.i20}.
 
 Erler, N.S., Rizopoulos, D., Rosmalen, J., Jaddoe, V.W.V.,
 Franco, O. H., & Lesaffre, E.M.E.H. (2016).

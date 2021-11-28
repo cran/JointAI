@@ -130,6 +130,7 @@ traceplot.JointAI <- function(object, start = NULL, end = NULL, thin = NULL,
 #' @param ... additional parameters passed to \code{plot()}
 #' @examples
 #'
+#' \dontrun{
 #' # fit a JointAI object:
 #' mod <- lm_imp(y ~ C1 + C2 + M1, data = wideDF, n.iter = 100)
 #'
@@ -165,7 +166,7 @@ traceplot.JointAI <- function(object, start = NULL, end = NULL, thin = NULL,
 #'   xlab("value") +
 #'   theme(legend.position = 'bottom') +
 #'   scale_color_brewer(palette = 'Dark2', name = 'chain')
-#'
+#' }
 #'
 #' @seealso
 #' The vignette
@@ -316,12 +317,13 @@ plot_prep <- function(object, start = NULL, end = NULL, thin = NULL,
 
   if (!is.null(outcome)) {
     outcomes <- clean_survname(names(object$fixed)[outcome])
-    params <- parameters(object)
-    selected_params <- params$coef[params$outcome %in% outcomes]
+    params <- parameters(object, expand_ranef = TRUE)
+    selected_params <- params$coef[lvapply(params$outcome,
+                                           function(x) any(outcomes %in% x))]
 
     if (any(!selected_params %in% colnames(object$MCMC[[1]]))) {
-      errormsg("Not all of the that were selected are present in the MCMC sample
-             (%s). Please contact the package maintainer.",
+      errormsg("Not all of the parameters that were selected are present in the
+                MCMC sample (%s). Please contact the package maintainer.",
                paste_and(dQuote(
                  selected_params[!selected_params %in% colnames(MCMC[[1]])]
                ))
@@ -493,7 +495,7 @@ plot_all <- function(data, nrow = NULL, ncol = NULL,
     } else if (is.character(x)) {
       plot(0, type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "",
            main = main, bty = 'n')
-      text(1, 0, paste0(names(data)[i],
+      text(1, 0, paste0(i,
                         " \nis coded as character\nand cannot be plotted."),
            xpd = TRUE)
     } else if (class(x) %in% c('Date', 'POSIXt')) {

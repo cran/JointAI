@@ -12,6 +12,14 @@ jagsmodel_survreg <- function(info) {
   rdslopes <- paste_rdslope_lp(info)
   hc_predictor <- paste_lp_ranef_part(info)
 
+  ranefpriors <- paste0(
+    unlist(
+      lapply(names(info$hc_list$hcvars), function(lvl) {
+        if (isTRUE(info$rd_vcov[[lvl]] != "full")) {
+          ranef_priors(info$nranef[lvl], paste0("_", info$varname, "_", lvl),
+                       rd_vcov = info$rd_vcov[[lvl]])
+        }
+      })), collapse = "\n")
 
   # linear predictor
   eta <- if (!is.null(hc_predictor)) {
@@ -110,10 +118,7 @@ jagsmodel_survreg <- function(info) {
          # paste_ppc_prior,
 
          # random effects covariance matrix
-         paste0(
-           sapply(names(info$hc_list$hcvars), function(x) {
-             ranef_priors(info$nranef[x], paste0(info$varname, "_", x))
-           }), collapse = "\n")
+         ranefpriors
   )
 }
 
@@ -131,6 +136,15 @@ jagsmodel_coxph <- function(info) {
   rdintercept <- paste_rdintercept_lp(info)
   rdslopes <- paste_rdslope_lp(info)
   hc_predictor <- paste_lp_ranef_part(info)
+
+  ranefpriors <- paste0(
+    unlist(
+      lapply(names(info$hc_list$hcvars), function(lvl) {
+        if (isTRUE(info$rd_vcov[[lvl]] != "full")) {
+          ranef_priors(info$nranef[lvl], paste0("_", info$varname, "_", lvl),
+                       rd_vcov = info$rd_vcov[[lvl]])
+        }
+      })), collapse = "\n")
 
   # linear predictor
   eta <- if (!is.null(hc_predictor)) {
@@ -152,7 +166,7 @@ jagsmodel_coxph <- function(info) {
   logh_pred <- paste(
     c(paste0("logh0_", info$varname, "[", index, "] + eta_", info$varname,
              "[", index, "]"),
-      if (info$resp_mat[2L] != "M_lvlone") {
+      if (info$resp_mat[2L] != "M_lvlone" & !is.null(info$parelmts$M_lvlone)) {
         paste_linpred_jm(varname = info$varname,
                          parname = info$parname,
                          parelmts = info$parelmts[["M_lvlone"]],
@@ -171,7 +185,8 @@ jagsmodel_coxph <- function(info) {
   surv_predictor <- paste0(
     paste0(
       c(paste0("gkw[k] * exp(logh0s_", info$varname, "[", index, ", k]"),
-        if (info$resp_mat[2L] != "M_lvlone") {
+        if (info$resp_mat[2L] != "M_lvlone" &
+            !is.null(info$parelmts$M_lvlone)) {
           paste_linpred_jm(varname = info$varname,
                            parname = info$parname,
                            parelmts = info$parelmts[["M_lvlone"]],
@@ -253,10 +268,7 @@ jagsmodel_coxph <- function(info) {
          tab(), "}", "\n",
 
          # random effects covariance
-         paste0(
-           sapply(names(info$hc_list$hcvars), function(x) {
-             ranef_priors(info$nranef[x], paste0(info$varname, "_", x))
-           }), collapse = "\n")
+         ranefpriors
   )
 }
 
@@ -266,13 +278,13 @@ jagsmodel_jm <- function(info) {
 
   # check if a transformation of time-dependent covariate is used
   # (not yet implemented)
-  if (!is.null(unlist(sapply(info$tv_vars, "[[", "trafos")))) {
-    trfs <- sapply(info$tv_vars, function(x) !is.null(x$trafos))
-    errormsg("You have specified functions of the time-varying covariate(s) %s
-             in the linear predictor of the survival model. This is currently
-             not possible in a joint model.",
-             paste_and(dQuote(names(trfs)[trfs])))
-  }
+  # if (!is.null(unlist(sapply(info$tv_vars, "[[", "trafos")))) {
+  #   trfs <- sapply(info$tv_vars, function(x) !is.null(x$trafos))
+  #   errormsg("You have specified functions of the time-varying covariate(s) %s
+  #            in the linear predictor of the survival model. This is currently
+  #            not possible in a joint model.",
+  #            paste_and(dQuote(names(trfs)[trfs])))
+  # }
 
 
   # specify indent width and index
@@ -285,6 +297,15 @@ jagsmodel_jm <- function(info) {
   rdintercept <- paste_rdintercept_lp(info)
   rdslopes <- paste_rdslope_lp(info)
   hc_predictor <- paste_lp_ranef_part(info)
+
+  ranefpriors <- paste0(
+    unlist(
+      lapply(names(info$hc_list$hcvars), function(lvl) {
+        if (isTRUE(info$rd_vcov[[lvl]] != "full")) {
+          ranef_priors(info$nranef[lvl], paste0("_", info$varname, "_", lvl),
+                       rd_vcov = info$rd_vcov[[lvl]])
+        }
+      })), collapse = "\n")
 
   # linear predictor
   eta <- if (!is.null(hc_predictor)) {
@@ -406,10 +427,7 @@ jagsmodel_jm <- function(info) {
          tab(), "}", "\n",
 
          # random effects covariance matrix
-         paste0(
-           sapply(names(info$hc_list$hcvars), function(x) {
-             ranef_priors(info$nranef[x], paste0(info$varname, "_", x))
-           }), collapse = "\n")
+         ranefpriors
   )
 
 }

@@ -78,8 +78,8 @@ paste_linpred <- function(parname, parelmts, matnam, index, cols, scale_pars,
   paste(
     paste_scaling(x = paste_data(matnam, index, cols, isgk),
                   rows = cols,
-                  scale_pars = scale_pars,
-                  scalemat = paste0("sp", matnam)
+                  scale_pars = list(scale_pars)[rep(1, length(cols))],
+                  scalemat = rep(paste0("sp", matnam), length(cols))
     ),
     paste_coef(parname, parelmts),
     sep = " * ", collapse = " + ")
@@ -120,14 +120,14 @@ paste_scaling <- function(x, rows, scale_pars, scalemat) {
   # - scale_pars: scaling matrix
   # - scalemat: name of the scaling matrix in JAGS, e.g. "spM_ID"
 
-  if (is.null(scale_pars)) {
+  if (is.null(unlist(scale_pars))) {
     x
   } else {
     cvapply(seq_along(x), function(k) {
-      if (rowSums(is.na(scale_pars[rows, ]))[k] > 0L) {
+      if (rowSums(is.na(scale_pars[[k]][rows[k], , drop = FALSE])) > 0L) {
         x[k]
       } else {
-        paste_scale(x, row = rows, scalemat = scalemat)[k]
+        paste_scale(x[[k]], row = rows[k], scalemat = scalemat[k])
       }
     })
   }
@@ -169,64 +169,68 @@ paste_rdslope_lp <- function(info, isgk = FALSE) {
   }
 
 
+
   # for each of the grouping levels for which there are random effects do:
   nlapply(names(info$hc_list$hcvars), function(lvl) {
 
-    # name of the corresponding data matrix
-    mat <- paste0("M_", lvl)
-
-    # identify variables for which a random slope needs to be specified on the
-    # current grouping level and variables which have an interaction with one
-    # of these random slope variables
-    rds <- info$hc_list$hcvars[[lvl]]$rd_slope_coefs
-    rdsi <- info$hc_list$hcvars[[lvl]]$rd_slope_interact_coefs
-
-
-    nlapply(unique(names(rds), names(rdsi)), function(x) {
-
-      rds_rdsi_vec <- c(
-        # random slope coefficients (if rds[[x]] == NULL there are no random
-        # slope coefficients on this level)
-        if (!is.null(rds[[x]])) {
-          # If there are no coefficients (= no fixed effect, only random
-          # effect), the mean of the random effect is 0, otherwise it is a
-          # linear predictor
-          if (!all(is.na(rds[[x]]$parelmts))) {
-            paste_coef(parname = info$parname,
-                       parelmts = rds[[x]]$parelmts)
-          } else {
-            "0"
-          }
-        },
-
-        # interactions with random slope (if rdsi[[x]] == NULL there are no
-        # variables that have an interaction with a random slope variable)
-        if (!is.null(rdsi[[x]])) {
-          if (!all(is.na(rdsi[[x]]$parelmts))) {
-            # write the product from the scaled data part and the corresponding
-            # regression coefficients
-            paste(
-              paste_scaling(x = paste_data(matnam = rdsi[[x]]$matrix,
-                                           index = info$index[lvl],
-                                           col = rdsi[[x]]$cols, isgk),
-                            rows = rdsi[[x]]$cols,
-                            scale_pars = info$scale_pars[[mat]],
-                            scalemat = paste0("sp", mat)
-              ),
-              paste_coef(parname = info$parname,
-                         parelmts = rdsi[[x]]$parelmts),
-              sep = " * ")
-          }
-        }
-      )
-
-      # combine the random slope and random slope interaction part into a
-      # linear predictor
-      paste(rds_rdsi_vec, collapse = " + ")
-
-    })
+    get_rds_lp(info$hc_list$hcvars[[lvl]]$rd_slope_coefs,
+               info$hc_list$hcvars[[lvl]]$rd_slope_interact_coefs,
+               lvl = lvl,
+               index = info$index,
+               parname = info$parname,
+               scale_pars = info$scale_pars,
+               isgk = isgk)
   })
 }
+
+
+get_rds_lp <- function(rd_slope_coefs, rd_slope_interact_coefs = NULL,
+                       lvl, index, parname, scale_pars = NULL,
+                       isgk = FALSE) {
+
+  # name of the corresponding data matrix
+  mat <- paste0("M_", lvl)
+
+  # identify variables for which a random slope needs to be specified on the
+  # current grouping level and variables which have an interaction with one
+  # of these random slope variables
+
+
+  rd_vars <- unique(c(rd_slope_coefs$rd_effect,
+                      rd_slope_interact_coefs$rd_effect))
+
+
+  nlapply(rd_vars, function(rd) {
+
+    rds <- rd_slope_coefs[rd_slope_coefs$rd_effect == rd, ]
+    rdsi <- rd_slope_interact_coefs[
+      rd_slope_interact_coefs$rd_effect == rd &
+        !is.na(rd_slope_interact_coefs$parelmts), ]
+
+    rds_terms <- ifelse(is.na(rds$parelmts),
+                        "0",
+                        paste_coef(parname = parname,
+                                   parelmts = rds$parelmts)
+    )
+    rdsi_terms <- if (isTRUE(nrow(rdsi) > 0L)) {
+      paste(
+        paste_scaling(x = paste_data(matnam = rdsi$matrix,
+                                     index = index[lvl],
+                                     col = rdsi$cols, isgk),
+                      rows = rdsi$cols,
+                      scale_pars = scale_pars[rep(mat, length(rdsi$cols))],
+                      scalemat = rep(paste0("sp", mat), length(rdsi$cols))
+        ),
+        paste_coef(parname = parname,
+                   parelmts = rdsi$parelmts),
+        sep = " * ")
+    }
+
+    paste0(c(rds_terms, rdsi_terms), collapse = " + ")
+  })
+}
+
+
 
 
 # used in jagsmodels that use random effects (2020-06-10)
@@ -303,24 +307,39 @@ paste_lp_ranef_part <- function(info, isgk = FALSE) {
                          surv_lvl = info$surv_lvl, isgk = isgk)
 
 
+      rd_nam <- if (isTRUE(info$rd_vcov[[lvl]] == "full")) {
+        attr(info$rd_vcov[[lvl]], "name")
+      } else {
+        paste0("_", info$varname)
+      }
+
+      ranef_nrs <- if (!is.null(info$rd_vcov[[lvl]]) &
+                       isTRUE(info$nranef[lvl] > 0L)) {
+        if (is.null(attr(info$rd_vcov[[lvl]], "ranef_index"))) {
+          1:info$nranef[lvl]
+        } else {
+          eval(parse(text = attr(info$rd_vcov[[lvl]],
+                                 "ranef_index")[info$varname]))
+        }
+      }
+
       # generate the random intercept part to enter the linear predictor of
       # the outcome.
       rdi <- if (isTRUE(attr(info$hc_list$hcvars[[lvl]], "rd_intercept"))) {
-        paste_data(matnam = paste0("b_", info$varname, "_", lvl),
+        paste_data(matnam = paste0("b", rd_nam, "_", lvl),
                    index = index,
-                   col = 1L)
+                   col = min(ranef_nrs)
+        )
       }
 
       # generate the random slope part to enter the linear predictor of
       # the outcome
-      rds_data_lvls <- gsub("M_",
-                            "",
-                            cvapply(info$hc_list$hcvars[[lvl]]$rd_slope_coefs,
-                                    "[[", "matrix"))
+      rds_data_lvls <- gsub("M_", "",
+                            info$hc_list$hcvars[[lvl]]$rd_slope_coefs$matrix)
       rds <- get_rds(
         rd_slope_coefs = info$hc_list$hcvars[[lvl]]$rd_slope_coefs,
         lvl = lvl,
-        varname = info$varname,
+        varname = rd_nam,
         index = index,
         out_index = cvapply(
           rds_data_lvls,
@@ -330,6 +349,7 @@ paste_lp_ranef_part <- function(info, isgk = FALSE) {
           surv_lvl = info$surv_lvl,
           isgk = isgk
         ),
+        ranef_nrs = ranef_nrs,
         has_rdintercept = attr(info$hc_list$hcvars[[lvl]],
                                "rd_intercept"),
         scale_pars = info$scale_pars,
@@ -456,31 +476,36 @@ get_index <- function(lvl, resplvl, indices, surv_lvl, isgk = FALSE) {
 
 get_rds <- function(rd_slope_coefs, lvl, varname, index, out_index,
                     has_rdintercept = TRUE,
-                    scale_pars, isgk = FALSE) {
-  if (any(!lvapply(rd_slope_coefs, is.null))) {
+                    scale_pars, isgk = FALSE, ranef_nrs) {
+
+  if (is.null(rd_slope_coefs)) {
+    return(NULL)
+  }
+
+  if (!is.null(has_rdintercept)) {
+
+    if (has_rdintercept) {
+      ranef_nrs <- ranef_nrs[-which.min(ranef_nrs)]
+    }
     # if there are any random slope variables for this random effect level,
     # do:
-    sapply(seq_along(rd_slope_coefs), function(q) {
+    # write the multiplication of the random slope with the corresponding
+    # longitudinal variable ("b[i, 2] * M[i, 4]")
+    paste(
+      paste_data(matnam = paste0("b", varname, "_", lvl),
+                 index = index,
+                 col = ranef_nrs),
 
-      rdsc <- rd_slope_coefs[[q]]
-
-      # write the multiplication of the random slope with the corresponding
-      # longitudinal variable ("b[i, 2] * M[i, 4]")
-      paste(
-        paste_data(matnam = paste0("b_", varname, "_", lvl),
-                   index = index,
-                   col = q + has_rdintercept),
-
-        paste_scaling(
-          paste_data(
-            matnam = rdsc$matrix,
-            index = out_index[q],
-            col = rdsc$cols, isgk = isgk),
-          rows = rdsc$cols,
-          scale_pars = scale_pars[[unique(rdsc$matrix)]],
-          scalemat = paste0("sp", unique(rdsc$matrix))),
-        sep = " * ")
-    })
+      paste_scaling(
+        paste_data(
+          matnam = rd_slope_coefs$matrix,
+          index = out_index,
+          col = rd_slope_coefs$cols, isgk = isgk),
+        rows = rd_slope_coefs$cols,
+        scale_pars = scale_pars[rd_slope_coefs$matrix],
+        scalemat = paste0("sp", rd_slope_coefs$matrix)),
+      sep = " * ")
+    # })
   }
 }
 
@@ -524,8 +549,8 @@ paste_o <- function(x, parname, index, scale_pars, scale_mat, isgk = FALSE) {
                    col = x$cols,
                    isgk = isgk),
         rows = x$cols,
-        scale_pars = scale_pars,
-        scalemat = scale_mat),
+        scale_pars = list(scale_pars)[rep(1, length(x$cols))],
+        scalemat = rep(scale_mat, length(x$cols))),
       sep = " * "),
     collapse = " + ")
 }
@@ -543,24 +568,34 @@ write_ranefs <- function(lvl, info, rdintercept, rdslopes) {
   # - rdintercept: list of random intercept linear predictors as strings
   # - rdslopes: list of list of random slope linear predictors as strings
 
+  if (isTRUE(info$rd_vcov[[lvl]] != "full")) {
+    # write the model part for the random effects distribution
+    paste0(
+      tab(), "for (", info$index[lvl], " in 1:", info$N[lvl], ") {", "\n",
+
+      # distribution specification
+      ranef_distr(nam = paste0("_", info$varname, "_", lvl),
+                  index = info$index[lvl], nranef = info$nranef[lvl]),
+
+      # specification of the means structure of the random effects
+      paste_mu_b(rdintercept[[lvl]], rdslopes[[lvl]],
+                 paste(info$varname, lvl, sep = "_"), info$index[lvl]),
+      "\n",
+      tab(), "}", "\n\n")
+  }
+}
+
+
+ranef_distr <- function(nam, index, nranef) {
   # specify distribution for the random effects, based on their dimension
-  norm.distr  <- if (info$nranef[lvl] < 2L) {"dnorm"} else {"dmnorm"}
+  norm_distr  <- if (nranef < 2L) {"dnorm"} else {"dmnorm"}
 
-  # write the model part for the random effects distribution
   paste0(
-    tab(), "for (", info$index[lvl], " in 1:", info$N[lvl], ") {", "\n",
-
-    # distribution specification
-    tab(4L), "b_", info$varname, "_", lvl, "[", info$index[lvl], ", 1:",
-    info$nranef[lvl], "] ~ ", norm.distr,
-    "(mu_b_", info$varname, "_", lvl, "[", info$index[lvl], ", ], invD_",
-    info$varname, "_", lvl, "[ , ])", "\n",
-
-    # specification of the means structure of the random effects
-    paste_mu_b(rdintercept[[lvl]], rdslopes[[lvl]],
-               paste(info$varname, lvl, sep = "_"), info$index[lvl]),
-    "\n",
-    tab(), "}", "\n\n")
+    tab(4L), "b", nam, "[", index, ", 1:",
+    nranef, "] ~ ", norm_distr,
+    "(mu_b", nam, "[", index, ", ], invD",
+    nam, "[ , ])", "\n"
+  )
 }
 
 
@@ -619,37 +654,88 @@ paste_mu_b <- function(rdintercept, rdslopes, varname, index) {
 
 
 
+# used in write_ranefs() (2020-06-10)
+paste_mu_b_full <- function(lps, nranef, nam, index) {
+  lps <- Filter(Negate(is.null), lps)
+
+  rd_lp <- paste0(tab(4L),
+                  paste_data(matnam = paste0("mu_b", nam), index = index,
+                             col = unlist(nranef)),
+                  " <- ",
+                  lapply(lps, add_linebreaks,
+                         indent = 4L + 4L + max(0, nchar(nam)) + 1L +
+                           nchar(index) + 8L)
+  )
+
+  # combine the random intercept and random slope part
+  paste0(rd_lp, collapse = "\n")
+}
+
+
+
 # used in jagsmodels that use random effects (2020-06-10)
-ranef_priors <- function(nranef, varname) {
+ranef_priors <- function(nranef, nam, rd_vcov) {
   # write prior distribution part for random effects variance parameters
   # - nranef: number/dimension of the random effects
-  # - varname: name of the outcome of the sub-model
+  # - nam: name of the outcome of the sub-model
+  # - rd_vcov: structure of the random effect variance-covariance matrix
 
+  if (nranef == 1L) {
+    rd_vcov_univ(nam)
+  } else if (rd_vcov == "indep") {
+    rd_vcov_indep(nranef, nam)
+  } else if (rd_vcov %in% c("full", "blockdiag")) {
+    rd_vcov_full(nranef, nam)
+  } else {
+    errormsg("I do not know %s type %s.",
+             dQuote("rd_vcov"), dQuote(rd_vcov))
+  }
+}
 
-  # based on number of random effects, use Gamma or Wishart distribution
+rd_vcov_univ <- function(nam) {
+
   # (Truncation in Gamma to prevent JAGS error when values get too small or
   # too large)
-  invD_distr <- if (nranef == 1L) {
-    "dgamma(shape_diag_RinvD, rate_diag_RinvD)T(1e-16, 1e16)"
-  } else {
-    paste0("dwish(RinvD_", varname, "[ , ], KinvD_", varname, ")")
-  }
 
-
+  invD_distr <- "dgamma(shape_diag_RinvD, rate_diag_RinvD)T(1e-16, 1e16)"
   paste0("\n",
-         if (nranef > 1L) {
-           paste0(
-             tab(), "for (k in 1:", nranef, ") {", "\n",
-             tab(4L), "RinvD_", varname,
-             "[k, k] ~ dgamma(shape_diag_RinvD, rate_diag_RinvD)", "\n",
-             tab(), "}", "\n")
-         },
-         tab(), "invD_", varname, "[1:", nranef, ", 1:", nranef, "] ~ ",
-         invD_distr, "\n",
-         tab(), "D_", varname, "[1:", nranef, ", 1:", nranef,
-         "] <- inverse(invD_", varname, "[ , ])"
+         tab(), "invD", nam, "[1, 1] ~ ", invD_distr, "\n",
+         tab(), "D", nam, "[1, 1] <- 1 / (invD", nam, "[1, 1])"
   )
 }
+
+rd_vcov_indep <- function(nranef, nam) {
+
+  # (Truncation in Gamma to prevent JAGS error when values get too small or
+  # too large)
+
+  invD_distr <- "dgamma(shape_diag_RinvD, rate_diag_RinvD)T(1e-16, 1e16)"
+  paste0("\n",
+         tab(), "for (k in 1:", nranef, ") {", "\n",
+         tab(4L), "invD", nam, "[k, k] ~ ", invD_distr, "\n",
+         tab(), "}", "\n",
+         tab(), "D", nam, "[1:", nranef, ", 1:", nranef,
+         "] <- inverse(invD", nam, "[ , ])"
+  )
+}
+
+rd_vcov_full <- function(nranef, nam) {
+
+  invD_distr <- paste0("dwish(RinvD", nam, "[ , ], KinvD", nam, ")")
+
+  paste0("\n",
+         tab(), "for (k in 1:", nranef, ") {", "\n",
+         tab(4L), "RinvD", nam,
+         "[k, k] ~ dgamma(shape_diag_RinvD, rate_diag_RinvD)", "\n",
+         tab(), "}", "\n",
+         tab(),
+         "invD", nam, "[1:", nranef, ", 1:", nranef, "] ~ ",
+         invD_distr, "\n",
+         tab(), "D", nam, "[1:", nranef, ", 1:", nranef,
+         "] <- inverse(invD", nam, "[ , ])"
+  )
+}
+
 
 
 # Joint model ------------------------------------------------------------------
@@ -684,8 +770,8 @@ paste_linpred_jm <- function(varname, parname, parelmts, matnam, index, cols,
   paste(
     paste_scaling(x = pastedat,
                   rows = cols,
-                  scale_pars = scale_pars,
-                  scalemat = paste0("sp", matnam)
+                  scale_pars = list(scale_pars)[rep(1, length(cols))],
+                  scalemat = rep(paste0("sp", matnam), length(cols))
     ),
     paste_coef(parname, parelmts),
     sep = " * ", collapse = " + ")
@@ -814,7 +900,7 @@ paste_interactions <- function(interactions, group_lvls, n) {
 
   # determine which index should be used for each of the levels
   index <- setNames(cvapply(seq_along(sort(group_lvls)),
-                           function(k) paste0(rep("i", k), collapse = "")),
+                            function(k) paste0(rep("i", k), collapse = "")),
                     names(sort(group_lvls)))
 
   # select only those interactions in which incomplete variables are involved
@@ -1098,16 +1184,16 @@ write_probs <- function(info, index, isgk = FALSE, indent = 4L) {
   .isgk <- isgk
 
   probs <- cvapply(2L:(info$ncat - 1L),
-                  function(k, .info = info, .index = index, .isgk = isgk) {
-                    paste0(tab(indent), paste_p(k), " <- ",
-                           minmax(
-                             if (isTRUE(.info$rev)) {
-                               paste0(paste_ps(k), " - ", paste_ps(k - 1L))
-                             } else {
-                               paste0(paste_ps(k - 1L), " - ", paste_ps(k))
-                             })
-                    )
-                  })
+                   function(k, .info = info, .index = index, .isgk = isgk) {
+                     paste0(tab(indent), paste_p(k), " <- ",
+                            minmax(
+                              if (isTRUE(.info$rev)) {
+                                paste0(paste_ps(k), " - ", paste_ps(k - 1L))
+                              } else {
+                                paste0(paste_ps(k - 1L), " - ", paste_ps(k))
+                              })
+                     )
+                   })
 
 
   paste0(tab(indent),
@@ -1136,18 +1222,18 @@ write_logits <- function(info, index, nonprop = FALSE, isgk = FALSE,
   # syntax for logits, e.g., "logit(psum_O2[i, 1]) <- gamma_O2[1] + eta_O2[i]"
 
   logits <- cvapply(1L:(info$ncat - 1L),
-                   function(k,
-                            .info = info,
-                            .index = index,
-                            .isgk = isgk) {
-                     paste0(tab(indent), "logit(", paste_ps(k),
-                            ") <- gamma_", info$varname, "[", k, "]",
-                            " + eta_", info$varname, "[", index, "]",
-                            if (nonprop) {
-                              paste0(" + eta_", info$varname, "_", k,
-                                     "[", index, "]")
-                            })
-                   })
+                    function(k,
+                             .info = info,
+                             .index = index,
+                             .isgk = isgk) {
+                      paste0(tab(indent), "logit(", paste_ps(k),
+                             ") <- gamma_", info$varname, "[", k, "]",
+                             " + eta_", info$varname, "[", index, "]",
+                             if (nonprop) {
+                               paste0(" + eta_", info$varname, "_", k,
+                                      "[", index, "]")
+                             })
+                    })
 
   paste0(logits, collapse = "\n")
 }

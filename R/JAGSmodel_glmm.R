@@ -33,6 +33,18 @@ jagsmodel_glmm <- function(info) {
   rdslopes <- paste_rdslope_lp(info)
   Z_predictor <- paste_lp_ranef_part(info)
 
+
+  ranefpriors <- paste0(
+    unlist(
+      lapply(names(info$hc_list$hcvars), function(lvl) {
+      if (isTRUE(info$rd_vcov[[lvl]] != "full")) {
+        ranef_priors(info$nranef[lvl], paste0("_", info$varname, "_", lvl),
+                     rd_vcov = info$rd_vcov[[lvl]])
+      }
+    })), collapse = "\n")
+
+
+
   dummies <- if (!is.null(info$dummy_cols)) {
     paste0('\n\n', paste0(
       paste_dummies(resp_mat = info$resp_mat,
@@ -88,8 +100,8 @@ jagsmodel_glmm <- function(info) {
          info$trafos,
          tab(), "}", "\n",
          "\n",
-         paste0(sapply(names(rdintercept), write_ranefs, info = info,
-                       rdintercept = rdintercept, rdslopes = rdslopes),
+         paste0(unlist(sapply(names(rdintercept), write_ranefs, info = info,
+                       rdintercept = rdintercept, rdslopes = rdslopes)),
                 collapse = ''),
          tab(), "# Priors for the model for ", info$varname, "\n",
          tab(), "for (k in ", min(unlist(info$parelmts)), ":",
@@ -100,10 +112,7 @@ jagsmodel_glmm <- function(info) {
          secndpar,
          paste_ppc_prior,
          "\n",
-         paste0(
-           sapply(names(info$hc_list$hcvars), function(x) {
-             ranef_priors(info$nranef[x], paste0(info$varname, "_", x))
-           }), collapse = "\n")
+         ranefpriors
   )
 }
 

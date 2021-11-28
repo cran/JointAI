@@ -10,7 +10,7 @@
 [![Download
 counter](https://cranlogs.r-pkg.org/badges/JointAI)](https://cran.r-project.org/package=JointAI)
 [![Rdoc](https://www.rdocumentation.org/badges/version/JointAI)](https://www.rdocumentation.org/packages/JointAI)
-[![codecov](https://codecov.io/gh/NErler/JointAI/branch/master/graph/badge.svg)](https://codecov.io/gh/NErler/JointAI)
+[![codecov](https://codecov.io/gh/NErler/JointAI/branch/master/graph/badge.svg)](https://app.codecov.io/gh/NErler/JointAI)
 [![Travis-CI Build
 Status](https://travis-ci.org/NErler/JointAI.svg?branch=master)](https://travis-ci.org/NErler/JointAI)
 [![R build
@@ -29,8 +29,8 @@ types simultaneously. Missing values in (if present) will be imputed
 automatically.
 
 **JointAI** performs some preprocessing of the data and creates a
-[JAGS](http://mcmc-jags.sourceforge.net/) model, which will then
-automatically be passed to [JAGS](http://mcmc-jags.sourceforge.net/)
+[JAGS](https://mcmc-jags.sourceforge.io/) model, which will then
+automatically be passed to [JAGS](https://mcmc-jags.sourceforge.io/)
 with the help of the R package
 [**rjags**](https://CRAN.R-project.org/package=rjags).
 

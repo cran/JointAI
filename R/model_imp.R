@@ -20,6 +20,8 @@
 #'               family function, a family function or the result of a call to
 #'               a family function. (For more details see below and
 #'               \code{\link[stats]{family}}.)
+#' @param rd_vcov character string or list specifying the structure of the
+#'                random effects variance covariance matrix, see details below.
 #' @param monitor_params named list or vector specifying which parameters
 #'                       should be monitored (more details below)
 #' @param inits optional; specification of initial values in the form of a list
@@ -28,27 +30,7 @@
 #'              created by \strong{JointAI}, initial values are then generated
 #'              by JAGS.
 #'              It is an error to supply an initial value for an observed node.
-#' @param progress.bar character string specifying the type of progress bar.
-#'                     Possible values are "text", "gui", and "none" (see
-#'                     \code{\link[rjags]{update}}).
-#'                     Note: when sampling is performed in parallel it is
-#'                     currently not possible to display a progress bar.
 #' @inheritParams sharedParams
-#' @param modelname optional; character string specifying the name of the model
-#'                  file (including the ending, either .R or .txt).
-#'                  If unspecified a random name will be generated.
-#' @param modeldir optional; directory containing the model file or directory
-#'                 in which the model file should be written. If unspecified a
-#'                 temporary directory will be created.
-#' @param overwrite logical; whether an existing model file with the specified
-#'                  \code{<modeldir>/<modelname>} should be overwritten.
-#'                  If set to \code{FALSE} and a model already exists, that
-#'                  model will be used.
-#'                  If unspecified (\code{NULL}) and a file exists, the user is
-#'                  asked for input on how to proceed.
-#' @param keep_model logical; whether the created JAGS model file should be
-#'                   saved or removed from (\code{FALSE}; default) when the
-#'                   sampling has finished.
 #' @param auxvars optional; one-sided formula of variables that should be used
 #'                as predictors in the imputation procedure (and will be imputed
 #'                if necessary) but are not part of the analysis model(s).
@@ -74,23 +56,6 @@
 #'                a subset of the categorical variables the default will be
 #'                used for the remaining variables.
 #'                (See also \code{\link{set_refcat}})
-#' @param trunc optional; named list specifying limits of truncation for the
-#'              distribution of the named incomplete variables (see the vignette
-#'              \href{https://nerler.github.io/JointAI/articles/ModelSpecification.html#functions-with-restricted-support}{ModelSpecification})
-#' @param hyperpars optional; list of hyper-parameters, as obtained by
-#'                  \code{\link{default_hyperpars}()}
-#' @param scale_vars optional; named vector of (continuous) variables that will
-#'                   be centred and scaled (such that mean = 0 and sd = 1)
-#'                   when they enter a linear predictor to improve
-#'                   convergence of the MCMC sampling. Default is that all
-#'                   numeric variables and integer variables with >20 different
-#'                   values will be scaled.
-#'                   If set to \code{FALSE} no scaling will be done.
-#' @param keep_scaled_mcmc should the "original" MCMC sample
-#'                         (i.e., the scaled version returned by
-#'                         \code{coda.samples()}) be kept?
-#'                         (The MCMC sample that is re-scaled to the scale of
-#'                         the data is always kept.)
 #' @param df_basehaz degrees of freedom for the B-spline used to model the
 #'                   baseline hazard in proportional hazards models
 #'                  (\code{coxph_imp} and \code{JM_imp})
@@ -99,14 +64,64 @@
 #'                  or a named vector specifying the type of shrinkage to be
 #'                  used in the models given as names.
 #' @param rev optional character vector; vector of ordinal outcome variable
-#'   names for which the odds should be reversed, i.e., logit(y <= k) instead
-#'   of logit(y > k).
+#'            names for which the odds should be reversed, i.e.,
+#'            \eqn{logit(y\le k)} instead of \eqn{logit(y > k)}.
 #' @param nonprop optional named list of one-sided formulas specifying
 #'                covariates that have non-proportional effects in cumulative
 #'                logit models. These covariates should also be part of the
 #'                regular model formula, and the names of the list should be
 #'                the names of the ordinal response variables.
-#' @param ... additional, optional arguments (not used)
+#' @param ... additional, optional arguments
+#'            \describe{
+#'            \item{`trunc`}{named list specifying limits of truncation for the
+#'                 distribution of the named incomplete variables (see the
+#'                 vignette
+#'                 \href{https://nerler.github.io/JointAI/articles/ModelSpecification.html#functions-with-restricted-support}{ModelSpecification})}
+#'            \item{`hyperpars`}{list of hyper-parameters, as obtained by
+#'                 \code{\link{default_hyperpars}()}}
+#'            \item{`scale_vars`}{named vector of (continuous) variables that
+#'                 will be centred and scaled (such that mean = 0 and sd = 1)
+#'                 when they enter a linear predictor to improve
+#'                 convergence of the MCMC sampling. Default is that all
+#'                 numeric variables and integer variables with >20 different
+#'                 values will be scaled.
+#'                 If set to \code{FALSE} no scaling will be done.}
+#'            \item{`custom`}{named list of JAGS model chunks (character strings)
+#'                 that replace the model for the given variable.}
+#'            \item{`append_data_list`}{list that will be appended to the list
+#'                 containing the data that is passed to **rjags**
+#'                 (`data_list`). This may be necessary if additional data /
+#'                 variables are needed for custom (covariate) models.}
+#'            \item{`progress.bar`}{character string specifying the type of
+#'                 progress bar. Possible values are "text" (default), "gui",
+#'                 and "none" (see \code{\link[rjags]{update}}). Note: when
+#'                 sampling is performed in parallel it is not possible to
+#'                 display a progress bar.}
+#'            \item{`quiet`}{logical; if \code{TRUE} then messages generated by
+#'                 \strong{rjags} during compilation as well as the progress bar
+#'                 for the adaptive phase will be suppressed,
+#'                 (see \code{\link[rjags]{jags.model}})}
+#'            \item{`keep_scaled_mcmc`}{should the "original" MCMC sample (i.e.,
+#'                 the scaled version returned by \code{coda.samples()}) be
+#'                 kept? (The MCMC sample that is re-scaled to the scale of the
+#'                 data is always kept.)}
+#'            \item{`modelname`}{character string specifying the name of the
+#'                  model file (including the ending, either .R or .txt). If
+#'                  unspecified a random name will be generated.}
+#'            \item{`modeldir`}{directory containing the model file or directory
+#'                 in which the model file should be written. If unspecified a
+#'                 temporary directory will be created.}
+#'            \item{`overwrite`}{logical; whether an existing model file with
+#'                 the specified \code{<modeldir>/<modelname>} should be
+#'                 overwritten. If set to \code{FALSE} and a model already
+#'                 exists, that model will be used. If unspecified (\code{NULL})
+#'                 and a file exists, the user is asked for input on how to
+#'                 proceed.}
+#'            \item{`keep_model`}{logical; whether the created JAGS model file
+#'                 should be saved or removed from (\code{FALSE}; default) when
+#'                 the sampling has finished.}
+#' }
+#'
 #' @name model_imp
 #'
 #' @return An object of class \link[=JointAIObject]{JointAI}.
@@ -157,10 +172,57 @@
 #' Note that it is not possible to specify multiple models for the same outcome
 #' variable.
 #'
+#' ### Random effects variance-covariance structure
+#' (Note: This feature is new and has not been fully tested yet.)
+#'
+#' By default, a block-diagonal structure is assumed for the variance-covariance
+#' matrices of the random effects in models with random effects. This means that
+#' per outcome and level random effects are assumed to be correlated, but
+#' random effects of different outcomes are modelled as independent.
+#' The argument `rd_vcov` allows the user specify different assumptions about
+#' these variance-covariance matrices. Implemented structures are `full`,
+#' `blockdiag` and `indep` (all off-diagonal elements are zero).
+#'
+#' If `rd_vcov` is set to one of these options, the structure is assumed for
+#' all random effects variance-covariance matrices.
+#' Alternatively, it is possible to specify a named list of vectors, where
+#' the names are the structures and the vectors contain the names of the
+#' response variables which are included in this structure.
+#'
+#' For example, for a multivariate mixed model with five outcomes
+#' `y1`, ..., `y5`, the specification could be:
+#' ```{r}
+#' rd_vcov = list(blockdiag = c("y1", "y2"),
+#'                full = c("y3", "y4"),
+#'                indep = "y5")
+#' ```
+#' This would entail that the random effects for `y3` and `y4` are assumed to
+#' be correlated (within and across outcomes),
+#' random effects for `y1` and `y2` are assumed to be correlated within each
+#' outcome, and the random effects for `y5` are assumed to be independent.
+#'
+#'
+#' It is possible to have multiple sets of response variables for which separate
+#' full variance-covariance matrices are used, for example:
+#' ```{r}
+#' rd_vcov = list(full = c("y1", "y2", "y5"),
+#'                full = c("y3", "y4"))
+#' ```
+#'
+#' In models with multiple levels of nesting, separate structures can be
+#' specified per level:
+#' ```{r}
+#' rd_vcov = list(id = list(blockdiag = c("y1", "y2"),
+#'                          full = c("y3", "y4"),
+#'                          indep = "y5"),
+#'               center = "indep")
+#' ```
+#'
+#'
 #' ## Survival models with frailties or time-varying covariates
 #' Random effects specified in brackets can also be used to indicate a
 #' multi-level structure in survival models, as would, for instance be needed
-#' in a multicentre setting, where patients are from multiple hospitals.
+#' in a multi-centre setting, where patients are from multiple hospitals.
 #'
 #' It also allows to model time-dependent covariates in a proportional
 #' hazards survival model (using \code{coxph_imp}), also in combination with
@@ -186,7 +248,7 @@
 #'
 #' Moreover, it is not possible to use `.` to indicate that all variables in a
 #' `data.frame` other than the outcome variable should be used as covariates.
-#' I.e., a formula `y ~ .` is valid in **JointAI**.
+#' I.e., a formula `y ~ .` is not valid in **JointAI**.
 #'
 #'
 #' @details # Data structure
@@ -421,6 +483,61 @@
 #'
 #'
 #'
+#' @section Custom model parts:
+#' (Note: This feature is experimental and has not been fully tested yet.)
+#'
+#' Via the argument `custom` it is possible to provide custom sub-models that
+#' replace the sub-models that are automatically generated by **JointAI**.
+#'
+#' Using this feature it is, for instance, possible to use the value of
+#' a repeatedly measured variable at a specific time point as covariate in
+#' another model. An example would be the use of "baseline" cholesterol
+#' (`chol` at `day = 0`) as covariate in a survival model.
+#'
+#' First, the variable `chol0` is added to the `PBC` data.
+#' For most patients the value of cholesterol at baseline is observed, but not
+#' for all. It is important that the data has a row with `day = 0` for each
+#' patient.
+#'
+#' ```{r, eval = FALSE}
+#' PBC <- merge(PBC,
+#'              subset(PBC, day == 0, select = c("id", "chol")),
+#'              by = "id", suffixes = c("", "0"))
+#' ```
+#'
+#' Next, the custom piece of JAGS model syntax needs to be specified.
+#' We loop here only over the patients for which the baseline cholesterol
+#' is missing.
+#'
+#' ```{r, eval = FALSE}
+#' calc_chol0 <- "
+#' for (ii in 1:28) {
+#'   M_id[row_chol0_id[ii], 3] <- M_lvlone[row_chol0_lvlone[ii], 1]
+#'   }"
+#' ```
+#'
+#' To be able to run the model with the custom imputation "model" for baseline
+#' cholesterol we need to provide the numbers of the rows in the data matrices
+#' that contain the missing values of baseline cholesterol and the rows that
+#' contain the imputed cholesterol at `day = 0`:
+#' ```{r, eval = FALSE}
+#' row_chol0_lvlone <- which(PBC$day == 0 & is.na(PBC$chol0))
+#' row_chol0_id <- match(PBC$id, unique(PBC$id))[row_chol0_lvlone]
+#' ```
+#' Then we pass both the custom sub-model and the additional data to the
+#' analysis function `coxph_imp()`. Note that we explicitly need to specify
+#' the model for `chol`.
+#'
+#' ```{r, eval = FALSE}
+#' coxph_imp(list(Surv(futime, status != "censored") ~ age + sex + chol0,
+#'                chol ~ age + sex + day + (day | id)),
+#'           no_model = "day", data = PBC,
+#'           append_data_list = list(row_chol0_lvlone = row_chol0_lvlone,
+#'                                   row_chol0_id = row_chol0_id),
+#'           custom = list(chol0 = calc_chol0))
+#' ```
+#'
+#'
 #'
 #' @section Note:
 #' ## Coding of variables:
@@ -531,7 +648,7 @@
 #' mod1 <- lm_imp(y ~ C1 + C2 + M1 + B1, data = wideDF, n.iter = 100)
 #'
 #'
-#' # Example 2: Logistic regression with incomplete covariats
+#' # Example 2: Logistic regression with incomplete covariates
 #' mod2 <- glm_imp(B1 ~ C1 + C2 + M1, data = wideDF,
 #'                 family = binomial(link = "logit"), n.iter = 100)
 #'
@@ -583,11 +700,12 @@ NULL
 
 model_imp <- function(formula = NULL, fixed = NULL, data, random = NULL,
                       family = NULL, df_basehaz = NULL,
+                      rd_vcov = "blockdiag",
                       n.chains = 3, n.adapt = 100, n.iter = 0, thin = 1,
                       monitor_params = c(analysis_main = TRUE), auxvars = NULL,
                       timevar = NULL, refcats = NULL,
                       models = NULL, no_model = NULL, trunc = NULL,
-                      shrinkage = FALSE,
+                      shrinkage = FALSE, custom = NULL,
                       nonprop = NULL, rev = NULL,
                       ppc = TRUE, seed = NULL, inits = NULL,
                       scale_vars = NULL, hyperpars = NULL,
@@ -597,7 +715,7 @@ model_imp <- function(formula = NULL, fixed = NULL, data, random = NULL,
                       warn = TRUE, mess = TRUE,
                       keep_scaled_mcmc = FALSE,
                       analysis_type, assoc_type = NULL,
-                      data_list = NULL, ...) {
+                      append_data_list = NULL, ...) {
 
   modimpcall <- as.list(match.call())[-1L]
 
@@ -635,7 +753,8 @@ model_imp <- function(formula = NULL, fixed = NULL, data, random = NULL,
                            scale_vars = scale_vars, refcats = refcats,
                            nonprop = nonprop, rev = rev,
                            warn = warn, mess = mess, ppc = ppc,
-                           shrinkage = shrinkage, df_basehaz = df_basehaz)
+                           shrinkage = shrinkage, df_basehaz = df_basehaz,
+                           rd_vcov = rd_vcov)
 
   # * model dimensions ---------------------------------------------------------
   par_index_main <- get_model_dim(Mlist$lp_cols[names(Mlist$lp_cols) %in%
@@ -648,10 +767,11 @@ model_imp <- function(formula = NULL, fixed = NULL, data, random = NULL,
   # * model info ---------------------------------------------------------------
   info_list <- get_model_info(Mlist, par_index_main = par_index_main,
                               par_index_other = par_index_other,
-                              trunc = trunc, assoc_type = assoc_type)
+                              trunc = trunc, assoc_type = assoc_type,
+                              custom = custom)
 
   # * data list ----------------------------------------------------------------
-  data_list <- get_data_list(Mlist, info_list, hyperpars)
+  data_list <- get_data_list(Mlist, info_list, hyperpars, append_data_list)
 
   # write model ----------------------------------------------------------------
   modelfile <- make_filename(modeldir = modeldir, modelname = modelname,
@@ -811,14 +931,10 @@ lm_imp <- function(formula, data,
                    n.chains = 3, n.adapt = 100, n.iter = 0, thin = 1,
                    monitor_params = c(analysis_main = TRUE), auxvars = NULL,
                    refcats = NULL,
-                   models = NULL, no_model = NULL, trunc = NULL,
+                   models = NULL, no_model = NULL,
                    shrinkage = FALSE, ppc = TRUE, seed = NULL, inits = NULL,
-                   scale_vars = NULL, hyperpars = NULL,
-                   modelname = NULL, modeldir = NULL,
-                   keep_model = FALSE, overwrite = NULL,
-                   quiet = TRUE, progress.bar = "text",
                    warn = TRUE, mess = TRUE,
-                   keep_scaled_mcmc = FALSE, ...) {
+                   ...) {
 
 
   if (missing(formula)) errormsg("No model formula specified.")
@@ -840,14 +956,10 @@ glm_imp <- function(formula, family, data,
                     n.chains = 3, n.adapt = 100, n.iter = 0, thin = 1,
                     monitor_params = c(analysis_main = TRUE), auxvars = NULL,
                     refcats = NULL,
-                    models = NULL, no_model = NULL, trunc = NULL,
+                    models = NULL, no_model = NULL,
                     shrinkage = FALSE, ppc = TRUE, seed = NULL, inits = NULL,
-                    scale_vars = NULL, hyperpars = NULL,
-                    modelname = NULL, modeldir = NULL,
-                    keep_model = FALSE, overwrite = NULL,
-                    quiet = TRUE, progress.bar = "text",
                     warn = TRUE, mess = TRUE,
-                    keep_scaled_mcmc = FALSE, ...) {
+                    ...) {
 
   if (missing(formula)) errormsg("No model formula specified.")
   if (missing(family))
@@ -868,14 +980,9 @@ clm_imp <- function(formula, data,
                     n.chains = 3, n.adapt = 100, n.iter = 0, thin = 1,
                     monitor_params = c(analysis_main = TRUE), auxvars = NULL,
                     refcats = NULL, nonprop = NULL, rev = NULL,
-                    models = NULL, no_model = NULL, trunc = NULL,
+                    models = NULL, no_model = NULL,
                     shrinkage = FALSE, ppc = TRUE, seed = NULL, inits = NULL,
-                    scale_vars = NULL, hyperpars = NULL,
-                    modelname = NULL, modeldir = NULL,
-                    keep_model = FALSE, overwrite = NULL,
-                    quiet = TRUE, progress.bar = "text",
-                    warn = TRUE, mess = TRUE,
-                    keep_scaled_mcmc = FALSE, ...) {
+                    warn = TRUE, mess = TRUE, ...) {
 
   if (missing(formula)) errormsg("No model formula specified.")
 
@@ -894,15 +1001,9 @@ lognorm_imp <- function(formula, data,
                         n.chains = 3, n.adapt = 100, n.iter = 0, thin = 1,
                         monitor_params = c(analysis_main = TRUE),
                         auxvars = NULL, refcats = NULL,
-                        models = NULL, no_model = NULL, trunc = NULL,
+                        models = NULL, no_model = NULL,
                         shrinkage = FALSE, ppc = TRUE, seed = NULL,
-                        inits = NULL,
-                        scale_vars = NULL, hyperpars = NULL,
-                        modelname = NULL, modeldir = NULL,
-                        keep_model = FALSE, overwrite = NULL,
-                        quiet = TRUE, progress.bar = "text",
-                        warn = TRUE, mess = TRUE,
-                        keep_scaled_mcmc = FALSE, ...) {
+                        inits = NULL, warn = TRUE, mess = TRUE, ...) {
 
   if (missing(formula)) errormsg("No model formula specified.")
 
@@ -922,15 +1023,9 @@ betareg_imp <- function(formula, data,
                         n.chains = 3, n.adapt = 100, n.iter = 0, thin = 1,
                         monitor_params = c(analysis_main = TRUE),
                         auxvars = NULL, refcats = NULL,
-                        models = NULL, no_model = NULL, trunc = NULL,
+                        models = NULL, no_model = NULL,
                         shrinkage = FALSE, ppc = TRUE, seed = NULL,
-                        inits = NULL,
-                        scale_vars = NULL, hyperpars = NULL,
-                        modelname = NULL, modeldir = NULL,
-                        keep_model = FALSE, overwrite = NULL,
-                        quiet = TRUE, progress.bar = "text",
-                        warn = TRUE, mess = TRUE,
-                        keep_scaled_mcmc = FALSE, ...) {
+                        inits = NULL, warn = TRUE, mess = TRUE, ...) {
 
   if (missing(formula)) errormsg("No model formula specified.")
 
@@ -948,14 +1043,9 @@ mlogit_imp <- function(formula, data,
                        n.chains = 3, n.adapt = 100, n.iter = 0, thin = 1,
                        monitor_params = c(analysis_main = TRUE), auxvars = NULL,
                        refcats = NULL,
-                       models = NULL, no_model = NULL, trunc = NULL,
+                       models = NULL, no_model = NULL,
                        shrinkage = FALSE, ppc = TRUE, seed = NULL, inits = NULL,
-                       scale_vars = NULL, hyperpars = NULL,
-                       modelname = NULL, modeldir = NULL,
-                       keep_model = FALSE, overwrite = NULL,
-                       quiet = TRUE, progress.bar = "text",
-                       warn = TRUE, mess = TRUE,
-                       keep_scaled_mcmc = FALSE, ...) {
+                       warn = TRUE, mess = TRUE, ...) {
 
   if (missing(formula)) errormsg("No model formula specified.")
 
@@ -972,15 +1062,10 @@ mlogit_imp <- function(formula, data,
 lme_imp <- function(fixed, data, random,
                     n.chains = 3, n.adapt = 100, n.iter = 0, thin = 1,
                     monitor_params = c(analysis_main = TRUE), auxvars = NULL,
-                    refcats = NULL,
-                    models = NULL, no_model = NULL, trunc = NULL,
+                    refcats = NULL, rd_vcov = "blockdiag",
+                    models = NULL, no_model = NULL,
                     shrinkage = FALSE, ppc = TRUE, seed = NULL, inits = NULL,
-                    scale_vars = NULL, hyperpars = NULL,
-                    modelname = NULL, modeldir = NULL,
-                    keep_model = FALSE, overwrite = NULL,
-                    quiet = TRUE, progress.bar = "text",
-                    warn = TRUE, mess = TRUE,
-                    keep_scaled_mcmc = FALSE, ...) {
+                    warn = TRUE, mess = TRUE, ...) {
 
   arglist <- prep_arglist(analysis_type = "lme",
                           family = gaussian(),
@@ -1006,15 +1091,10 @@ lmer_imp <- lme_imp
 glme_imp <- function(fixed, data, random, family,
                      n.chains = 3, n.adapt = 100, n.iter = 0, thin = 1,
                      monitor_params = c(analysis_main = TRUE), auxvars = NULL,
-                     refcats = NULL,
-                     models = NULL, no_model = NULL, trunc = NULL,
+                     refcats = NULL, rd_vcov = "blockdiag",
+                     models = NULL, no_model = NULL,
                      shrinkage = FALSE, ppc = TRUE, seed = NULL, inits = NULL,
-                     scale_vars = NULL, hyperpars = NULL,
-                     modelname = NULL, modeldir = NULL,
-                     keep_model = FALSE, overwrite = NULL,
-                     quiet = TRUE, progress.bar = "text",
-                     warn = TRUE, mess = TRUE,
-                     keep_scaled_mcmc = FALSE, ...) {
+                     warn = TRUE, mess = TRUE, ...) {
 
   if (missing(family))
     errormsg("The argument %s needs to be specified.", dQuote(family))
@@ -1044,16 +1124,10 @@ glmer_imp <- glme_imp
 betamm_imp <- function(fixed, random, data,
                        n.chains = 3, n.adapt = 100, n.iter = 0, thin = 1,
                        monitor_params = c(analysis_main = TRUE),
-                       auxvars = NULL, refcats = NULL,
-                       models = NULL, no_model = NULL, trunc = NULL,
+                       auxvars = NULL, refcats = NULL, rd_vcov = "blockdiag",
+                       models = NULL, no_model = NULL,
                        shrinkage = FALSE, ppc = TRUE, seed = NULL,
-                       inits = NULL,
-                       scale_vars = NULL, hyperpars = NULL,
-                       modelname = NULL, modeldir = NULL,
-                       keep_model = FALSE, overwrite = NULL,
-                       quiet = TRUE, progress.bar = "text",
-                       warn = TRUE, mess = TRUE,
-                       keep_scaled_mcmc = FALSE, ...) {
+                       inits = NULL, warn = TRUE, mess = TRUE, ...) {
 
   arglist <- prep_arglist(analysis_type = "glmm_beta",
                           formals = formals(), call = match.call(),
@@ -1072,16 +1146,10 @@ betamm_imp <- function(fixed, random, data,
 lognormmm_imp <- function(fixed, random, data,
                           n.chains = 3, n.adapt = 100, n.iter = 0, thin = 1,
                           monitor_params = c(analysis_main = TRUE),
-                          auxvars = NULL, refcats = NULL,
-                          models = NULL, no_model = NULL, trunc = NULL,
+                          auxvars = NULL, refcats = NULL, rd_vcov = "blockdiag",
+                          models = NULL, no_model = NULL,
                           shrinkage = FALSE, ppc = TRUE, seed = NULL,
-                          inits = NULL,
-                          scale_vars = NULL, hyperpars = NULL,
-                          modelname = NULL, modeldir = NULL,
-                          keep_model = FALSE, overwrite = NULL,
-                          quiet = TRUE, progress.bar = "text",
-                          warn = TRUE, mess = TRUE,
-                          keep_scaled_mcmc = FALSE, ...) {
+                          inits = NULL, warn = TRUE, mess = TRUE, ...) {
 
   arglist <- prep_arglist(analysis_type = "glmm_lognorm",
                           formals = formals(), call = match.call(),
@@ -1099,14 +1167,10 @@ clmm_imp <- function(fixed, data, random,
                      n.chains = 3, n.adapt = 100, n.iter = 0, thin = 1,
                      monitor_params = c(analysis_main = TRUE), auxvars = NULL,
                      refcats = NULL, nonprop = NULL, rev = NULL,
-                     models = NULL, no_model = NULL, trunc = NULL,
+                     rd_vcov = "blockdiag",
+                     models = NULL, no_model = NULL,
                      shrinkage = FALSE, ppc = TRUE, seed = NULL, inits = NULL,
-                     scale_vars = NULL, hyperpars = NULL,
-                     modelname = NULL, modeldir = NULL,
-                     keep_model = FALSE, overwrite = NULL,
-                     quiet = TRUE, progress.bar = "text",
-                     warn = TRUE, mess = TRUE,
-                     keep_scaled_mcmc = FALSE, ...) {
+                     warn = TRUE, mess = TRUE, ...) {
 
   arglist <- prep_arglist(analysis_type = "clmm",
                           formals = formals(), call = match.call(),
@@ -1123,16 +1187,11 @@ clmm_imp <- function(fixed, data, random,
 mlogitmm_imp <- function(fixed, data, random,
                          n.chains = 3, n.adapt = 100, n.iter = 0, thin = 1,
                          monitor_params = c(analysis_main = TRUE),
-                         auxvars = NULL, refcats = NULL,
-                         models = NULL, no_model = NULL, trunc = NULL,
+                         auxvars = NULL, refcats = NULL, rd_vcov = "blockdiag",
+                         models = NULL, no_model = NULL,
                          shrinkage = FALSE, ppc = TRUE, seed = NULL,
                          inits = NULL,
-                         scale_vars = NULL, hyperpars = NULL,
-                         modelname = NULL, modeldir = NULL,
-                         keep_model = FALSE, overwrite = NULL,
-                         quiet = TRUE, progress.bar = "text",
-                         warn = TRUE, mess = TRUE,
-                         keep_scaled_mcmc = FALSE, ...) {
+                         warn = TRUE, mess = TRUE, ...) {
 
   arglist <- prep_arglist(analysis_type = "mlogitmm",
                           formals = formals(), call = match.call(),
@@ -1150,24 +1209,19 @@ survreg_imp <- function(formula, data,
                         n.chains = 3, n.adapt = 100, n.iter = 0, thin = 1,
                         monitor_params = c(analysis_main = TRUE),
                         auxvars = NULL, refcats = NULL,
-                        models = NULL, no_model = NULL, trunc = NULL,
+                        models = NULL, no_model = NULL,
                         shrinkage = FALSE, ppc = TRUE, seed = NULL,
                         inits = NULL,
-                        scale_vars = NULL, hyperpars = NULL,
-                        modelname = NULL, modeldir = NULL,
-                        keep_model = FALSE, overwrite = NULL,
-                        quiet = TRUE, progress.bar = "text",
-                        warn = TRUE, mess = TRUE,
-                        keep_scaled_mcmc = FALSE, ...) {
+                        warn = TRUE, mess = TRUE, ...) {
 
 
   if (missing(formula)) errormsg("No model formula specified.")
 
 
   fmla <- if (is.list(formula)) {
-    deparse(formula[[1]], width.cutoff = 500)
+    paste(deparse(formula[[1]], width.cutoff = 500), collapse = " ")
   } else {
-    deparse(formula, width.cutoff = 500)
+    paste(deparse(formula, width.cutoff = 500) , collapse = " ")
   }
   if (!grepl("^Surv\\(", fmla)) {
     errormsg("For a survival model, the left hand side of the model formula
@@ -1189,22 +1243,17 @@ coxph_imp <- function(formula, data, df_basehaz = 6,
                       n.chains = 3, n.adapt = 100, n.iter = 0, thin = 1,
                       monitor_params = c(analysis_main = TRUE),  auxvars = NULL,
                       refcats = NULL,
-                      models = NULL, no_model = NULL, trunc = NULL,
+                      models = NULL, no_model = NULL,
                       shrinkage = FALSE, ppc = TRUE, seed = NULL, inits = NULL,
-                      scale_vars = NULL, hyperpars = NULL,
-                      modelname = NULL, modeldir = NULL,
-                      keep_model = FALSE, overwrite = NULL,
-                      quiet = TRUE, progress.bar = "text",
-                      warn = TRUE, mess = TRUE,
-                      keep_scaled_mcmc = FALSE, ...) {
+                      warn = TRUE, mess = TRUE, ...) {
 
 
   if (missing(formula)) errormsg("No model formula specified.")
 
   fmla <- if (is.list(formula)) {
-    deparse(formula[[1]], width.cutoff = 500)
+    paste(deparse(formula[[1]], width.cutoff = 500), collapse = " ")
   } else {
-    deparse(formula, width.cutoff = 500)
+    paste(deparse(formula, width.cutoff = 500), collapse = " ")
   }
   if (!grepl("^Surv\\(", fmla)) {
     errormsg("For a survival model, the left hand side of the model formula
@@ -1227,16 +1276,11 @@ coxph_imp <- function(formula, data, df_basehaz = 6,
 JM_imp <- function(formula, data, df_basehaz = 6,
                    n.chains = 3, n.adapt = 100, n.iter = 0, thin = 1,
                    monitor_params = c(analysis_main = TRUE), auxvars = NULL,
-                   timevar = NULL, refcats = NULL,
+                   timevar = NULL, refcats = NULL, rd_vcov = "blockdiag",
                    models = NULL, no_model = NULL,
-                   assoc_type = NULL, trunc = NULL,
+                   assoc_type = NULL,
                    shrinkage = FALSE, ppc = TRUE, seed = NULL, inits = NULL,
-                   scale_vars = NULL, hyperpars = NULL,
-                   modelname = NULL, modeldir = NULL,
-                   keep_model = FALSE, overwrite = NULL,
-                   quiet = TRUE, progress.bar = "text",
-                   warn = TRUE, mess = TRUE,
-                   keep_scaled_mcmc = FALSE, ...) {
+                   warn = TRUE, mess = TRUE, ...) {
 
 
   if (missing(timevar))
@@ -1253,9 +1297,9 @@ JM_imp <- function(formula, data, df_basehaz = 6,
   if (missing(formula)) errormsg("No model formula specified.")
 
   fmla <- if (is.list(formula)) {
-    deparse(formula[[1]], width.cutoff = 500)
+    paste(deparse(formula[[1]], width.cutoff = 500), collapse = " ")
   } else {
-    deparse(formula, width.cutoff = 500)
+    paste(deparse(formula, width.cutoff = 500), collapse = " ")
   }
   if (!grepl("^Surv\\(", fmla)) {
     errormsg("For a survival model, the left hand side of the model formula
