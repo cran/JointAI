@@ -1,154 +1,119 @@
 # help functions ---------------------------------------------------------------
-tab <- function(times = 2L) {
-  # creates a vector of spaces to facilitate indentation
-
-  tb <- " "
-  paste(rep(tb, times), collapse = "")
-}
-
-
-add_dashes <- function(x, width = 95L) {
-  # add separation lines between sub-models in JAGS model for readability
-  # - x: name of the sub-model
-
-  paste(x, paste0(rep("-", 80L - nchar(x)), collapse = ""))
-}
-
-
-add_linebreaks <- function(string, indent, width = 90L) {
-  # add linebreaks to a string, breaking it after a "+" sign
-  # - string: the linear predictor string to be broken
-  # - indent: in case of a linebreak, how much should the new line be indented?
-  # - width: output width
-
-  if (is.null(string)) {
-    return(NULL)
-  }
-
-  # identify position of "+"
-  m <- gregexpr(" \\+ ", string)[[1L]]
-
-  # if there is no "+", return the original string
-  if (all(m < 0L)) {
-    return(string)
-  }
-
-  # calculate the lengths of the sub-strings
-  len <- c(as.numeric(m)[1L], diff(c(as.numeric(m), nchar(string))))
-
-
-  # check how many sub-strings (and the indent) can be combined until reaching
-  # the maximal width, and create a string of " + " (no break) and
-  # " +\n" (break) to be pasted in afterwards
-  # (there is probably a more elegant way to do this)
-  i <- 1L
-  br <- character(0L)
-  while (i < length(len)) {
-    cs <- cumsum(len[i:length(len)])
-    nfit <- max(1L, which(cs <= (width - indent)))
-    br <- c(
-      br, rep(" + ", nfit - 1L),
-      if ((i + nfit - 1L) < length(len)) paste0(" +\n", tab(indent))
-    )
-    i <- i + nfit
-  }
-
-  paste0(strsplit(string, " \\+ ")[[1L]], c(br, ""), collapse = "")
-}
-
-
 
 # linear predictors ------------------------------------------------------------
+#' Write a linear predictor
+#'
+#' Construct a linear predictor from parameter names and indices, the name of
+#' the data matrix and corresponding columns, and apply scaling to the data
+#' if necessary.
+#'
+#' @param parname character string; name fo the parameter (e.g., "beta")
+#' @param parlemts integer vector; indices of the parameter vector to be used;
+#'                 should have the same length as `cols`
+#' @param matname character string; name of the data matrix
+#' @param index character string; name of the index (e.g., "i" or "ii")
+#' @param cols integer vector; indices of the columns of `matname`, should have
+#'             the same length as `parlemts`
+#' @param scale_pars matrix with row names according to the column names of
+#'                   `matname` and columns "center" and "scale"; or NULL
+#' @param isgk logical; is this linear predictor within the Gauss-Kronrod
+#'             quadrature?
+#'
+#' @keywords internal
 paste_linpred <- function(parname, parelmts, matnam, index, cols, scale_pars,
                           isgk = FALSE) {
-  # paste a regular linear predictor
-  # - parname: name of the parameter, e.g. "beta"
-  # - parelmts: vector specifying which elements of the parameter vector are
-  #             to be used, e.g. c(1,2,3,6,8,4)
-  # - matnam: name of the design matrix, e.g. "M_lvlone" or "M_ID"
-  # - index: character sting specifying the index to be used, e.g. "i" or "ii"
-  # - cols: index of the columns of the design matrix to be used,
-  #         e.g. c(1, 4, 2, 10)
-  # - scale_pars: a matrix with row names according to the columns of the
-  #               design matrix and columns "center" and "scale".
-  #               Contains NA if a variable should not be scaled
-  #               (could also be NULL instead of a matrix)
-  # - isgk: logical indicator of this is for within the Gauss-Kronrod quadrature
+  scaled_data <- paste_scaling(
+    x = paste_data(matnam, index, cols, isgk),
+    rows = cols,
+    scale_pars = list(scale_pars)[rep(1, length(cols))],
+    scalemat = rep(paste0("sp", matnam), length(cols)))
 
-  paste(
-    paste_scaling(x = paste_data(matnam, index, cols, isgk),
-                  rows = cols,
-                  scale_pars = list(scale_pars)[rep(1, length(cols))],
-                  scalemat = rep(paste0("sp", matnam), length(cols))
-    ),
-    paste_coef(parname, parelmts),
-    sep = " * ", collapse = " + ")
+  paste(scaled_data, paste_coef(parname, parelmts),
+        sep = " * ", collapse = " + ")
 }
 
 # * linpred help functions -----------------------------------------------------
-paste_data <- function(matnam, index, col, isgk = FALSE) {
-  # create a (vector of) data element(s) of a linear predictor, e.g. "X[i, 3]"
-  # if isgk = TRUE, the suffix "gk" will be added to "matname"
-  # - matnam: the name of the design matrix
-  # - index: the index to be used, e.g. "i" or "ii"
-  # - col: the column (or vector of columns) of the design matrix
-  # - isgk: is this whithin the Gauss-Kronrod quadrature?
 
-  paste0(matnam, if (isgk) {"gk"} else {""},
-         "[", index, ", ", col,
-         if (isgk) {", k]"} else {"]"})
+#' Write the data element of a linear predictor
+#'
+#' @param matnam characters string; name of the data matrix
+#' @param index character string; the index (e.g., "i", or "ii")
+#' @param col integer vector; the indices of the columns in `matnam`
+#' @param isgk logical; is this for within the Gauss-Kronrod quadrature?
+#'
+#' @return A vector of character strings of the form
+#'         `M_id[i, 3]` or `M_id[i, 3, k]`.
+#' @keywords internal
+#'
+paste_data <- function(matnam, index, col, isgk = FALSE) {
+  if (isTRUE(isgk)) {
+    paste0(matnam, "gk[", index, ", ", col,  ", k]")
+  } else {
+    paste0(matnam, "[", index, ", ", col, "]")
+  }
 }
 
-
+#' Write the coefficient part of a linear predictor
+#'
+#' @param parname character string; name of the coefficient (e.g., "beta")
+#' @param parlemts vector of integers; the index of the parameter vector
+#'
+#' @return A vector of character strings of the form `beta[3]`.
+#'
+#' @keywords internal
 paste_coef <- function(parname, parelmts) {
-  # create a (vector of) coefficient element(s) of a linear predictor,
-  # e.g. beta[3]
-  # - parname: the name of the parameter, e.g. "alpha" or "beta"
-  # - parelmts: vector of integers giving the elements of the parameter to be
-  #             used
-
   paste0(parname, "[", parelmts, "]")
 }
 
 
+#' Wrap a data element of a linear predictor in scaling syntax
+#'
+#' Identifies if a data element of a linear predictor should be scaled (based
+#' on whether scaling parameters are given) and then calls `paste_scale()`.
+#'
+#' Calls `paste_scale()` on each element of `x`.
+#'
+#' @param x vector of character strings; to be scaled, typically matrix columns
+#' @param rows integer vector; row numbers of the matrix containing the scaling
+#'             information
+#' @param scale_pars matrix containing the scaling information, with columns
+#'                   "center" and "scale"
+#' @param scalemat the name of the scaling matrix in the JAGS model
+#'                 (e.g. "spM_id")
+#'
+#' @keywords internal
 paste_scaling <- function(x, rows, scale_pars, scalemat) {
-  # identify if a data element of a linear predictor should be scaled (based
-  # on whether scaling parameters are given) and obtain the scaling trafo
-  # string
-  # - x: vector of expressions to scale
-  # - row: the row number(s) of the matrix containing the scaling parameters
-  # - scale_pars: scaling matrix
-  # - scalemat: name of the scaling matrix in JAGS, e.g. "spM_ID"
 
+  # if there is no scaling info at all, return x
   if (is.null(unlist(scale_pars))) {
-    x
-  } else {
-    cvapply(seq_along(x), function(k) {
-      if (rowSums(is.na(scale_pars[[k]][rows[k], , drop = FALSE])) > 0L) {
-        x[k]
-      } else {
-        paste_scale(x[[k]], row = rows[k], scalemat = scalemat[k])
-      }
-    })
+    return(x)
   }
+
+  cvapply(seq_along(x), function(k) {
+    missing_scaleinfo <- any(is.na(scale_pars[[k]][rows[k], , drop = FALSE]))
+    if (missing_scaleinfo) {
+      x[k]
+    } else {
+      paste_scale(x[[k]], row = rows[k], scalemat = scalemat[k])
+    }
+  })
 }
 
 
+#' Create the scaling in a data element of a linear predictor
+#'
+#' @param x a character string
+#' @param row integer; indicating the row of `scalemat` to be used
+#' @param scalemat character string; name of the matrix containing the scaling
+#'                 information (e.g., "spM_lvlone"). This matrix is assumed to
+#'                 have columns "center" and "scale".
+#' @keywords internal
+#' @return a character string of the form `(x - center)/scale`.
+#'
 paste_scale <- function(x, row, scalemat) {
-  # create a (vector of) scaling transformation(s) for the data element(s) of a
-  # linear predictor
-  # - x: term that will be scaled (or vector of terms)
-  # - row: the row number(s) of the matrix containing the scaling parameters
-  # - scalemat: the name of the matrix containing the scaling parameters,
-  #             e.g. "spM_lvlone" or "spM_ID"
-  #             The matrix is assumed to have columns "center" and "scale".
-
   paste0("(", x, " - ", scalemat, "[", row, ", 1])/", scalemat,
          "[", row, ", 2]")
 }
-
-
-
 
 
 
@@ -823,7 +788,7 @@ paste_obsvalue <- function(varname, matname, index, column, isgk, ...) {
   #        functions
 
   if (isgk) # "M_lvlonegk[i, 4, k]" in the GK-quadrature
-    paste0(matname, "gk[", index, ", ", column, ", k]")
+    paste0(matname, "gk[", index, ", ", column, ", 1:15]")
   else # "M_lvlone[srow_varname[i, k]" outside the quadrature
     paste0(matname, "[srow_", varname, "[", index, "], ", column, "]")
 }
@@ -841,7 +806,7 @@ paste_underlvalue <- function(varname, covname, index, isgk, ...) {
   #        functions
 
   if (isgk)
-    paste0("mugk_", covname, "[", index, ", k]")
+    paste0("mugk_", covname, "[", index, ", 1:15]")
   else
     paste0("mu_", covname, "[srow_", varname, "[", index, "]]")
 }
@@ -1194,7 +1159,13 @@ write_probs <- function(info, index, isgk = FALSE, indent = 4L) {
                               })
                      )
                    })
-
+  # if (isTRUE(isgk)) {
+  #   paste0(c(
+  #     write_pgk(info, index, indent), "",
+  #     write_psum_expit(info, index, indent)
+  #   ), collapse = "\n")
+  #
+  # } else {
 
   paste0(tab(indent),
          paste_p(1L), " <- ",
@@ -1228,7 +1199,8 @@ write_logits <- function(info, index, nonprop = FALSE, isgk = FALSE,
                              .isgk = isgk) {
                       paste0(tab(indent), "logit(", paste_ps(k),
                              ") <- gamma_", info$varname, "[", k, "]",
-                             " + eta_", info$varname, "[", index, "]",
+                             " + eta", if (isgk) "gk",
+                             "_", info$varname, "[", index, if (isgk) ", k", "]",
                              if (nonprop) {
                                paste0(" + eta_", info$varname, "_", k,
                                       "[", index, "]")
@@ -1236,7 +1208,68 @@ write_logits <- function(info, index, nonprop = FALSE, isgk = FALSE,
                     })
 
   paste0(logits, collapse = "\n")
+  # if (isTRUE(isgk)) {
+  #   paste0(write_exp_lp(info, index = index, indent = indent, nonprop = nonprop),
+  #          collapse = "\n")
+  #
+  # } else {
+
 }
+
+# write the part that calculates the exponential function of the linear predictor
+# in the quadrature part for ordinal longitudinal outcomes in joint models
+write_exp_lp <- function(info, index, nonprop = FALSE, indent = 4L) {
+  paste0(tab(indent),
+         "exp_lp_", info$varname, "[", index, ", ", 1L:(info$ncat - 1L),
+         ", 1:15] <- exp(1)^(gamma_", info$varname, "[", 1L:(info$ncat - 1L), "]",
+         " + etagk",
+         "_", info$varname, "[", index, ", 1:15", "]",
+         if (nonprop) {
+           paste0(" + eta_", info$varname, "_", 1L:(info$ncat - 1L),
+                  "[", index, "]")
+         }, ")")
+}
+
+
+write_psum_expit <- function(info, index, indent = 4L) {
+  cvapply(1:(info$ncat - 1), function(r) {
+    paste0(tab(indent),
+           "psumgk_", info$varname, "[", index, ", ", r,
+           ", 1:15] <- exp_lp_", info$varname, "[", index, ", ", r,
+           ", ]/(1 + exp_lp_", info$varname, "[", index, ", ", r, ", ])",
+           if (r < info$ncat - 1) {
+             paste0(" - psumgk_", info$varname, "[", index, ", ", r + 1, ", 1:15]")
+           }
+    )
+  })
+}
+
+
+write_pgk <- function(info, index, indent = 4L) {
+  c(
+    paste0(tab(indent),
+           "pgk_", info$varname, "[", index, ", 1, 1:15] <- 1 - ifelse(",
+           "probsumgk_", info$varname, "[", index, ", ] > 1 - 1e-10, 1-1e-10, ", "\n",
+           tab(indent + 4 + nchar(info$varname) + nchar(index) + 15),
+           "ifelse(probsumgk_", info$varname, "[", index, ", ] < 1e-10, 1e-10, ",
+           "probsumgk_", info$varname, "[", index, ", ]))"
+    ),
+
+    paste0(tab(indent),
+           "pgk_", info$varname, "[", index, ", 2:", info$ncat, ", 1:15] <- ifelse(",
+           "psumgk_", info$varname, "[", index, ", , ] > 1 - 1e-10, 1-1e-10, ", "\n",
+           tab(indent + 4 + nchar(info$varname) + nchar(index) + 17),
+           "ifelse(psumgk_", info$varname, "[", index, ", , ] < 1e-10, 1e-10, ",
+           "psumgk_", info$varname, "[", index, ", , ]))"
+    ),
+
+    paste0("\n", tab(indent),
+           "probsumgk_", info$varname, "[", index, ", 1:15] <- ",
+           paste0("pgk_", info$varname, "[", index, ", ", 2:info$ncat, ", ]",
+                  collapse = " + ")
+    ))
+}
+
 
 
 write_priors_clm <- function(info) {
@@ -1283,6 +1316,4 @@ paste_ps <- function(nr, env = parent.frame()) {
   paste0("psum", if (gk) "gk", "_", vn, "[", ind, ", ", nr, if (gk) ", k", "]")
 }
 
-minmax <- function(x, max = "1-1e-10", min = "1e-10") {
-  paste0("max(", min, ", min(", max, ", ", x, "))")
-}
+

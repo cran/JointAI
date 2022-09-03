@@ -686,7 +686,6 @@
 #' # MCMC chains are run sequentially.
 #' # To run MCMC chains in parallel, a strategy can be specified using the
 #' # package \pkg{future} (see ?future::plan), for example:
-#' doFuture::registerDoFuture()
 #' future::plan(future::multisession, workers = 4)
 #' mod8 <- lm_imp(y ~ C1 + C2 + B2, data = wideDF, n.iter = 500, n.chains = 8)
 #' mod8$comp_info$future
@@ -718,7 +717,7 @@ model_imp <- function(formula = NULL, fixed = NULL, data, random = NULL,
                       append_data_list = NULL, ...) {
 
   modimpcall <- as.list(match.call())[-1L]
-
+  start_time <- Sys.time()
 
   # checks & warnings -------------------------------------------------------
   if (!is.null(formula) & is.null(fixed) & is.null(random)) {
@@ -818,27 +817,21 @@ model_imp <- function(formula = NULL, fixed = NULL, data, random = NULL,
       msg("Note: No MCMC sample will be created when n.iter is set to 0.")
   }
 
-  future_info <- get_future_info()
-
-  run_jags <- ifelse(future_info$parallel, run_parallel, run_seq)
-
-  t0 <- Sys.time()
-  jags_res <- run_jags(n_adapt = n.adapt, n_iter = n.iter, n_chains = n.chains,
-                       inits = inits, thin = thin,
-                       n_workers = future_info$workers,
-                       data_list = data_list, var_names = var_names,
-                       modelfile = modelfile, quiet = quiet,
-                       progress_bar = progress.bar, mess = mess, warn = warn)
+  jags_res <- run_parallel(n_adapt = n.adapt, n_iter = n.iter,
+                           n_chains = n.chains, inits = inits, thin = thin,
+                           data_list = data_list, var_names = var_names,
+                           modelfile = modelfile, quiet = quiet,
+                           progress_bar = progress.bar, mess = mess,
+                           warn = warn)
   adapt <- jags_res$adapt
   mcmc <- jags_res$mcmc
 
-  t1 <- Sys.time()
 
-  if (n.iter > 0 & class(mcmc) != "mcmc.list")
+  if (n.iter > 0 & !inherits(mcmc, "mcmc.list"))
     warnmsg("There is no mcmc sample. Something went wrong.")
 
   # post processing ------------------------------------------------------------
-  if (n.iter > 0 & !is.null(mcmc)) {
+  if (n.iter > 0 & !is.null(mcmc) & !inherits(mcmc, "try-error")) {
     MCMC <- mcmc
 
     if (any(!vapply(Mlist$scale_pars, is.null, FUN.VALUE = logical(1)),
@@ -869,9 +862,18 @@ model_imp <- function(formula = NULL, fixed = NULL, data, random = NULL,
                         inits = inits,
                         seed = seed)
 
+  fmla <- if (is.null(formula) & !is.null(fixed)) {
+    combine_formula_lists(fixed, random, warn = warn)
+  } else {
+    formula
+  }
+  if (length(fmla) == 1L) {
+    fmla <- fmla[[1]]
+  }
 
   object <- structure(
     list(analysis_type = analysis_type,
+         formula = fmla,
          data = Mlist$data,
          models = Mlist$models,
          fixed = Mlist$fixed,
@@ -895,10 +897,17 @@ model_imp <- function(formula = NULL, fixed = NULL, data, random = NULL,
          model = if (n.adapt > 0) adapt,
          sample = if (n.iter > 0 & !is.null(mcmc) & keep_scaled_mcmc) mcmc,
          MCMC = if (n.iter > 0 & !is.null(mcmc)) coda::as.mcmc.list(MCMC),
-         comp_info = list(start_time = t0,
-                          duration = t1 - t0,
+         comp_info = list(start_time = start_time,
+                          duration = if (!is.null(jags_res)) {
+                            duration_obj(
+                              list("adapt" = jags_res$time_adapt,
+                                   "sample" = jags_res$time_sample))
+                          },
                           JointAI_version = packageVersion("JointAI"),
-                          future = future_info$call),
+                          R_version = R.version.string,
+                          parallel = if (!is.null(jags_res)) jags_res$parallel,
+                          workers = if (isTRUE(jags_res$parallel))
+                            jags_res$workers),
          call = modimpcall$thecall
     ), class = "JointAI")
 

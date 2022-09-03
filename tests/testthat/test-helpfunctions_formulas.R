@@ -3,31 +3,8 @@ library("JointAI")
 library("survival")
 
 
-# check_formula_list -----------------------------------------------------------
-test_that('check_formula_list works', {
-  expect_equal(check_formula_list(y ~ x + z),
-               list(y ~ x + z))
-  expect_equal(check_formula_list(y ~ x + z | id),
-               list(y ~ x + z | id))
-  expect_equal(check_formula_list(NULL),
-               NULL)
-  expect_equal(check_formula_list(list(y ~ x + z, NULL)),
-               list(y ~ x + z, NULL))
-})
 
 
-test_that('check_formula_list gives error', {
-  expect_error(check_formula_list("y ~ x + z"))
-  expect_error(check_formula_list(33))
-  expect_error(check_formula_list(log(y)))
-  expect_error(check_formula_list(list(y ~ x + z, NULL, 33)))
-  expect_error(check_formula_list(list(y ~ x + z, NULL, "abc")))
-  expect_error(check_formula_list(list(y ~ x + z, NULL, "y ~ abc")))
-})
-
-
-
-# extract_id--------------------------------------------------------------
 runs <- list(list(random = ~ 1 | id, ids = 'id', RHS = list(~ 1 | id),
                   nogroup = list(id = ~ 1)),
              list(random = ~ 0 | id, ids = 'id', RHS = list(~ 0 | id),
@@ -41,53 +18,6 @@ runs <- list(list(random = ~ 1 | id, ids = 'id', RHS = list(~ 1 | id),
                   nogroup = list(y ~ 0))
 )
 
-test_that('extract_id works', {
-  for (i in setdiff(seq_along(runs), c(4, 6))) {
-    expect_equal(extract_id(runs[[i]]$random), runs[[i]]$ids)
-  }
-
-  # test all together
-  expect_equal(extract_id(lapply(runs, "[[", 'random')),
-               unlist(unique(lapply(runs, "[[", 'ids'))))
-})
-
-
-test_that('extract_id gives warning', {
-  for (i in c(4, 6)) {
-    expect_warning(extract_id(runs[[i]]$random), runs[[i]]$ids)
-  }
-
-  # test all together
-  expect_equal(extract_id(lapply(runs, "[[", 'random')),
-               unlist(unique(lapply(runs, "[[", 'ids'))))
-})
-
-
-test_that('extract_id results in error', {
-  err <- list(
-    "text",
-    NA,
-    TRUE,
-    mean,
-    list(random =  ~ a | id/class, ids = c('id', 'class')),
-    list(random = ~ a | id + class, ids = c('id', 'class')),
-    list(random = list(~a | id, ~ b | id2), ids = c('id', 'id2'))
-  )
-
-  for (i in seq_along(err)) {
-    expect_error(extract_id(err[[i]]))
-  }
-})
-
-
-test_that('extract_id results in warning', {
-  rd_warn <- list(~1,
-                  ~a + b + c)
-
-  for (i in seq_along(rd_warn)) {
-    expect_warning(extract_id(rd_warn[[i]]))
-  }
-})
 
 
 # extract_outcome ----------------------------------------------------------
@@ -125,24 +55,9 @@ test_that('extract_outcome works', {
 })
 
 
-# extract_lhs ------------------------------------------------------------------
-test_that('extract_lhs works', {
-  for (i in seq_along(ys)) {
-    expect_equal( extract_lhs(ys[[i]]$fixed), ys[[i]]$LHS)
-  }
-})
 
-# remove_lhs -------------------------------------------------------------------
-test_that('remove_lhs works', {
-  for (i in seq_along(ys)) {
-    expect_equal(remove_lhs(ys[[i]]$fixed), ys[[i]]$RHS,
-                 ignore_formula_env = TRUE)
-  }
-  for (i in seq_along(runs)) {
-    expect_equal(remove_lhs(runs[[i]]$random), runs[[i]]$RHS,
-                 ignore_formula_env = TRUE)
-  }
-})
+
+
 
 
 # remove grouping --------------------------------------------------------------
@@ -159,44 +74,6 @@ test_that('remove_grouping works', {
 })
 
 
-# split_formula-----------------------------------------------
-fmls <- list(
-  list(fmla = y ~ a + b + (b | id),
-       fixed = y ~ a + b,
-       random = ~ (b | id)),
-  list(fmla = y ~ (1|id),
-       fixed = y ~ 1,
-       random = ~ (1 | id)),
-  list(fmla = y ~ a + (a + b|id),
-       fixed = y ~ a,
-       random = ~ (a + b |id)),
-  list(fmla = y ~ a + I(a^2) + (a + I(a^2) | id),
-       fixed = y ~ a + I(a^2),
-       random = ~ (a + I(a^2) | id)),
-  list(fmla = y ~ x + (1| id/class),
-       fixed = y ~ x,
-       random = ~ (1 | id/class)),
-  list(fmla = y ~ x + (1|id) + (1|class),
-       fixed = y ~ x,
-       random = ~ (1|id) + (1|class)))
-
-test_that('split_formula works', {
-  for (i in seq_along(fmls)) {
-    expect_equal(split_formula(fmls[[i]]$fmla),
-                 list(fixed = fmls[[i]]$fixed, random = fmls[[i]]$random),
-                 ignore_formula_env = TRUE)
-  }
-})
-
-# split_formula_list --------------------------------------------------
-test_that('split_formula_list works', {
-  expect_equal(
-    unname(lapply(split_formula_list(lapply(fmls, "[[", "fmla")), unname)),
-               list(lapply(fmls, "[[", 'fixed'),
-                    lapply(fmls, "[[", 'random')),
-    ignore_formula_env = TRUE)
-
-})
 
 
 # identify_functions -----------------------------------------------------------

@@ -78,9 +78,9 @@ get_params <- function(analysis_main = TRUE,
   impvals <- if (isTRUE(args$imps)) {
     unlist(unname(lapply(names(Mlist$M), function(k) {
       if (any(is.na(Mlist$M[[k]]))) {
-        misvals <- which(is.na(Mlist$M[[k]][, colnames(Mlist$M[[k]]) %in%
-                                              names(Mlist$data), drop = FALSE]),
-                         arr.ind = TRUE)
+        misvals <- which(is.na(Mlist$M[[k]]), arr.ind = TRUE)
+        relevant_cols <- which(colnames(Mlist$M[[k]]) %in% names(Mlist$data))
+        misvals <- misvals[misvals[, "col"] %in% relevant_cols, ]
 
         apply(misvals, 1L, function(x) {
           paste0(k, "[", x[1L], ",", x[2L], "]")
@@ -304,15 +304,15 @@ get_ranefpars <- function(info_list, Mlist, args, set = "main") {
     })
 
     RinvD_block_indep <- lapply(ranef_info, function(x) {
-      if (x$nranef > 1) {
-        lapply(x$lvls, function(lvl) {
+      lapply(x$lvls, function(lvl) {
+        if (x$nranef[lvl] > 1) {
           if (isTRUE(x$rd_vcov[[lvl]] == "blockdiag")) {
             paste0("RinvD_", x$varname, "_", lvl,
                    "[", seq.int(max(1L, x$nranef[lvl])), ",",
                    seq.int(max(1L, x$nranef[lvl])), "]")
           }
-        })
-      }
+        }
+      })
     })
 
     params <- c(params,

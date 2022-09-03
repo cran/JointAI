@@ -426,15 +426,34 @@ formula.JointAI <- function(x, ...) {
   if (!(inherits(x, "JointAI") | inherits(x, "JointAI_errored")))
     errormsg("Use only %s with objects.", sQuote("JointAI"))
 
-  if (is.null(x$call$formula)) {
-    as.formula(x$call$fixed)
-  } else {
-    if (inherits(x$call$formula, "list")) {
-      x$call$formula
-    } else {
-      as.formula(x$call$formula)
-    }
-  }
+  x$formula
+
+  #   if (inherits(x$call, "call")) {
+  #   if (is.null(x$call$formula)) {
+  #     as.formula(x$call$fixed)
+  #   } else {
+  #     fmla <- eval(x$call$formula)
+  #     if (inherits(eval(x$call$formula), "list")) {
+  #       x$call$formula
+  #     } else {
+  #       as.formula(x$call$formula)
+  #     }
+  #   }
+  # } else if (inherits(x$call, "list")) {
+  #   fmla_list <- lapply(x$call, function(k) {
+  #     if (!is.null(k$formula)) {
+  #       k$formula
+  #     } else {
+  #       k$fixed
+  #     }
+  #   })
+  #   fmla_list <- lapply(fmla_list[lvapply(fmla_list, inherits, "call")], as.formula)
+  #   if (length(fmla_list) == 1L) {
+  #     fmla_list[[1]]
+  #   } else {
+  #     fmla_list
+  #   }
+  # }
 }
 
 
@@ -691,12 +710,14 @@ get_missinfo <- function(object) {
     errormsg("Use only with 'JointAI' objects.")
 
 
-  allvars <- all_vars(c(object$fixed, object$random, object$Mlist$auxvars,
-                        object$Mlist$timevar))
+  allvars <- unique(
+    c(all_vars(c(object$fixed, object$random, object$Mlist$auxvars)),
+      object$Mlist$timevar))
 
   groups <- object$Mlist$groups
 
-  data_lvls <- cvapply(object$data[, allvars], check_varlevel, groups = groups)
+  # data_lvls <- cvapply(object$data[, allvars], check_varlevel, groups = groups)
+  data_lvls <- get_datlvls(object$data[, allvars, drop = FALSE], groups)
 
   complcases <- lapply(names(groups), function(k) {
     cc <- complete.cases(object$data[match(unique(groups[[k]]), groups[[k]]),
@@ -712,8 +733,9 @@ get_missinfo <- function(object) {
       ), check.names = FALSE, row.names = k)
   })
 
-  dat_lvls <- sapply(object$data[allvars], check_varlevel,
-                     groups = object$Mlist$groups)
+  # dat_lvls <- sapply(object$data[allvars], check_varlevel,
+  #                    groups = object$Mlist$groups)
+  dat_lvls <- get_datlvls(object$data[allvars], object$Mlist$groups)
 
   miss_list <- sapply(unique(dat_lvls), function(lvl) {
     subdat <- object$data[match(unique(object$Mlist$groups[[lvl]]),

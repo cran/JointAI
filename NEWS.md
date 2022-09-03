@@ -1,4 +1,42 @@
-# JointAI Development Vesion
+# JointAI Development Version
+
+
+# JointAI 1.0.4
+
+## New features
+* `md_pattern()` has an additional argument `sort_columns` to provide the option
+  to switch off the sorting of columns by number of missing values.
+* `sum_duration()`: new function to get sum of computational time across chains,
+  phases, runs, ...
+
+## Bug fixes
+* `formula()` now also return the model formula when `add_samples()` is used.
+* `JM_imp()` with ordinal longitudinal outcome is not using the correct 
+  version of the linear predictor in the quadrature procedure approximating the
+  integral in the survival.
+* Bug causing the wrong elements of the data matrix to be monitored when 
+  `monitor_params(imps = TRUE)` in survival models fixed.
+* `predDF()`: bugfix for models including auxiliary variables (which were
+   previously not included into the data)  
+* `nonprop`: bugfix for non-proportional effects in covariate models
+
+## Small improvements
+* Use of `add_samples()` will now result in the `call` element of a `JointAI`
+  object being a `list` and no longer a nested list.
+* Re-structuring of the JAGS model code for proportional hazards models to
+  reduce computational time.
+* change in how parallel computation is done: does not rely on **doFuture** and
+  **foreach** any more, only package **future** is required.
+* `comp_info` element of fitted `JointAI` object has changed due to the changes
+  in parallel computing, and computational time is not reported separately for
+  the adaptive phase and the sampling phase, and separately per chain when
+  parallel computation was used.
+* `predict()` is now a lot faster for proportional hazards models.
+
+
+-----------------------------------------------------------------------------
+
+# JointAI 1.0.3
 
 
 ## New features
@@ -34,7 +72,7 @@
 
 
 
---------------------------------------------------------------------------------
+-----------------------------------------------------------------------------
 
 # JointAI 1.0.2
 
