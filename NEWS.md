@@ -1,5 +1,11 @@
-# JointAI Development Version
+# JointAI 1.0.5
 
+(update request by CRAN)
+
+* use a wrapper for `bs()` to avoid warning in CMD check when run on older version
+  of R where `splines::bs()` did not yet have the argument `warn.outside`.
+
+--------------------------------------------------------------------------------
 
 # JointAI 1.0.4
 

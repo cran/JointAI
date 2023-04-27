@@ -65,8 +65,10 @@ predDF.formula <- function(object, data, vars, length = 100L, ...) {
          length = length, ...)
 }
 
-# @rdname predDF
-# @export
+#' @rdname predDF
+#' @param idvar optional name of an ID variable
+#' @keywords internal
+#' @export
 predDF.list <- function(object, data, vars, length = 100L, idvar = NULL, ...) {
 
   id_vars <- extract_id(vars, warn = FALSE)
