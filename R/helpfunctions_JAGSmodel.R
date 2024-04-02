@@ -8,9 +8,9 @@
 #' if necessary.
 #'
 #' @param parname character string; name fo the parameter (e.g., "beta")
-#' @param parlemts integer vector; indices of the parameter vector to be used;
+#' @param parelmts integer vector; indices of the parameter vector to be used;
 #'                 should have the same length as `cols`
-#' @param matname character string; name of the data matrix
+#' @param matnam character string; name of the data matrix
 #' @param index character string; name of the index (e.g., "i" or "ii")
 #' @param cols integer vector; indices of the columns of `matname`, should have
 #'             the same length as `parlemts`
@@ -56,7 +56,7 @@ paste_data <- function(matnam, index, col, isgk = FALSE) {
 #' Write the coefficient part of a linear predictor
 #'
 #' @param parname character string; name of the coefficient (e.g., "beta")
-#' @param parlemts vector of integers; the index of the parameter vector
+#' @param parelmts vector of integers; the index of the parameter vector
 #'
 #' @return A vector of character strings of the form `beta[3]`.
 #'
@@ -706,7 +706,8 @@ rd_vcov_full <- function(nranef, nam) {
 # Joint model ------------------------------------------------------------------
 
 paste_linpred_jm <- function(varname, parname, parelmts, matnam, index, cols,
-                             scale_pars, assoc_type, covnames, isgk = FALSE) {
+                             scale_pars, assoc_type, covnames, isgk = FALSE,
+                             trafo = NULL) {
   # - varname: name of the survival outcome
   # - parname: name of the parameter, e.g. "beta"
   # - parelmts: vector specifying which elements of the parameter vector are
@@ -732,8 +733,24 @@ paste_linpred_jm <- function(varname, parname, parelmts, matnam, index, cols,
                                 index = index, columns = cols,
                                 assoc_type = assoc_type, isgk = isgk)
 
+  # wrap in trafo if there is a trafo of the time-dep variable in the lin.pred
+  # of the survival model
+  if (!is.null(unlist(covnames))) {
+    pastedat <- Map(function(covname, colname, strng) {
+      if (colname %in% trafo$colname) {
+        fct <- trafo$fct[trafo$colname == colname]
+        if (trafo$type[trafo$colname == colname] == "I") {
+          fct <- gsub("\\)$", "", gsub("^I\\(", "", fct))
+        }
+        gsub(pattern = covname, replacement = strng, x = fct)
+      } else {
+        strng
+      }
+    }, covname = covnames, colname = names(covnames), strng = pastedat)
+  }
+
   paste(
-    paste_scaling(x = pastedat,
+    paste_scaling(x = unlist(pastedat),
                   rows = cols,
                   scale_pars = list(scale_pars)[rep(1, length(cols))],
                   scalemat = rep(paste0("sp", matnam), length(cols))

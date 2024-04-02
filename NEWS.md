@@ -1,3 +1,13 @@
+# JointAI (development version)
+
+* clean-up of helper functions and additional unit tests
+* fix typos in argument names in helpfiles
+* fix documentation syntax (CRAN NOTEs)
+
+--------------------------------------------------------------------------------
+
+
+
 # JointAI 1.0.5
 
 (update request by CRAN)
